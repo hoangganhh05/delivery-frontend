@@ -75,7 +75,8 @@ export default function CustomerView() {
     try {
       const res = await calculateVoucherApi({
         voucherCode: code.trim().toUpperCase(),
-        orderAmount: selectedService.fee,
+        orderAmount: Math.max(1, Number(declaredValue)),
+        shippingFee: selectedService.fee,
       });
       if (res && res.data != null) {
         setDiscountFee(Number(res.data));
@@ -288,9 +289,9 @@ export default function CustomerView() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { code: 'VIETTEL50', desc: 'Giảm 50% phí vận chuyển (Tối đa 50k)' },
-                    { code: 'FREESHIP', desc: 'Miễn phí giao hàng (Tối đa 30k)' },
-                    { code: 'VIETTEL20', desc: 'Giảm 20% phí giao hàng' }
+                    { code: 'VIETTEL50', desc: 'Giảm 50% · Đơn tối thiểu 100.000đ' },
+                    { code: 'FREESHIP', desc: 'Miễn phí giao hàng · Đơn tối thiểu 50.000đ' },
+                    { code: 'VIETTEL20', desc: 'Giảm 20% · Đơn tối thiểu 50.000đ' }
                   ].map(v => (
                     <div key={v.code} className="flex items-center justify-between p-3 rounded-xl border border-dashed border-blue-200 bg-blue-50">
                       <div>

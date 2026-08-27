@@ -69,6 +69,7 @@ export const getShippersApi = (): Promise<ApiResponse> => {
 export const calculateVoucherApi = (data: {
   voucherCode: string;
   orderAmount: number;
+  shippingFee?: number;
 }): Promise<ApiResponse> => {
   return axiosClient.post("/vouchers/calculate", data);
 };
