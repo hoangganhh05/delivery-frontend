@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: delivery_ui_ux
+    ports:
+      - "8443:80"
+    restart: always

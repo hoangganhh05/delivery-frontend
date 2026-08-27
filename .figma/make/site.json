@@ -1,0 +1,10 @@
+{
+  "description": "Streamline delivery management for businesses with user management, order tracking, payment processing, and real-time analytics in a professional SaaS platform.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
