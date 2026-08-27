@@ -27,6 +27,14 @@ export default function ShipperMobile() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
+  const openDirections = (address?: string) => {
+    if (!address) {
+      addToast({ type: 'warning', title: 'Chưa có địa chỉ giao hàng' });
+      return;
+    }
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank', 'noopener,noreferrer');
+  };
+
   const fetchShipperOrders = async () => {
     try {
       setLoading(true);
@@ -103,7 +111,7 @@ export default function ShipperMobile() {
               <p className="text-xs text-blue-200 uppercase font-600">Điểm giao nhận</p>
               <p className="text-base font-700">{selectedOrder.receiverName}</p>
             </div>
-            <button className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-600 flex items-center gap-1">
+            <button onClick={() => openDirections(selectedOrder.receiverAddress)} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-600 flex items-center gap-1">
               <Navigation size={13} /> Dẫn đường
             </button>
           </div>

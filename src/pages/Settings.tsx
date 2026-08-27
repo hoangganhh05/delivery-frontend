@@ -30,14 +30,31 @@ export default function Settings() {
   const { addToast } = useApp();
   const [activeTab, setActiveTab] = useState('general');
   const [showPw, setShowPw] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem('appTheme') || 'light');
+  const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || '#2563EB');
+  const [integrationStates, setIntegrationStates] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('integrationStates') || '') || { VNPay: true, Momo: true, ZaloPay: false, 'VNPT Pay': false };
+    } catch {
+      return { VNPay: true, Momo: true, ZaloPay: false, 'VNPT Pay': false };
+    }
+  });
 
-  const [notifSettings, setNotifSettings] = useState({
-    newOrder: true, statusChange: true, paymentSuccess: true,
-    deliveryComplete: true, shipperAssign: false, systemAlert: true,
-    emailNotif: true, smsNotif: false, pushNotif: true,
+  const [notifSettings, setNotifSettings] = useState(() => {
+    const defaults = {
+      newOrder: true, statusChange: true, paymentSuccess: true,
+      deliveryComplete: true, shipperAssign: false, systemAlert: true,
+      emailNotif: true, smsNotif: false, pushNotif: true,
+    };
+    try { return JSON.parse(localStorage.getItem('notificationSettings') || '') || defaults; }
+    catch { return defaults; }
   });
 
   const save = () => {
+    localStorage.setItem('notificationSettings', JSON.stringify(notifSettings));
+    localStorage.setItem('appTheme', theme);
+    localStorage.setItem('accentColor', accentColor);
+    localStorage.setItem('integrationStates', JSON.stringify(integrationStates));
     addToast({ type: 'success', title: 'Đã lưu cài đặt', message: 'Thay đổi của bạn đã được áp dụng thành công' });
   };
 
@@ -192,7 +209,7 @@ export default function Settings() {
                     <p className="text-sm font-600 text-amber-800">Chưa bật xác thực 2 lớp</p>
                     <p className="text-xs text-amber-600 mt-0.5">Tăng cường bảo mật tài khoản của bạn</p>
                   </div>
-                  <button className="h-8 px-4 rounded-lg bg-amber-600 text-white text-xs font-600 hover:bg-amber-700">
+                  <button onClick={() => addToast({ type: 'info', title: '2FA chưa được backend hỗ trợ', message: 'Cần thêm API tạo và xác minh mã OTP trước khi kích hoạt.' })} className="h-8 px-4 rounded-lg bg-amber-600 text-white text-xs font-600 hover:bg-amber-700">
                     Kích hoạt
                   </button>
                 </div>
@@ -209,8 +226,8 @@ export default function Settings() {
                   { id: 'dark', label: 'Tối', preview: 'bg-slate-900 border-slate-600' },
                   { id: 'system', label: 'Theo hệ thống', preview: 'bg-gradient-to-r from-white to-slate-900' },
                 ].map(({ id, label, preview }) => (
-                  <button key={id}
-                    className={`p-4 rounded-xl border-2 text-center ${id === 'light' ? 'border-blue-400 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}>
+                  <button key={id} onClick={() => setTheme(id)}
+                    className={`p-4 rounded-xl border-2 text-center ${theme === id ? 'border-blue-400 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}>
                     <div className={`w-full h-16 rounded-lg mb-2 border ${preview}`} />
                     <p className="text-xs font-500 text-slate-700">{label}</p>
                   </button>
@@ -220,8 +237,8 @@ export default function Settings() {
               <h3 className="text-sm font-700 text-slate-900 mb-3">Màu chủ đạo</h3>
               <div className="flex gap-2">
                 {['#2563EB', '#7C3AED', '#059669', '#DC2626', '#D97706', '#0891B2'].map(color => (
-                  <button key={color}
-                    className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${color === '#2563EB' ? 'border-slate-400 scale-110' : 'border-transparent'}`}
+                  <button key={color} onClick={() => setAccentColor(color)}
+                    className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${color === accentColor ? 'border-slate-400 scale-110' : 'border-transparent'}`}
                     style={{ background: color }}
                   />
                 ))}
@@ -238,7 +255,10 @@ export default function Settings() {
                   { name: 'Momo', status: 'Đã kết nối', connected: true, logo: '📱' },
                   { name: 'ZaloPay', status: 'Chưa kết nối', connected: false, logo: '💙' },
                   { name: 'VNPT Pay', status: 'Chưa kết nối', connected: false, logo: '📶' },
-                ].map(({ name, status, connected, logo }) => (
+                ].map(({ name, logo }) => {
+                  const connected = integrationStates[name] ?? false;
+                  const status = connected ? 'Đã kết nối' : 'Chưa kết nối';
+                  return (
                   <div key={name} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{logo}</span>
@@ -247,11 +267,11 @@ export default function Settings() {
                         <p className={`text-xs ${connected ? 'text-green-600' : 'text-slate-400'}`}>{status}</p>
                       </div>
                     </div>
-                    <button className={`h-8 px-4 rounded-lg text-xs font-600 ${connected ? 'border border-slate-200 text-slate-600 hover:bg-slate-100' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-                      {connected ? 'Cài đặt' : 'Kết nối'}
+                    <button onClick={() => setIntegrationStates(prev => ({ ...prev, [name]: !connected }))} className={`h-8 px-4 rounded-lg text-xs font-600 ${connected ? 'border border-slate-200 text-slate-600 hover:bg-slate-100' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                      {connected ? 'Ngắt kết nối' : 'Kết nối'}
                     </button>
                   </div>
-                ))}
+                );})}
               </div>
             </div>
           )}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Shield, Check, X } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 type Role = 'Admin' | 'Staff' | 'Shipper' | 'Customer';
 
@@ -58,7 +59,12 @@ const roleColors: Record<Role, string> = {
 };
 
 export default function Permissions() {
+  const { addToast } = useApp();
   const [matrix, setMatrix] = useState(() => {
+    const saved = localStorage.getItem('permissionMatrix');
+    if (saved) {
+      try { return JSON.parse(saved); } catch { /* use defaults */ }
+    }
     const m: Record<string, Record<Role, boolean>> = {};
     permissionGroups.forEach(g => g.permissions.forEach(p => {
       m[p.id] = { Admin: p.Admin, Staff: p.Staff, Shipper: p.Shipper, Customer: p.Customer };
@@ -73,6 +79,11 @@ export default function Permissions() {
 
   const roles: Role[] = ['Admin', 'Staff', 'Shipper', 'Customer'];
 
+  const savePermissions = () => {
+    localStorage.setItem('permissionMatrix', JSON.stringify(matrix));
+    addToast({ type: 'success', title: 'Đã lưu phân quyền', message: 'Ma trận quyền đã được lưu trên trình duyệt này.' });
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -80,7 +91,7 @@ export default function Permissions() {
           <h2 className="text-lg font-700 text-slate-900">Phân quyền & Vai trò</h2>
           <p className="text-xs text-slate-500 mt-0.5">Quản lý quyền truy cập theo từng vai trò</p>
         </div>
-        <button className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
+        <button onClick={savePermissions} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
           Lưu thay đổi
         </button>
       </div>
