@@ -86,7 +86,7 @@ export default function OrderDetail() {
   const currentStep = statusOrder[rawStatus] ?? 0;
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       {/* Breadcrumb + Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -113,7 +113,7 @@ export default function OrderDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Left column — main info */}
         <div className="col-span-2 space-y-4">
           {/* Status Timeline */}
@@ -154,7 +154,7 @@ export default function OrderDetail() {
           )}
 
           {/* Sender & Receiver */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
               <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">📦 Người gửi</p>
               <p className="text-sm font-600 text-slate-900">{order.senderName || 'N/A'}</p>
@@ -195,7 +195,7 @@ export default function OrderDetail() {
                 ))}
               </div>
             ) : null}
-            <div className="grid grid-cols-3 gap-4 pt-2 border-t border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
               <div>
                 <p className="text-xs text-slate-500 mb-1">Khối lượng (gram)</p>
                 <p className="text-sm font-600 text-slate-900">{order.weightGram || 500}g</p>

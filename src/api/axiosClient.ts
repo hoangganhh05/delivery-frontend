@@ -1,7 +1,9 @@
 import axios from "axios";
 
-const rawBaseUrl =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD
+    ? "https://delivery-management-backend-fqen.onrender.com/api/v1"
+    : "http://localhost:8080/api/v1");
 const API_BASE_URL = rawBaseUrl.endsWith("/")
   ? rawBaseUrl.slice(0, -1)
   : rawBaseUrl;

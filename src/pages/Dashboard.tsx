@@ -78,7 +78,12 @@ export default function Dashboard() {
         ]);
 
         if (statsRes && statsRes.data) {
-          setStats(statsRes.data);
+          setStats({
+            totalOrders: Number(statsRes.data.totalOrders || 0),
+            successOrders: Number(statsRes.data.deliveredOrders ?? statsRes.data.successOrders ?? 0),
+            cancelledOrders: Number(statsRes.data.cancelledOrders || 0),
+            totalRevenue: Number(statsRes.data.totalRevenue || 0),
+          });
         }
         if (ordersRes && ordersRes.data && ordersRes.data.items) {
           setRecentOrders(ordersRes.data.items);
@@ -157,9 +162,9 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
       {/* Welcome bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm text-slate-500">Hệ thống Quản lý Giao hàng Viettel</p>
           <h2 className="text-xl font-700 text-slate-900">
@@ -173,7 +178,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {kpis.map(({ label, value, icon: Icon, change, trend, sub, color, bg }) => (
           <div key={label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
@@ -193,15 +198,15 @@ export default function Dashboard() {
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Order Analytics - 2/3 */}
-        <div className="col-span-2 bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-5">
+        <div className="xl:col-span-2 bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100 min-w-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
             <div>
               <h3 className="text-sm font-600 text-slate-900">Thống kê đơn hàng</h3>
               <p className="text-xs text-slate-400 mt-0.5">Tổng quan đơn hàng từ database</p>
             </div>
-            <div className="flex bg-slate-50 rounded-lg p-0.5">
+            <div className="flex overflow-x-auto bg-slate-50 rounded-lg p-0.5">
               {timeFilters.map(f => (
                 <button
                   key={f}
@@ -262,7 +267,7 @@ export default function Dashboard() {
       </div>
 
       {/* Revenue chart + Recent orders */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Revenue */}
         <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
           <h3 className="text-sm font-600 text-slate-900 mb-1">Doanh thu cước vận chuyển</h3>
@@ -279,7 +284,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Orders */}
-        <div className="col-span-2 bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+        <div className="xl:col-span-2 bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100 min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-600 text-slate-900">Đơn hàng mới nhất (Backend Database)</h3>
             <button
@@ -294,7 +299,7 @@ export default function Dashboard() {
               {loading ? 'Đang tải đơn hàng...' : 'Chưa có đơn hàng nào trong CSDL backend'}
             </div>
           ) : (
-            <table className="w-full">
+            <div className="overflow-x-auto"><table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-100">
                   {['Mã vận đơn', 'Người gửi', 'Người nhận', 'Cước phí', 'Trạng thái'].map(h => (
@@ -321,7 +326,7 @@ export default function Dashboard() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

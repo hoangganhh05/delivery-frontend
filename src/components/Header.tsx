@@ -67,7 +67,7 @@ export default function Header() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center px-4 gap-3 flex-shrink-0">
+    <header className="h-16 bg-white border-b border-slate-100 flex items-center px-3 sm:px-4 gap-2 sm:gap-3 flex-shrink-0">
       {/* Mobile hamburger */}
       <button onClick={() => setSidebarOpen(!sidebarOpen)}
         className="w-8 h-8 rounded-lg hover:bg-slate-50 flex items-center justify-center text-slate-400 lg:hidden">
@@ -76,7 +76,7 @@ export default function Header() {
 
       {/* Page title */}
       <div className="flex-1">
-        <h1 className="text-sm font-600 text-slate-900">{title}</h1>
+        <h1 className="text-sm font-600 text-slate-900 truncate">{title}</h1>
       </div>
 
       {/* Search */}

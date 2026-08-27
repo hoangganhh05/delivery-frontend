@@ -75,7 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confirm, setConfirm] = useState<ConfirmDialog | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
 
   const setRole = useCallback((r: Role) => {
     setRoleState(r);

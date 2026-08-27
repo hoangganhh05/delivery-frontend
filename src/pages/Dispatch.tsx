@@ -77,8 +77,8 @@ export default function Dispatch() {
   );
 
   return (
-    <div className="p-6 h-full space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 min-h-full space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Trung tâm điều phối giao hàng (Backend Real-time)</h2>
           <p className="text-xs text-slate-500 mt-0.5">{unassignedOrders.length} đơn hàng chưa phân công · {shippersList.length} nhân viên shipper</p>
@@ -90,9 +90,9 @@ export default function Dispatch() {
         </div>
       </div>
 
-      <div className="flex gap-5 h-[calc(100vh-200px)]">
+      <div className="flex flex-col lg:flex-row gap-5 lg:h-[calc(100vh-200px)]">
         {/* Left Panel — Order list */}
-        <div className="w-80 flex flex-col gap-3 flex-shrink-0">
+        <div className="w-full lg:w-80 flex flex-col gap-3 flex-shrink-0">
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex-1 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100">
               <h3 className="text-sm font-600 text-slate-900">Đơn hàng chờ phân công (CREATED)</h3>
@@ -182,7 +182,7 @@ export default function Dispatch() {
         </div>
 
         {/* Right Panel — Interactive Shipper & Route Map */}
-        <div className="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden relative flex flex-col">
+        <div className="flex-1 min-h-[420px] bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden relative flex flex-col">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <div>
               <h3 className="text-sm font-700 text-slate-900">Danh sách nhân viên giao hàng (Backend Shippers)</h3>
@@ -190,7 +190,7 @@ export default function Dispatch() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {shippersList.map(shipper => (
                 <div key={shipper.id} className="p-4 border border-slate-100 rounded-xl bg-white shadow-sm hover:border-blue-200 space-y-2">
                   <div className="flex items-center gap-3">

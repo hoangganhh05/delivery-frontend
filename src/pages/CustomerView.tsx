@@ -422,7 +422,7 @@ export default function CustomerView() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-6 space-y-5">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-5">
         {/* Welcome */}
         {tab === 'home' && (
           <>
@@ -446,7 +446,7 @@ export default function CustomerView() {
             </div>
 
             {/* Quick actions */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Tạo đơn mới', icon: Plus, color: 'text-blue-600', bg: 'bg-blue-50', action: () => setTab('create') },
                 { label: 'Tra cứu vận đơn', icon: MapPin, color: 'text-violet-600', bg: 'bg-violet-50', action: () => setTab('tracking') },

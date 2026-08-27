@@ -4,7 +4,7 @@ import { Plus, Search, Filter, Download, ChevronLeft, ChevronRight, Eye, X, XCir
 import StatusBadge from '../components/StatusBadge';
 import type { OrderStatus, PaymentStatus } from '../data/mockData';
 import { useApp } from '../context/AppContext';
-import { searchOrdersApi } from '../api/deliveryApi';
+import { cancelOrderApi, searchOrdersApi } from '../api/deliveryApi';
 
 const statusOptions = [
   { label: 'Tất cả', value: '' },
@@ -76,7 +76,15 @@ export default function Orders() {
       message: `Bạn có chắc chắn muốn hủy đơn hàng ${trackingNumber}? Hành động này không thể hoàn tác.`,
       confirmLabel: 'Hủy đơn',
       danger: true,
-      onConfirm: () => addToast({ type: 'success', title: 'Đã gửi yêu cầu hủy', message: `Đơn hàng ${trackingNumber} đã hủy.` }),
+      onConfirm: async () => {
+        try {
+          await cancelOrderApi(trackingNumber);
+          addToast({ type: 'success', title: 'Đã hủy đơn', message: `Đơn hàng ${trackingNumber} đã được hủy trên hệ thống.` });
+          await fetchOrders();
+        } catch (err: any) {
+          addToast({ type: 'error', title: 'Không thể hủy đơn', message: err.message || 'Backend từ chối yêu cầu hủy đơn' });
+        }
+      },
     });
   };
 
@@ -84,14 +92,14 @@ export default function Orders() {
   const toggleAll = () => setSelected(selected.length === ordersList.length ? [] : ordersList.map(o => o.trackingNumber || String(o.id)));
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Quản lý Đơn hàng</h2>
           <p className="text-xs text-slate-500 mt-0.5">{totalElements} đơn hàng trong CSDL Backend</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={fetchOrders} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 hover:bg-slate-50">
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Tải lại
           </button>
@@ -107,7 +115,7 @@ export default function Orders() {
       {/* Search & Filter bar */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative flex-1 min-w-0 sm:min-w-[240px] w-full">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -119,7 +127,7 @@ export default function Orders() {
           </div>
 
           {/* Status quick filter */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full pb-1">
             {statusOptions.map(s => (
               <button
                 key={s.value}
@@ -146,8 +154,8 @@ export default function Orders() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
               <th className="w-12 py-3 pl-4">

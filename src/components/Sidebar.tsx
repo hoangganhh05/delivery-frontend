@@ -78,8 +78,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`${sidebarOpen ? 'w-60' : 'w-16'} min-h-screen bg-white border-r border-slate-100
-      flex flex-col flex-shrink-0 transition-all duration-200`}>
+    <aside className={`fixed inset-y-0 left-0 z-40 w-60 min-h-screen bg-white border-r border-slate-100
+      flex flex-col flex-shrink-0 transition-all duration-200 lg:static lg:z-auto
+      ${sidebarOpen ? 'translate-x-0 lg:w-60' : '-translate-x-full lg:translate-x-0 lg:w-16'}`}>
       {/* Logo */}
       <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-100 overflow-hidden">
         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -117,6 +118,7 @@ export default function Sidebar() {
                   <NavLink
                     key={path}
                     to={path}
+                    onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
                     title={!sidebarOpen ? label : undefined}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-sm font-500 transition-colors
                       ${isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
@@ -147,7 +149,7 @@ export default function Sidebar() {
             {demoViews.map(({ path, label, icon: Icon }) => {
               const isActive = location.pathname === path;
               return (
-                <NavLink key={path} to={path}
+                <NavLink key={path} to={path} onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-xs font-500 transition-colors
                     ${isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
                   <Icon size={13} className="text-slate-400 flex-shrink-0" />

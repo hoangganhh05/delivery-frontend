@@ -24,7 +24,7 @@ export default function ShipperDetail() {
   const initials = (name: string) => name.split(' ').slice(-2).map(n => n[0]).join('');
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center gap-3 mb-2">
         <button onClick={() => navigate('/shippers')} className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50">
           <ArrowLeft size={15} />
@@ -32,7 +32,7 @@ export default function ShipperDetail() {
         <h2 className="text-base font-700 text-slate-900">Hồ sơ Shipper</h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="space-y-4">
           {/* Profile card */}
           <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 text-center">

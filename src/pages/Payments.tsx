@@ -18,7 +18,11 @@ export default function Payments() {
       ]);
 
       if (statsRes && statsRes.data) {
-        setStats(statsRes.data);
+        setStats({
+          totalRevenue: Number(statsRes.data.totalRevenue || 0),
+          totalOrders: Number(statsRes.data.totalOrders || 0),
+          successOrders: Number(statsRes.data.deliveredOrders ?? statsRes.data.successOrders ?? 0),
+        });
       }
       if (ordersRes && ordersRes.data && ordersRes.data.items) {
         setOrdersList(ordersRes.data.items);
@@ -41,8 +45,8 @@ export default function Payments() {
   });
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Quản lý Thanh toán & Doanh thu</h2>
           <p className="text-xs text-slate-500 mt-0.5">Dữ liệu từ cổng thanh toán VNPay / COD (Spring Boot CSDL)</p>
@@ -52,7 +56,7 @@ export default function Payments() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
           <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3 text-blue-600">
             <DollarSign size={18} />
@@ -88,8 +92,8 @@ export default function Payments() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
               {['Mã vận đơn', 'Khách nhận', 'Cước phí', 'Thu hộ COD', 'Chiết khấu', 'Tổng thu', 'Trạng thái'].map(h => (

@@ -51,7 +51,7 @@ const roleRoutes: Record<Role, string> = {
 };
 
 export default function Login() {
-  const { loginWithAuthData, login, addToast } = useApp();
+  const { loginWithAuthData, addToast } = useApp();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<Role>('Admin');
   const [username, setUsername] = useState('admin');
@@ -96,9 +96,7 @@ export default function Login() {
           : '/';
         navigate(targetRoute);
       } else {
-        login(selectedRole);
-        addToast({ type: 'success', title: 'Đăng nhập tạm thời', message: `Đăng nhập dưới vai trò ${selectedRole}` });
-        navigate(roleRoutes[selectedRole]);
+        throw new Error('Phản hồi đăng nhập từ backend không hợp lệ');
       }
     } catch (err: any) {
       addToast({
@@ -106,9 +104,6 @@ export default function Login() {
         title: 'Đăng nhập thất bại',
         message: err.message || 'Không thể kết nối máy chủ backend. Đang sử dụng chế độ dự phòng.'
       });
-      // Fallback in case backend server is unreachable
-      login(selectedRole);
-      navigate(roleRoutes[selectedRole]);
     } finally {
       setLoading(false);
     }

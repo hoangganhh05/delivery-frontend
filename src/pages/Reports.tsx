@@ -8,7 +8,12 @@ export default function Reports() {
 
   useEffect(() => {
     getDashboardStatsApi()
-      .then(res => res && res.data && setStats(res.data))
+      .then(res => res && res.data && setStats({
+        totalOrders: Number(res.data.totalOrders || 0),
+        successOrders: Number(res.data.deliveredOrders ?? res.data.successOrders ?? 0),
+        cancelledOrders: Number(res.data.cancelledOrders || 0),
+        totalRevenue: Number(res.data.totalRevenue || 0),
+      }))
       .catch(err => console.error(err));
   }, []);
 
@@ -27,14 +32,14 @@ export default function Reports() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div>
         <h2 className="text-lg font-700 text-slate-900">Báo cáo & Thống kê Vận hành (Real-time DB)</h2>
         <p className="text-xs text-slate-500 mt-0.5">Tổng hợp số liệu dữ liệu thực từ Spring Boot Database</p>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {[
           { label: 'Tổng đơn hàng', value: stats.totalOrders.toLocaleString(), icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Đơn giao thành công', value: stats.successOrders.toLocaleString(), icon: Truck, color: 'text-green-600', bg: 'bg-green-50' },
@@ -51,7 +56,7 @@ export default function Reports() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Revenue trend */}
         <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
           <h3 className="text-sm font-600 text-slate-900 mb-4">Xu hướng doanh thu</h3>

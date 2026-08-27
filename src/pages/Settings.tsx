@@ -42,16 +42,16 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="p-4 sm:p-6 max-w-5xl">
       <div className="mb-6">
         <h2 className="text-lg font-700 text-slate-900">Cài đặt hệ thống</h2>
         <p className="text-xs text-slate-500 mt-0.5">Quản lý cấu hình và tùy chọn của hệ thống</p>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Tab sidebar */}
-        <div className="w-48 flex-shrink-0">
-          <nav className="space-y-1">
+        <div className="w-full lg:w-48 flex-shrink-0 overflow-x-auto">
+          <nav className="flex lg:block gap-1 lg:space-y-1 min-w-max lg:min-w-0">
             {tabs.map(({ id, label, icon: Icon }) => (
               <button key={id} onClick={() => setActiveTab(id)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-500 text-left transition-colors
@@ -77,7 +77,7 @@ export default function Settings() {
                     { label: 'Số điện thoại', value: '1900 1234', placeholder: '' },
                     { label: 'Địa chỉ', value: '123 Nguyễn Huệ, Q.1, TP.HCM', placeholder: '' },
                   ].map(({ label, value, placeholder }) => (
-                    <div key={label} className="grid grid-cols-3 gap-4 items-center">
+                    <div key={label} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                       <label className="text-xs font-600 text-slate-600">{label}</label>
                       <input defaultValue={value} placeholder={placeholder}
                         className="col-span-2 h-9 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
@@ -95,7 +95,7 @@ export default function Settings() {
                     { label: 'Thời gian xử lý đơn (giờ)', value: '2' },
                     { label: 'Phí COD (%)', value: '1.5' },
                   ].map(({ label, value }) => (
-                    <div key={label} className="grid grid-cols-3 gap-4 items-center">
+                    <div key={label} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                       <label className="text-xs font-600 text-slate-600">{label}</label>
                       <input defaultValue={value} type="number"
                         className="col-span-2 h-9 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white w-48" />
@@ -203,7 +203,7 @@ export default function Settings() {
           {activeTab === 'appearance' && (
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
               <h3 className="text-sm font-700 text-slate-900 mb-4">Chủ đề giao diện</h3>
-              <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 {[
                   { id: 'light', label: 'Sáng', preview: 'bg-white border-blue-400' },
                   { id: 'dark', label: 'Tối', preview: 'bg-slate-900 border-slate-600' },

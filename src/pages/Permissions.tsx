@@ -74,8 +74,8 @@ export default function Permissions() {
   const roles: Role[] = ['Admin', 'Staff', 'Shipper', 'Customer'];
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Phân quyền & Vai trò</h2>
           <p className="text-xs text-slate-500 mt-0.5">Quản lý quyền truy cập theo từng vai trò</p>
@@ -86,7 +86,7 @@ export default function Permissions() {
       </div>
 
       {/* Role description cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {roles.map(role => (
           <div key={role} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${roleColors[role]}`}>
@@ -104,7 +104,7 @@ export default function Permissions() {
       </div>
 
       {/* Permission Matrix */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
         <div className="grid grid-cols-[1fr_repeat(4,_120px)] border-b border-slate-100 bg-slate-50">
           <div className="py-3 px-4 text-xs font-600 text-slate-500">Quyền</div>
           {roles.map(role => (

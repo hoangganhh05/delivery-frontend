@@ -94,7 +94,7 @@ export default function Tracking() {
           </div>
 
           {/* Info */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
               <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-2">📦 Tuyến đường</p>
               <div className="space-y-1.5 text-xs text-slate-700">

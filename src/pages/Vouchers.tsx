@@ -57,7 +57,7 @@ export default function Vouchers() {
   };
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Quản lý Voucher Khuyến Mãi (Backend)</h2>
@@ -69,7 +69,7 @@ export default function Vouchers() {
       </div>
 
       {/* Cards grid */}
-      <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {sampleVouchers.map((v) => (
           <div key={v.id} className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 to-blue-400" />

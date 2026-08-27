@@ -40,6 +40,10 @@ export const getOrderByTrackingApi = (
   return axiosClient.get(`/orders/${trackingNumber}`);
 };
 
+export const cancelOrderApi = (trackingNumber: string): Promise<ApiResponse> => {
+  return axiosClient.put(`/orders/${trackingNumber}/cancel`);
+};
+
 // Shipments & Shipper Assignment
 export const assignShipperApi = (data: {
   orderId: number | string;
@@ -111,6 +115,7 @@ export default {
   createOrderApi,
   searchOrdersApi,
   getOrderByTrackingApi,
+  cancelOrderApi,
   assignShipperApi,
   updateShipmentStatusApi,
   getShippersApi,

@@ -52,7 +52,7 @@ export default function Users() {
   });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Quản lý Tài Khoản & Người Dùng (Spring Boot)</h2>
