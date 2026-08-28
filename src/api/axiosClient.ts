@@ -10,7 +10,8 @@ const API_BASE_URL = rawBaseUrl.endsWith("/")
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  // Render free instances may need 30-50 seconds to wake after being idle.
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -47,6 +48,9 @@ axiosClient.interceptors.response.use(
     }
 
     let errorMessage = "";
+    if (error.code === "ECONNABORTED") {
+      errorMessage = "Dịch vụ đang khởi động lâu hơn dự kiến. Vui lòng đợi một chút rồi thử lại.";
+    }
     if (resData) {
       if (resData.message && resData.message !== "INVALID_INPUT") {
         errorMessage = resData.message;

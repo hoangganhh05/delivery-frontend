@@ -324,7 +324,7 @@ export default function Login() {
                 <div className="p-5 pt-0 flex flex-col-reverse sm:flex-row gap-3 justify-end">
                   <button onClick={() => setShowRegister(false)} className="h-10 px-5 rounded-xl border border-slate-200 text-sm text-slate-600">Hủy</button>
                   <button onClick={handleRegister} disabled={registering} className="h-10 px-6 rounded-xl bg-blue-600 text-white text-sm font-600 disabled:opacity-60">
-                    {registering ? 'Đang tạo tài khoản...' : 'Đăng ký ngay'}
+                {registering ? 'Đang kết nối, vui lòng chờ...' : 'Đăng ký ngay'}
                   </button>
                 </div>
               </div>
