@@ -49,7 +49,7 @@ function normalizeRole(rawRole: string): Role {
   if (upper.includes('SHIPPER')) return 'Shipper';
   if (upper.includes('CUSTOMER')) return 'Customer';
   if (upper.includes('STAFF')) return 'Staff';
-  return 'Admin';
+  return 'Customer';
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {

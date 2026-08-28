@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Truck, Users, Navigation, MapPin,
   CreditCard, Tag, Bell, BarChart2, Settings, LogOut, ChevronLeft,
-  ChevronRight, Headphones
+  ChevronRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { Role } from '../context/AppContext';
@@ -40,7 +40,7 @@ const allNavGroups = [
   {
     label: 'Khác',
     items: [
-      { path: '/notifications', icon: Bell, label: 'Thông báo', badge: 3, roles: ['Admin', 'Staff'] },
+      { path: '/notifications', icon: Bell, label: 'Thông báo', roles: ['Admin', 'Staff'] },
       { path: '/reports', icon: BarChart2, label: 'Báo cáo', roles: ['Admin', 'Staff'] },
       { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin'] },
     ]
@@ -52,17 +52,24 @@ const demoViews = [
   { path: '/shipper-mobile', label: 'Giao diện Shipper', icon: Truck },
 ];
 
-const roleInfo: Record<Role, { color: string; bg: string; initials: string; name: string }> = {
-  Admin: { color: 'text-red-700', bg: 'bg-red-100', initials: 'AD', name: 'Trần Admin Quốc' },
-  Staff: { color: 'text-blue-700', bg: 'bg-blue-100', initials: 'ST', name: 'Lê Staff Hương' },
-  Shipper: { color: 'text-violet-700', bg: 'bg-violet-100', initials: 'SP', name: 'Nguyễn Văn Hùng' },
-  Customer: { color: 'text-green-700', bg: 'bg-green-100', initials: 'KH', name: 'Nguyễn Thị Mai' },
+const roleInfo: Record<Role, { color: string; bg: string; initials: string }> = {
+  Admin: { color: 'text-red-700', bg: 'bg-red-100', initials: 'AD' },
+  Staff: { color: 'text-blue-700', bg: 'bg-blue-100', initials: 'ST' },
+  Shipper: { color: 'text-violet-700', bg: 'bg-violet-100', initials: 'SP' },
+  Customer: { color: 'text-green-700', bg: 'bg-green-100', initials: 'KH' },
 };
 
 export default function Sidebar() {
   const location = useLocation();
-  const { role, logout, openConfirm, sidebarOpen, setSidebarOpen, addToast } = useApp();
+  const { role, user, logout, openConfirm, sidebarOpen, setSidebarOpen, addToast } = useApp();
   const info = roleInfo[role];
+  const displayName = user?.fullName || user?.username || role;
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map(part => part.charAt(0).toUpperCase())
+    .join('') || info.initials;
 
   const handleLogout = () => {
     openConfirm({
@@ -89,7 +96,7 @@ export default function Sidebar() {
         {sidebarOpen && (
           <div className="flex-1 min-w-0">
             <p className="text-sm font-700 text-slate-900 leading-tight truncate">DeliveryMS</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Management System</p>
+            <p className="text-[10px] text-slate-400 leading-tight">Giao hàng thông minh</p>
           </div>
         )}
         <button
@@ -112,7 +119,7 @@ export default function Sidebar() {
                   {group.label}
                 </p>
               )}
-              {visibleItems.map(({ path, icon: Icon, label, badge }) => {
+              {visibleItems.map(({ path, icon: Icon, label }) => {
                 const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
                 return (
                   <NavLink
@@ -127,11 +134,6 @@ export default function Sidebar() {
                     {sidebarOpen && (
                       <>
                         <span className="flex-1 truncate">{label}</span>
-                        {badge && (
-                          <span className="w-5 h-5 bg-red-500 text-white text-[10px] font-700 rounded-full flex items-center justify-center flex-shrink-0">
-                            {badge}
-                          </span>
-                        )}
                         {isActive && <ChevronRight size={11} className="text-blue-300 flex-shrink-0" />}
                       </>
                     )}
@@ -165,17 +167,17 @@ export default function Sidebar() {
       <div className="border-t border-slate-100 p-3">
         {sidebarOpen ? (
           <div>
-            <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer mb-1">
+            <NavLink to="/settings" className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer mb-1">
               <div className={`w-8 h-8 ${info.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
-                <span className={`text-xs font-700 ${info.color}`}>{info.initials}</span>
+                <span className={`text-xs font-700 ${info.color}`}>{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-600 text-slate-900 truncate">{info.name}</p>
+                <p className="text-xs font-600 text-slate-900 truncate">{displayName}</p>
                 <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-600 ${info.bg} ${info.color}`}>
                   {role.toUpperCase()}
                 </span>
               </div>
-            </div>
+            </NavLink>
             <button onClick={handleLogout}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors">
               <LogOut size={13} />
@@ -184,8 +186,8 @@ export default function Sidebar() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className={`w-8 h-8 ${info.bg} rounded-full flex items-center justify-center`} title={info.name}>
-              <span className={`text-xs font-700 ${info.color}`}>{info.initials}</span>
+            <div className={`w-8 h-8 ${info.bg} rounded-full flex items-center justify-center`} title={displayName}>
+              <span className={`text-xs font-700 ${info.color}`}>{initials}</span>
             </div>
             <button onClick={handleLogout} title="Đăng xuất"
               className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500">

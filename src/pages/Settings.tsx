@@ -40,10 +40,10 @@ export default function Settings() {
     }
   });
 
-  const [notifSettings, setNotifSettings] = useState(() => {
+  const [notifSettings, setNotifSettings] = useState<Record<string, boolean>>(() => {
     const defaults = {
       newOrder: true, statusChange: true, paymentSuccess: true,
-      deliveryComplete: true, shipperAssign: false, systemAlert: true,
+      deliveryComplete: true, shipperAssign: false, serviceAlert: true,
       emailNotif: true, smsNotif: false, pushNotif: true,
     };
     try { return JSON.parse(localStorage.getItem('notificationSettings') || '') || defaults; }
@@ -97,7 +97,7 @@ export default function Settings() {
                     <div key={label} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                       <label className="text-xs font-600 text-slate-600">{label}</label>
                       <input defaultValue={value} placeholder={placeholder}
-                        className="col-span-2 h-9 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
+                        className="sm:col-span-2 h-9 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                     </div>
                   ))}
                 </div>
@@ -115,7 +115,7 @@ export default function Settings() {
                     <div key={label} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                       <label className="text-xs font-600 text-slate-600">{label}</label>
                       <input defaultValue={value} type="number"
-                        className="col-span-2 h-9 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white w-48" />
+                        className="sm:col-span-2 h-9 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white w-full sm:w-48" />
                     </div>
                   ))}
                 </div>
@@ -134,7 +134,7 @@ export default function Settings() {
                     { key: 'paymentSuccess', label: 'Thanh toán thành công', desc: 'Khi khách hàng thanh toán xong' },
                     { key: 'deliveryComplete', label: 'Giao hàng thành công', desc: 'Khi shipper giao hàng xong' },
                     { key: 'shipperAssign', label: 'Phân công shipper', desc: 'Khi shipper được phân công đơn' },
-                    { key: 'systemAlert', label: 'Cảnh báo vận hành', desc: 'Thông báo bảo trì và gián đoạn dịch vụ' },
+                    { key: 'serviceAlert', label: 'Cảnh báo vận hành', desc: 'Thông báo bảo trì và gián đoạn dịch vụ' },
                   ].map(({ key, label, desc }) => (
                     <div key={key} className="flex items-center justify-between py-2 border-b border-slate-50">
                       <div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigation, Package, Clock, CheckCircle2, Truck, MapPin, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import type { ShipperStatus } from '../data/mockData';
+import type { ShipperStatus } from '../types/domain';
 import { searchOrdersApi, getShippersApi, assignShipperApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 
@@ -19,14 +19,15 @@ export default function Dispatch() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [ordersRes, shippersRes] = await Promise.all([
+      const [createdOrdersRes, paidOrdersRes, shippersRes] = await Promise.all([
         searchOrdersApi({ status: 'CREATED', page: 0, size: 50 }).catch(() => null),
+        searchOrdersApi({ status: 'PAID', page: 0, size: 50 }).catch(() => null),
         getShippersApi().catch(() => null),
       ]);
 
-      if (ordersRes && ordersRes.data && ordersRes.data.items) {
-        setUnassignedOrders(ordersRes.data.items);
-      }
+      const createdOrders = createdOrdersRes?.data?.items || [];
+      const paidOrders = paidOrdersRes?.data?.items || [];
+      setUnassignedOrders([...createdOrders, ...paidOrders].sort((a, b) => Number(b.id) - Number(a.id)));
       if (shippersRes && shippersRes.data) {
         setShippersList(shippersRes.data);
       }
@@ -95,7 +96,7 @@ export default function Dispatch() {
         <div className="w-full lg:w-80 flex flex-col gap-3 flex-shrink-0">
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex-1 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100">
-              <h3 className="text-sm font-600 text-slate-900">Đơn hàng chờ phân công (CREATED)</h3>
+              <h3 className="text-sm font-600 text-slate-900">Đơn hàng chờ phân công</h3>
               <p className="text-xs text-slate-400 mt-0.5">{unassignedOrders.length} đơn đang chờ gán shipper</p>
             </div>
             <div className="overflow-y-auto flex-1 p-3 space-y-2">

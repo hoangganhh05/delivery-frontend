@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search, Filter, Download, ChevronLeft, ChevronRight, Eye, X, XCircle, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import type { OrderStatus, PaymentStatus } from '../data/mockData';
+import type { OrderStatus, PaymentStatus } from '../types/domain';
+import { mapBackendStatusToUI } from '../utils/status';
 import { useApp } from '../context/AppContext';
 import { cancelOrderApi, searchOrdersApi } from '../api/deliveryApi';
 
@@ -16,22 +17,12 @@ const statusOptions = [
   { label: 'Cancelled', value: 'CANCELLED' },
 ];
 
-function mapBackendStatusToUI(status: string): OrderStatus {
-  switch (status?.toUpperCase()) {
-    case 'CREATED': return 'Pending';
-    case 'ASSIGNED': return 'Confirmed';
-    case 'PICKED_UP': return 'Picking';
-    case 'IN_TRANSIT': return 'Shipping';
-    case 'DELIVERED': return 'Delivered';
-    case 'CANCELLED': return 'Cancelled';
-    default: return 'Pending';
-  }
-}
-
 export default function Orders() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { openConfirm, addToast } = useApp();
-  const [search, setSearch] = useState('');
+  const queryKeyword = searchParams.get('keyword') || '';
+  const [search, setSearch] = useState(queryKeyword);
   const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [ordersList, setOrdersList] = useState<any[]>([]);
@@ -69,6 +60,11 @@ export default function Orders() {
   useEffect(() => {
     fetchOrders();
   }, [search, statusFilter, page]);
+
+  useEffect(() => {
+    setSearch(queryKeyword);
+    setPage(0);
+  }, [queryKeyword]);
 
   const handleCancel = (trackingNumber: string) => {
     openConfirm({
@@ -220,7 +216,7 @@ export default function Orders() {
                         className="w-7 h-7 rounded-lg hover:bg-blue-50 hover:text-blue-600 text-slate-400 flex items-center justify-center" title="Xem chi tiết">
                         <Eye size={14} />
                       </button>
-                      {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+                      {['CREATED', 'PENDING'].includes((order.status || '').toUpperCase()) && (
                         <button onClick={(e) => { e.stopPropagation(); handleCancel(tracking); }}
                           className="w-7 h-7 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center" title="Hủy đơn">
                           <XCircle size={14} />

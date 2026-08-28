@@ -87,6 +87,11 @@ export default function Header() {
           placeholder="Tìm mã vận đơn, khách hàng..."
           value={search}
           onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && search.trim()) {
+              navigate(`/orders?keyword=${encodeURIComponent(search.trim())}`);
+            }
+          }}
           className="h-9 w-64 pl-9 pr-4 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none
             focus:border-blue-400 focus:bg-white placeholder-slate-400 text-slate-700 transition-all
             focus:w-80"

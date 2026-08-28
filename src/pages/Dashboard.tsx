@@ -5,15 +5,14 @@ import {
   PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts';
 import {
-  Package, Truck, CheckCircle2, DollarSign, TrendingUp, TrendingDown,
+  Package, Truck, CheckCircle2, DollarSign,
   ArrowRight, Clock
 } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import type { OrderStatus } from '../data/mockData';
+import type { OrderStatus } from '../types/domain';
+import { mapBackendStatusToUI } from '../utils/status';
 import { getDashboardStatsApi, searchOrdersApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
-
-const timeFilters = ['7 ngày', '30 ngày', '3 tháng', '12 tháng'];
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
@@ -43,21 +42,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-function mapBackendStatusToUI(status: string): OrderStatus {
-  switch (status?.toUpperCase()) {
-    case 'CREATED': return 'Pending';
-    case 'ASSIGNED': return 'Confirmed';
-    case 'PICKED_UP': return 'Picking';
-    case 'IN_TRANSIT': return 'Shipping';
-    case 'DELIVERED': return 'Delivered';
-    case 'CANCELLED': return 'Cancelled';
-    default: return 'Pending';
-  }
-}
-
 export default function Dashboard() {
   const { user } = useApp();
-  const [activeFilter, setActiveFilter] = useState('7 ngày');
   const [stats, setStats] = useState({
     totalOrders: 0,
     successOrders: 0,
@@ -102,7 +88,7 @@ export default function Dashboard() {
       label: 'Tổng đơn hàng',
       value: stats.totalOrders.toLocaleString(),
       icon: Package,
-      change: '+12.5%',
+      change: 'Đã ghi nhận',
       trend: 'up',
       sub: 'Tổng số đơn đã ghi nhận',
       color: 'text-blue-600',
@@ -112,7 +98,7 @@ export default function Dashboard() {
       label: 'Đang giao / Chờ giao',
       value: (stats.totalOrders - stats.successOrders - stats.cancelledOrders > 0 ? stats.totalOrders - stats.successOrders - stats.cancelledOrders : 0).toLocaleString(),
       icon: Truck,
-      change: '+8.2%',
+      change: 'Đang xử lý',
       trend: 'up',
       sub: 'Số đơn đang xử lý',
       color: 'text-violet-600',
@@ -132,7 +118,7 @@ export default function Dashboard() {
       label: 'Tổng doanh thu',
       value: `₫${(stats.totalRevenue || 0).toLocaleString()}`,
       icon: DollarSign,
-      change: '+10.0%',
+      change: 'Đã ghi nhận',
       trend: 'up',
       sub: 'Doanh thu cước vận chuyển',
       color: 'text-amber-600',
@@ -147,18 +133,13 @@ export default function Dashboard() {
   ];
 
   const orderAnalyticsData = [
-    { date: 'T2', orders: Math.round(stats.totalOrders * 0.1) },
-    { date: 'T3', orders: Math.round(stats.totalOrders * 0.15) },
-    { date: 'T4', orders: Math.round(stats.totalOrders * 0.2) },
-    { date: 'T5', orders: Math.round(stats.totalOrders * 0.25) },
-    { date: 'T6', orders: Math.round(stats.totalOrders * 0.3) },
+    { date: 'Hoàn thành', orders: stats.successOrders },
+    { date: 'Đang xử lý', orders: Math.max(0, stats.totalOrders - stats.successOrders - stats.cancelledOrders) },
+    { date: 'Đã hủy', orders: stats.cancelledOrders },
   ];
 
   const revenueData = [
-    { month: 'T5', revenue: (stats.totalRevenue || 0) * 0.2 },
-    { month: 'T6', revenue: (stats.totalRevenue || 0) * 0.3 },
-    { month: 'T7', revenue: (stats.totalRevenue || 0) * 0.5 },
-    { month: 'T8', revenue: (stats.totalRevenue || 0) },
+    { month: 'Hiện tại', revenue: stats.totalRevenue || 0 },
   ];
 
   return (
@@ -185,8 +166,7 @@ export default function Dashboard() {
               <div className={`w-10 h-10 ${bg} rounded-lg flex items-center justify-center`}>
                 <Icon size={18} className={color} />
               </div>
-              <div className={`flex items-center gap-1 text-xs font-500 ${trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
-                {trend === 'up' ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+              <div className="flex items-center gap-1 text-xs font-500 text-slate-500">
                 {change}
               </div>
             </div>
@@ -205,18 +185,6 @@ export default function Dashboard() {
             <div>
               <h3 className="text-sm font-600 text-slate-900">Thống kê đơn hàng</h3>
               <p className="text-xs text-slate-400 mt-0.5">Tổng quan hoạt động đơn hàng</p>
-            </div>
-            <div className="flex overflow-x-auto bg-slate-50 rounded-lg p-0.5">
-              {timeFilters.map(f => (
-                <button
-                  key={f}
-                  onClick={() => setActiveFilter(f)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-500 transition-colors
-                    ${activeFilter === f ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  {f}
-                </button>
-              ))}
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Phone, Package, Truck, CheckCircle2, Clock, AlertCircle, UserCheck, Printer } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import type { OrderStatus } from '../data/mockData';
+import type { OrderStatus } from '../types/domain';
+import { mapBackendStatusToUI } from '../utils/status';
 import { getOrderByTrackingApi, trackOrderApi } from '../api/deliveryApi';
 
 const statusSteps = [
@@ -16,18 +17,6 @@ const statusSteps = [
 const statusOrder: Record<string, number> = {
   CREATED: 0, ASSIGNED: 1, PICKED_UP: 2, IN_TRANSIT: 3, DELIVERED: 4, CANCELLED: -1
 };
-
-function mapBackendStatusToUI(status: string): OrderStatus {
-  switch (status?.toUpperCase()) {
-    case 'CREATED': return 'Pending';
-    case 'ASSIGNED': return 'Confirmed';
-    case 'PICKED_UP': return 'Picking';
-    case 'IN_TRANSIT': return 'Shipping';
-    case 'DELIVERED': return 'Delivered';
-    case 'CANCELLED': return 'Cancelled';
-    default: return 'Pending';
-  }
-}
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -82,7 +71,7 @@ export default function OrderDetail() {
     );
   }
 
-  const rawStatus = (order.status || 'CREATED').toUpperCase();
+  const rawStatus = (order.status || order.currentStatus || 'CREATED').toUpperCase();
   const currentStep = statusOrder[rawStatus] ?? 0;
 
   return (
@@ -115,7 +104,7 @@ export default function OrderDetail() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Left column — main info */}
-        <div className="col-span-2 space-y-4">
+        <div className="xl:col-span-2 space-y-4 min-w-0">
           {/* Status Timeline */}
           {rawStatus !== 'CANCELLED' && (
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
@@ -212,11 +201,11 @@ export default function OrderDetail() {
           </div>
 
           {/* Tracking History Timeline */}
-          {trackingInfo && trackingInfo.histories && trackingInfo.histories.length > 0 && (
+          {trackingInfo && trackingInfo.history && trackingInfo.history.length > 0 && (
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
               <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-4">🕐 Nhật ký hành trình vận đơn</p>
               <div className="space-y-4">
-                {trackingInfo.histories.map((h: any, idx: number) => (
+                {trackingInfo.history.map((h: any, idx: number) => (
                   <div key={idx} className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
                       <Clock size={14} />

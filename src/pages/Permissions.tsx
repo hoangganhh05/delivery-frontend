@@ -60,10 +60,10 @@ const roleColors: Record<Role, string> = {
 
 export default function Permissions() {
   const { addToast } = useApp();
-  const [matrix, setMatrix] = useState(() => {
+  const [matrix, setMatrix] = useState<Record<string, Record<Role, boolean>>>(() => {
     const saved = localStorage.getItem('permissionMatrix');
     if (saved) {
-      try { return JSON.parse(saved); } catch { /* use defaults */ }
+      try { return JSON.parse(saved) as Record<string, Record<Role, boolean>>; } catch { /* use defaults */ }
     }
     const m: Record<string, Record<Role, boolean>> = {};
     permissionGroups.forEach(g => g.permissions.forEach(p => {
@@ -88,8 +88,8 @@ export default function Permissions() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-700 text-slate-900">Phân quyền & Vai trò</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Quản lý quyền truy cập theo từng vai trò</p>
+          <h2 className="text-lg font-700 text-slate-900">Phân quyền giao diện</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Tùy chỉnh cách hiển thị chức năng trên thiết bị này</p>
         </div>
         <button onClick={savePermissions} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
           Lưu thay đổi

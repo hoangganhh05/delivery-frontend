@@ -1,7 +1,7 @@
 import axiosClient from "./axiosClient";
 
 export interface ApiResponse<T = any> {
-  code: number;
+  code: string;
   message: string;
   data: T;
 }
@@ -65,6 +65,19 @@ export const getShippersApi = (): Promise<ApiResponse> => {
   return axiosClient.get("/shippers");
 };
 
+export const getShipperApi = (id: number | string): Promise<ApiResponse> => {
+  return axiosClient.get(`/shippers/${id}`);
+};
+
+export const getShipperOrdersApi = (id: number | string): Promise<ApiResponse> => {
+  return axiosClient.get(`/shippers/${id}/orders`);
+};
+
+// Users Management
+export const getUsersApi = (): Promise<ApiResponse> => {
+  return axiosClient.get("/users");
+};
+
 // Vouchers
 export const calculateVoucherApi = (data: {
   voucherCode: string;
@@ -76,6 +89,10 @@ export const calculateVoucherApi = (data: {
 
 export const createVoucherApi = (data: any): Promise<ApiResponse> => {
   return axiosClient.post("/vouchers", data);
+};
+
+export const getVouchersApi = (): Promise<ApiResponse> => {
+  return axiosClient.get("/vouchers");
 };
 
 // Tracking
@@ -120,8 +137,12 @@ export default {
   assignShipperApi,
   updateShipmentStatusApi,
   getShippersApi,
+  getShipperApi,
+  getShipperOrdersApi,
+  getUsersApi,
   calculateVoucherApi,
   createVoucherApi,
+  getVouchersApi,
   trackOrderApi,
   createPaymentApi,
   getNotificationsApi,

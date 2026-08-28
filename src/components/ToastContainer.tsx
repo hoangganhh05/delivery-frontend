@@ -19,7 +19,7 @@ export default function ToastContainer() {
         return (
           <div
             key={toast.id}
-            className={`${cfg.bg} ${cfg.border} border rounded-xl shadow-xl flex items-start gap-3 p-4 min-w-72 max-w-sm pointer-events-auto
+            className={`relative ${cfg.bg} ${cfg.border} border rounded-xl shadow-xl flex items-start gap-3 p-4 min-w-72 max-w-sm pointer-events-auto
               animate-in slide-in-from-right-4 fade-in duration-200`}
           >
             <div className={`w-5 h-5 flex-shrink-0 mt-0.5 ${cfg.iconColor}`}>

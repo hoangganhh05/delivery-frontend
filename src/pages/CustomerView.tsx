@@ -2,24 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, Search, Bell, ChevronRight, Plus, Clock, CheckCircle2, Truck, Tag, ExternalLink } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import type { OrderStatus } from '../data/mockData';
+import type { OrderStatus } from '../types/domain';
+import { mapBackendStatusToUI } from '../utils/status';
 import { createOrderApi, calculateVoucherApi, searchOrdersApi, createPaymentApi, trackOrderApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 
 const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Dịch vụ', 'Voucher', 'Thanh toán', 'Xác nhận'];
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-
-function mapBackendStatusToUI(status: string): OrderStatus {
-  switch (status?.toUpperCase()) {
-    case 'CREATED': return 'Pending';
-    case 'ASSIGNED': return 'Confirmed';
-    case 'PICKED_UP': return 'Picking';
-    case 'IN_TRANSIT': return 'Shipping';
-    case 'DELIVERED': return 'Delivered';
-    case 'CANCELLED': return 'Cancelled';
-    default: return 'Pending';
-  }
-}
 
 export default function CustomerView() {
   const navigate = useNavigate();
@@ -326,7 +315,7 @@ export default function CustomerView() {
                   <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'VNPay' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
                     <input type="radio" name="pay" checked={paymentMethod === 'VNPay'} onChange={() => setPaymentMethod('VNPay')} className="accent-blue-600" />
                     <div>
-                      <p className="text-sm font-600 text-slate-900">VNPay Online (Sandbox)</p>
+                      <p className="text-sm font-600 text-slate-900">Thanh toán VNPay</p>
                       <p className="text-xs text-slate-400">Thanh toán trực tuyến an toàn</p>
                     </div>
                   </label>
@@ -352,7 +341,7 @@ export default function CustomerView() {
 
                 {vnpayUrl && (
                   <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-2">
-                    <p className="text-xs text-blue-800 font-600">Đơn hàng sẵn sàng thanh toán VNPay Sandbox:</p>
+                    <p className="text-xs text-blue-800 font-600">Đơn hàng sẵn sàng thanh toán qua VNPay:</p>
                     <a href={vnpayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-600 hover:bg-blue-700">
                       Thanh toán ngay qua VNPay <ExternalLink size={14} />
                     </a>
@@ -535,7 +524,7 @@ export default function CustomerView() {
                 <div className="relative flex-1">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input type="text" value={trackInput} onChange={e => setTrackInput(e.target.value)}
-                    placeholder="Nhập mã vận đơn public (VD: VT...)"
+                    placeholder="Nhập mã vận đơn (VD: VT...)"
                     className="w-full h-10 pl-9 pr-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 placeholder-slate-400" />
                 </div>
                 <button onClick={handleTrackSearch} disabled={trackingLoading} className="h-10 px-4 rounded-xl bg-blue-600 text-sm text-white font-600">
@@ -551,17 +540,17 @@ export default function CustomerView() {
                     <h3 className="text-base font-700 text-blue-600">{trackedOrder.trackingNumber}</h3>
                     <p className="text-xs text-slate-500">Mã đơn: #{trackedOrder.orderId}</p>
                   </div>
-                  <StatusBadge status={mapBackendStatusToUI(trackedOrder.status)} type="order" />
+                  <StatusBadge status={mapBackendStatusToUI(trackedOrder.currentStatus)} type="order" />
                 </div>
                 <div className="text-xs space-y-1 text-slate-600">
                   <p>• Người gửi: <span className="font-600">{trackedOrder.senderName}</span></p>
                   <p>• Người nhận: <span className="font-600">{trackedOrder.receiverName}</span></p>
-                  {trackedOrder.shipperName && <p>• Shipper: <span className="font-600">{trackedOrder.shipperName} ({trackedOrder.shipperPhone})</span></p>}
+                  {trackedOrder.shipperName && <p>• Shipper: <span className="font-600">{trackedOrder.shipperName}</span></p>}
                 </div>
-                {trackedOrder.histories && trackedOrder.histories.length > 0 && (
+                {trackedOrder.history && trackedOrder.history.length > 0 && (
                   <div className="space-y-3 pt-2">
                     <p className="text-xs font-700 text-slate-700">Lịch sử trạng thái:</p>
-                    {trackedOrder.histories.map((h: any, i: number) => (
+                    {trackedOrder.history.map((h: any, i: number) => (
                       <div key={i} className="text-xs border-l-2 border-blue-500 pl-3 py-1">
                         <p className="font-600 text-slate-800">{h.status}</p>
                         <p className="text-slate-500">{h.note}</p>

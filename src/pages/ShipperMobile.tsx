@@ -1,26 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home, Package, Map, Bell, User, Phone, MapPin, Navigation, Camera, CheckCircle2, Clock, Truck, ChevronRight, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import type { OrderStatus } from '../data/mockData';
+import { mapBackendStatusToUI } from '../utils/status';
 import { searchOrdersApi, updateShipmentStatusApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 
-function mapBackendStatusToUI(status: string): OrderStatus {
-  switch (status?.toUpperCase()) {
-    case 'CREATED': return 'Pending';
-    case 'ASSIGNED': return 'Confirmed';
-    case 'PICKED_UP': return 'Picking';
-    case 'IN_TRANSIT': return 'Shipping';
-    case 'DELIVERED': return 'Delivered';
-    case 'CANCELLED': return 'Cancelled';
-    default: return 'Pending';
-  }
-}
-
 export default function ShipperMobile() {
   const navigate = useNavigate();
-  const { user, addToast } = useApp();
+  const { user, addToast, logout } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [shipperOrders, setShipperOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -153,23 +141,26 @@ export default function ShipperMobile() {
                 <CheckCircle2 size={36} className="text-green-500 mx-auto mb-1" />
                 <p className="text-sm font-700 text-green-700">Đã giao thành công!</p>
               </div>
-            ) : (
-              <div className="space-y-2">
+            ) : rawStatus === 'ASSIGNED' ? (
+                <button
+                  disabled={updating}
+                  onClick={() => handleUpdateStatus(selectedOrder.id, 'PICKED_UP', 'Shipper đã nhận kiện hàng')}
+                  className="w-full h-11 rounded-xl bg-blue-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
+                >
+                  <Package size={15} /> Xác nhận đã lấy hàng
+                </button>
+            ) : rawStatus === 'PICKED_UP' ? (
                 <button
                   disabled={updating}
                   onClick={() => handleUpdateStatus(selectedOrder.id, 'IN_TRANSIT', 'Shipper đang trên đường giao hàng')}
                   className="w-full h-11 rounded-xl bg-blue-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
                 >
-                  <Truck size={15} /> Đang giao (IN_TRANSIT)
+                  <Truck size={15} /> Bắt đầu giao hàng
                 </button>
-                <button
-                  disabled={updating}
-                  onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED', 'Shipper đã giao thành công')}
-                  className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"
-                >
-                  <CheckCircle2 size={15} /> Giao thành công (DELIVERED)
-                </button>
-              </div>
+            ) : rawStatus === 'IN_TRANSIT' || rawStatus === 'SHIPPING' ? (
+                <button disabled={updating} onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED', 'Shipper đã giao thành công')} className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"><CheckCircle2 size={15} /> Xác nhận giao thành công</button>
+            ) : (
+              <p className="py-3 text-center text-xs text-slate-400">Chưa có thao tác phù hợp với trạng thái hiện tại.</p>
             )}
           </div>
         </div>
@@ -182,8 +173,8 @@ export default function ShipperMobile() {
       {/* Mobile header */}
       <div className="bg-white border-b border-slate-100 px-4 py-3">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="text-xs text-slate-400 flex items-center gap-1 hover:text-slate-600">
-            <ArrowLeft size={12} /> Admin
+          <button onClick={() => { logout(); navigate('/login'); }} className="text-xs text-slate-400 flex items-center gap-1 hover:text-slate-600">
+            <ArrowLeft size={12} /> Đăng xuất
           </button>
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -254,6 +245,36 @@ export default function ShipperMobile() {
                   <StatusBadge status={mapBackendStatusToUI(order.status)} type="order" />
                 </div>
                 <p className="text-xs text-slate-600">Nhận: {order.receiverName} ({order.receiverAddress})</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'map' && (
+          <div className="p-4 space-y-3">
+            <div>
+              <p className="text-base font-700 text-slate-900">Điểm giao hàng</p>
+              <p className="text-xs text-slate-400 mt-0.5">Chọn một địa chỉ để mở chỉ đường</p>
+            </div>
+            {shipperOrders.length === 0 ? (
+              <div className="py-10 text-center text-xs text-slate-400">Chưa có điểm giao hàng được phân công</div>
+            ) : shipperOrders.map(order => (
+              <button
+                key={order.id}
+                onClick={() => openDirections(order.receiverAddress)}
+                className="w-full bg-white rounded-xl border border-slate-100 shadow-sm p-4 text-left hover:border-blue-200"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <MapPin size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-700 text-blue-600">{order.trackingNumber}</p>
+                    <p className="text-sm font-600 text-slate-800 mt-1">{order.receiverName}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{order.receiverAddress || 'Chưa cập nhật địa chỉ'}</p>
+                  </div>
+                  <Navigation size={15} className="text-slate-400 flex-shrink-0" />
+                </div>
               </button>
             ))}
           </div>

@@ -13,8 +13,6 @@ const roleCards = [
     color: 'text-red-600',
     bg: 'bg-red-50',
     border: 'border-red-200',
-    username: 'admin',
-    defaultPassword: 'admin123',
     badge: 'bg-red-100 text-red-700',
   },
   {
@@ -25,8 +23,6 @@ const roleCards = [
     color: 'text-violet-600',
     bg: 'bg-violet-50',
     border: 'border-violet-200',
-    username: 'shipper1',
-    defaultPassword: 'shipper123',
     badge: 'bg-violet-100 text-violet-700',
   },
   {
@@ -37,8 +33,6 @@ const roleCards = [
     color: 'text-green-600',
     bg: 'bg-green-50',
     border: 'border-green-200',
-    username: 'customer',
-    defaultPassword: 'customer123',
     badge: 'bg-green-100 text-green-700',
   },
 ];
@@ -54,8 +48,8 @@ export default function Login() {
   const { loginWithAuthData, addToast } = useApp();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<Role>('Admin');
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
@@ -67,11 +61,6 @@ export default function Login() {
 
   const handleRoleSelect = (r: Role) => {
     setSelectedRole(r);
-    const card = roleCards.find(c => c.role === r);
-    if (card) {
-      setUsername(card.username);
-      setPassword(card.defaultPassword);
-    }
     setErrors({});
   };
 
@@ -153,7 +142,7 @@ export default function Login() {
             </div>
             <div>
               <p className="text-white font-700 text-lg leading-tight">DeliveryMS</p>
-              <p className="text-blue-300 text-xs">Viettel Logistics System</p>
+              <p className="text-blue-300 text-xs">Giao hàng nhanh chóng</p>
             </div>
           </div>
 
@@ -168,8 +157,8 @@ export default function Login() {
         <div className="relative space-y-4">
           {[
             { label: 'Cập nhật nhanh', desc: 'Thông tin đơn hàng luôn mới nhất' },
-            { label: 'JWT Security', desc: 'Xác thực bảo mật tài khoản' },
-            { label: 'VNPay Gateway', desc: 'Thanh toán trực tuyến Sandbox' },
+            { label: 'Đăng nhập an toàn', desc: 'Bảo vệ thông tin tài khoản' },
+            { label: 'Thanh toán tiện lợi', desc: 'Thanh toán trực tuyến nhanh chóng' },
           ].map(({ label, desc }) => (
             <div key={label} className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -202,7 +191,7 @@ export default function Login() {
 
           {/* Role selector */}
           <div className="mb-6">
-            <p className="text-xs font-600 text-slate-600 uppercase tracking-wide mb-3">Tài khoản trải nghiệm</p>
+            <p className="text-xs font-600 text-slate-600 uppercase tracking-wide mb-3">Chọn loại tài khoản</p>
             <div className="grid grid-cols-3 gap-2">
               {roleCards.map(({ role, icon: Icon, label, desc, color, bg, border, badge }) => {
                 const isSelected = selectedRole === role;
@@ -235,7 +224,7 @@ export default function Login() {
                 className={`w-full h-11 px-4 text-sm border rounded-xl outline-none transition-colors
                   ${errors.username ? 'border-red-300 bg-red-50 focus:border-red-400' : 'border-slate-200 bg-slate-50 focus:border-blue-400 focus:bg-white'}
                   placeholder-slate-400 text-slate-800`}
-                placeholder="VD: admin, shipper1, customer..."
+                placeholder="Nhập tên đăng nhập"
               />
               {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}
             </div>
@@ -279,22 +268,13 @@ export default function Login() {
                   Đang đăng nhập...
                 </>
               ) : (
-                `Đăng nhập (${username})`
+                username ? `Đăng nhập (${username})` : 'Đăng nhập'
               )}
             </button>
             <button type="button" onClick={() => setShowRegister(true)}
               className="w-full h-10 rounded-xl border border-blue-200 text-blue-700 text-sm font-600 hover:bg-blue-50">
               Tạo tài khoản mới
             </button>
-          </div>
-
-          <div className="mt-6 p-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-800">
-            <p className="font-700 mb-1">🔑 Tài khoản trải nghiệm:</p>
-            <ul className="space-y-0.5 text-[11px] text-blue-700">
-              <li>• Admin: <code className="bg-blue-100 px-1 rounded">admin</code> / <code className="bg-blue-100 px-1 rounded">admin123</code></li>
-              <li>• Shipper: <code className="bg-blue-100 px-1 rounded">shipper1</code> / <code className="bg-blue-100 px-1 rounded">shipper123</code></li>
-              <li>• Customer: <code className="bg-blue-100 px-1 rounded">customer</code> / <code className="bg-blue-100 px-1 rounded">customer123</code></li>
-            </ul>
           </div>
 
           {showRegister && (

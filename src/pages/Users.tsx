@@ -1,42 +1,29 @@
 import { useState, useEffect } from 'react';
 import { Search, Shield, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import { getShippersApi } from '../api/deliveryApi';
-
-const seededUsers = [
-  { id: '1', username: 'admin', fullName: 'Quản trị viên', phone: '0988888888', email: 'admin@viettel.vn', role: 'Admin', status: 'Active' },
-  { id: '2', username: 'shipper1', fullName: 'Shipper Nguyễn Văn Giao', phone: '0977777771', email: 'shipper1@viettel.vn', role: 'Shipper', status: 'Active' },
-  { id: '3', username: 'shipper2', fullName: 'Shipper Trần Văn Nhanh', phone: '0977777772', email: 'shipper2@viettel.vn', role: 'Shipper', status: 'Active' },
-  { id: '4', username: 'customer', fullName: 'Khách Hàng Hoàng Anh', phone: '0966666666', email: 'customer@gmail.com', role: 'Customer', status: 'Active' },
-];
+import { getUsersApi } from '../api/deliveryApi';
+import { useApp } from '../context/AppContext';
 
 export default function Users() {
-  const [usersList, setUsersList] = useState<any[]>(seededUsers);
+  const { addToast } = useApp();
+  const [usersList, setUsersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await getShippersApi();
+      const res = await getUsersApi();
       if (res && res.data && Array.isArray(res.data)) {
-        const fetchedShippers = res.data.map((s: any) => ({
-          id: String(s.id),
-          username: s.username,
-          fullName: s.fullName || s.username,
-          phone: s.phoneNumber || 'N/A',
-          email: s.email || 'N/A',
-          role: 'Shipper',
-          status: 'Active',
-        }));
-        setUsersList([
-          seededUsers[0], // Admin
-          ...fetchedShippers,
-          seededUsers[3], // Customer
-        ]);
+        setUsersList(res.data.map((user: any) => ({
+          ...user,
+          phone: user.phoneNumber || 'N/A',
+          role: user.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase() : 'Customer',
+          status: user.status === 'ACTIVE' ? 'Active' : user.status === 'BLOCKED' ? 'Suspended' : 'Inactive',
+        })));
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      addToast({ type: 'error', title: 'Không thể tải người dùng', message: err.message });
     } finally {
       setLoading(false);
     }
@@ -99,7 +86,7 @@ export default function Users() {
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <StatusBadge status="Active" type="user" />
+                  <StatusBadge status={user.status} type="user" />
                 </td>
               </tr>
             ))}

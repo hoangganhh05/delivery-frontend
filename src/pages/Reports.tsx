@@ -18,17 +18,13 @@ export default function Reports() {
   }, []);
 
   const revenueData = [
-    { month: 'T5', revenue: (stats.totalRevenue || 0) * 0.2 },
-    { month: 'T6', revenue: (stats.totalRevenue || 0) * 0.4 },
-    { month: 'T7', revenue: (stats.totalRevenue || 0) * 0.7 },
-    { month: 'T8', revenue: (stats.totalRevenue || 0) },
+    { month: 'Hiện tại', revenue: stats.totalRevenue || 0 },
   ];
 
   const orderAnalyticsData = [
-    { date: 'T2', orders: Math.round(stats.totalOrders * 0.1) },
-    { date: 'T3', orders: Math.round(stats.totalOrders * 0.2) },
-    { date: 'T4', orders: Math.round(stats.totalOrders * 0.3) },
-    { date: 'T5', orders: Math.round(stats.totalOrders * 0.4) },
+    { date: 'Hoàn thành', orders: stats.successOrders },
+    { date: 'Đang xử lý', orders: Math.max(0, stats.totalOrders - stats.successOrders - stats.cancelledOrders) },
+    { date: 'Đã hủy', orders: stats.cancelledOrders },
   ];
 
   return (
@@ -59,7 +55,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Revenue trend */}
         <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-          <h3 className="text-sm font-600 text-slate-900 mb-4">Xu hướng doanh thu</h3>
+          <h3 className="text-sm font-600 text-slate-900 mb-4">Doanh thu đã ghi nhận</h3>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={revenueData}>
               <defs>
@@ -79,7 +75,7 @@ export default function Reports() {
 
         {/* Daily orders */}
         <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-          <h3 className="text-sm font-600 text-slate-900 mb-4">Biểu đồ tổng đơn</h3>
+          <h3 className="text-sm font-600 text-slate-900 mb-4">Phân bổ trạng thái đơn</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={orderAnalyticsData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />

@@ -81,7 +81,7 @@ export default function Shippers() {
                 <td colSpan={6} className="py-12 text-center text-xs text-slate-400">Không tìm thấy shipper nào</td>
               </tr>
             ) : filtered.map((shipper) => (
-              <tr key={shipper.id} className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer">
+              <tr key={shipper.id} onClick={() => navigate(`/shippers/${shipper.id}`)} className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer">
                 <td className="py-3 px-4 text-xs font-700 text-blue-600">
                   #{shipper.id} · @{shipper.username}
                 </td>
@@ -101,7 +101,7 @@ export default function Shippers() {
                   <StatusBadge status={(shipper.status || 'ACTIVE') === 'ACTIVE' ? 'Available' : 'Offline'} type="shipper" />
                 </td>
                 <td className="py-3 px-4">
-                  <button onClick={() => navigate('/dispatch')} className="h-7 px-3 rounded-lg bg-blue-50 text-blue-600 text-xs font-500 hover:bg-blue-100 flex items-center gap-1">
+                  <button onClick={(event) => { event.stopPropagation(); navigate(`/shippers/${shipper.id}`); }} className="h-7 px-3 rounded-lg bg-blue-50 text-blue-600 text-xs font-500 hover:bg-blue-100 flex items-center gap-1">
                     <Eye size={13} /> Điều phối đơn
                   </button>
                 </td>

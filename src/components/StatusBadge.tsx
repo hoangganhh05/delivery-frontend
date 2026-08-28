@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentStatus, ShipperStatus, UserStatus } from '../data/mockData';
+import type { OrderStatus, PaymentStatus, ShipperStatus, UserStatus } from '../types/domain';
 
 const orderStatusConfig: Record<OrderStatus, { bg: string; text: string; dot: string }> = {
   Pending: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },

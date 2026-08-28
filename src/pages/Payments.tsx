@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, TrendingUp, DollarSign, Clock, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getDashboardStatsApi, searchOrdersApi } from '../api/deliveryApi';
+import { paymentStatusFromOrder } from '../utils/status';
 
 export default function Payments() {
   const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, successOrders: 0 });
@@ -119,7 +120,7 @@ export default function Payments() {
                 <td className="py-3 px-4 text-xs text-green-600">-{(o.discountFee || 0).toLocaleString()}đ</td>
                 <td className="py-3 px-4 text-xs font-700 text-blue-700">{(o.totalFee || 0).toLocaleString()}đ</td>
                 <td className="py-3 px-4">
-                  <StatusBadge status={o.status === 'DELIVERED' ? 'Paid' : 'Pending'} type="payment" />
+                  <StatusBadge status={paymentStatusFromOrder(o.status)} type="payment" />
                 </td>
               </tr>
             ))}
