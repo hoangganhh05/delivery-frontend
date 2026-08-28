@@ -61,8 +61,8 @@ export default function Settings() {
   return (
     <div className="p-4 sm:p-6 max-w-5xl">
       <div className="mb-6">
-        <h2 className="text-lg font-700 text-slate-900">Cài đặt hệ thống</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Quản lý cấu hình và tùy chọn của hệ thống</p>
+        <h2 className="text-lg font-700 text-slate-900">Cài đặt ứng dụng</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Cá nhân hóa trải nghiệm và tùy chọn sử dụng</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -85,10 +85,10 @@ export default function Settings() {
           {activeTab === 'general' && (
             <>
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
-                <h3 className="text-sm font-700 text-slate-900 mb-4">Thông tin hệ thống</h3>
+                <h3 className="text-sm font-700 text-slate-900 mb-4">Thông tin thương hiệu</h3>
                 <div className="space-y-4">
                   {[
-                    { label: 'Tên hệ thống', value: 'DeliveryMS', placeholder: 'Nhập tên hệ thống' },
+                    { label: 'Tên ứng dụng', value: 'DeliveryMS', placeholder: 'Nhập tên ứng dụng' },
                     { label: 'Tên công ty', value: 'Công ty TNHH Giao Hàng Nhanh', placeholder: '' },
                     { label: 'Email liên hệ', value: 'support@deliveryms.vn', placeholder: '' },
                     { label: 'Số điện thoại', value: '1900 1234', placeholder: '' },
@@ -134,7 +134,7 @@ export default function Settings() {
                     { key: 'paymentSuccess', label: 'Thanh toán thành công', desc: 'Khi khách hàng thanh toán xong' },
                     { key: 'deliveryComplete', label: 'Giao hàng thành công', desc: 'Khi shipper giao hàng xong' },
                     { key: 'shipperAssign', label: 'Phân công shipper', desc: 'Khi shipper được phân công đơn' },
-                    { key: 'systemAlert', label: 'Cảnh báo hệ thống', desc: 'Thông báo bảo trì và lỗi hệ thống' },
+                    { key: 'systemAlert', label: 'Cảnh báo vận hành', desc: 'Thông báo bảo trì và gián đoạn dịch vụ' },
                   ].map(({ key, label, desc }) => (
                     <div key={key} className="flex items-center justify-between py-2 border-b border-slate-50">
                       <div>
@@ -209,7 +209,7 @@ export default function Settings() {
                     <p className="text-sm font-600 text-amber-800">Chưa bật xác thực 2 lớp</p>
                     <p className="text-xs text-amber-600 mt-0.5">Tăng cường bảo mật tài khoản của bạn</p>
                   </div>
-                  <button onClick={() => addToast({ type: 'info', title: '2FA chưa được backend hỗ trợ', message: 'Cần thêm API tạo và xác minh mã OTP trước khi kích hoạt.' })} className="h-8 px-4 rounded-lg bg-amber-600 text-white text-xs font-600 hover:bg-amber-700">
+                  <button onClick={() => addToast({ type: 'info', title: 'Tính năng đang phát triển', message: 'Xác thực hai lớp sẽ sớm được cập nhật.' })} className="h-8 px-4 rounded-lg bg-amber-600 text-white text-xs font-600 hover:bg-amber-700">
                     Kích hoạt
                   </button>
                 </div>
@@ -224,7 +224,7 @@ export default function Settings() {
                 {[
                   { id: 'light', label: 'Sáng', preview: 'bg-white border-blue-400' },
                   { id: 'dark', label: 'Tối', preview: 'bg-slate-900 border-slate-600' },
-                  { id: 'system', label: 'Theo hệ thống', preview: 'bg-gradient-to-r from-white to-slate-900' },
+                  { id: 'system', label: 'Tự động', preview: 'bg-gradient-to-r from-white to-slate-900' },
                 ].map(({ id, label, preview }) => (
                   <button key={id} onClick={() => setTheme(id)}
                     className={`p-4 rounded-xl border-2 text-center ${theme === id ? 'border-blue-400 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}>

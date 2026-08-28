@@ -59,7 +59,7 @@ export default function Orders() {
       addToast({
         type: 'error',
         title: 'Lỗi tải danh sách đơn hàng',
-        message: err.message || 'Không thể lấy dữ liệu đơn hàng từ backend'
+        message: err.message || 'Không thể tải danh sách đơn hàng'
       });
     } finally {
       setLoading(false);
@@ -79,10 +79,10 @@ export default function Orders() {
       onConfirm: async () => {
         try {
           await cancelOrderApi(trackingNumber);
-          addToast({ type: 'success', title: 'Đã hủy đơn', message: `Đơn hàng ${trackingNumber} đã được hủy trên hệ thống.` });
+          addToast({ type: 'success', title: 'Đã hủy đơn', message: `Đơn hàng ${trackingNumber} đã được hủy.` });
           await fetchOrders();
         } catch (err: any) {
-          addToast({ type: 'error', title: 'Không thể hủy đơn', message: err.message || 'Backend từ chối yêu cầu hủy đơn' });
+          addToast({ type: 'error', title: 'Không thể hủy đơn', message: err.message || 'Yêu cầu hủy đơn chưa được chấp nhận' });
         }
       },
     });
@@ -97,7 +97,7 @@ export default function Orders() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Quản lý Đơn hàng</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{totalElements} đơn hàng trong CSDL Backend</p>
+          <p className="text-xs text-slate-500 mt-0.5">{totalElements} đơn hàng</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button onClick={fetchOrders} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 hover:bg-slate-50">
@@ -171,7 +171,7 @@ export default function Orders() {
             {loading ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-xs text-slate-400">
-                  Đang tải đơn hàng từ Spring Boot backend...
+                  Đang tải đơn hàng...
                 </td>
               </tr>
             ) : ordersList.length === 0 ? (
@@ -180,7 +180,7 @@ export default function Orders() {
                   <div className="text-slate-300 mb-2 flex justify-center">
                     <Search size={40} strokeWidth={1} />
                   </div>
-                  <p className="text-sm font-500 text-slate-500">Không tìm thấy đơn hàng nào trong CSDL</p>
+                  <p className="text-sm font-500 text-slate-500">Không tìm thấy đơn hàng nào</p>
                   <p className="text-xs text-slate-400 mt-1">Thử thay đổi từ khóa hoặc bộ lọc trạng thái</p>
                 </td>
               </tr>

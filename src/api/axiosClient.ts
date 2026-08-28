@@ -59,7 +59,7 @@ axiosClient.interceptors.response.use(
 
     if (!errorMessage) {
       errorMessage =
-        error.message || "Có lỗi xảy ra khi kết nối tới máy chủ backend";
+        error.message || "Không thể kết nối. Vui lòng thử lại sau";
     }
 
     const customError = new Error(errorMessage);

@@ -279,7 +279,7 @@ export default function CustomerView() {
             {createStep === 4 && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-600 text-slate-700 mb-1.5">Mã voucher từ Backend</label>
+                  <label className="block text-xs font-600 text-slate-700 mb-1.5">Mã ưu đãi</label>
                   <div className="flex gap-2">
                     <input type="text" value={voucherCode} onChange={e => setVoucherCode(e.target.value)}
                       placeholder="VD: VIETTEL50, FREESHIP..."
@@ -388,7 +388,7 @@ export default function CustomerView() {
                 ) : (
                   <button onClick={handleCreateOrder} disabled={submitting}
                     className="flex-1 h-10 rounded-xl bg-blue-600 text-sm text-white font-600 hover:bg-blue-700 disabled:opacity-50">
-                    {submitting ? 'Đang gửi dữ liệu tới Spring Boot...' : 'Xác nhận tạo đơn hàng'}
+                    {submitting ? 'Đang tạo đơn hàng...' : 'Xác nhận tạo đơn hàng'}
                   </button>
                 )}
               </div>
@@ -466,7 +466,7 @@ export default function CustomerView() {
             {/* Recent orders */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-700 text-slate-900">Đơn hàng mới tạo (Backend CSDL)</h3>
+                <h3 className="text-sm font-700 text-slate-900">Đơn hàng mới tạo</h3>
                 <button onClick={() => setTab('orders')} className="text-xs text-blue-600 font-500">Xem tất cả</button>
               </div>
               <div className="space-y-3">
@@ -495,7 +495,7 @@ export default function CustomerView() {
         {tab === 'orders' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-700 text-slate-900">Đơn hàng của tôi (Backend Database)</h2>
+              <h2 className="text-base font-700 text-slate-900">Đơn hàng của tôi</h2>
               <button onClick={() => setTab('create')}
                 className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500">
                 <Plus size={14} /> Tạo đơn mới

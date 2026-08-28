@@ -66,7 +66,7 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <div className="p-12 text-center text-xs text-slate-400">
-        Đang tải thông tin chi tiết đơn hàng từ backend Spring Boot...
+        Đang tải thông tin chi tiết đơn hàng...
       </div>
     );
   }
@@ -98,7 +98,7 @@ export default function OrderDetail() {
               <h2 className="text-base font-700 text-slate-900">Mã vận đơn: {order.trackingNumber || id}</h2>
               <StatusBadge status={mapBackendStatusToUI(rawStatus)} type="order" />
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">ID Đơn: #{order.id} · Dữ liệu CSDL Backend</p>
+            <p className="text-xs text-slate-500 mt-0.5">ID Đơn: #{order.id}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

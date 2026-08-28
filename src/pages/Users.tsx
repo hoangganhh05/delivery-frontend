@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge';
 import { getShippersApi } from '../api/deliveryApi';
 
 const seededUsers = [
-  { id: '1', username: 'admin', fullName: 'Quản Trị Viên Hệ Thống', phone: '0988888888', email: 'admin@viettel.vn', role: 'Admin', status: 'Active' },
+  { id: '1', username: 'admin', fullName: 'Quản trị viên', phone: '0988888888', email: 'admin@viettel.vn', role: 'Admin', status: 'Active' },
   { id: '2', username: 'shipper1', fullName: 'Shipper Nguyễn Văn Giao', phone: '0977777771', email: 'shipper1@viettel.vn', role: 'Shipper', status: 'Active' },
   { id: '3', username: 'shipper2', fullName: 'Shipper Trần Văn Nhanh', phone: '0977777772', email: 'shipper2@viettel.vn', role: 'Shipper', status: 'Active' },
   { id: '4', username: 'customer', fullName: 'Khách Hàng Hoàng Anh', phone: '0966666666', email: 'customer@gmail.com', role: 'Customer', status: 'Active' },
@@ -55,8 +55,8 @@ export default function Users() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-700 text-slate-900">Quản lý Tài Khoản & Người Dùng (Spring Boot)</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Danh sách tài khoản xác thực JWT trong CSDL</p>
+          <h2 className="text-lg font-700 text-slate-900">Quản lý tài khoản & người dùng</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Danh sách thành viên và quyền truy cập</p>
         </div>
         <button onClick={fetchUsers} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-600 hover:bg-slate-50">
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Tải lại

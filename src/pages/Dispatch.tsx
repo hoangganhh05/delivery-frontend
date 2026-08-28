@@ -80,7 +80,7 @@ export default function Dispatch() {
     <div className="p-4 sm:p-6 min-h-full space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-700 text-slate-900">Trung tâm điều phối giao hàng (Backend Real-time)</h2>
+          <h2 className="text-lg font-700 text-slate-900">Trung tâm điều phối giao hàng</h2>
           <p className="text-xs text-slate-500 mt-0.5">{unassignedOrders.length} đơn hàng chưa phân công · {shippersList.length} nhân viên shipper</p>
         </div>
         <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function Dispatch() {
               {loading ? (
                 <div className="p-8 text-center text-xs text-slate-400">Đang tải đơn hàng...</div>
               ) : unassignedOrders.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400">Không có đơn hàng nào chờ phân công trong CSDL</div>
+                <div className="p-8 text-center text-xs text-slate-400">Không có đơn hàng nào chờ phân công</div>
               ) : unassignedOrders.map((order) => {
                 const isSelected = selectedOrder?.id === order.id;
                 return (
@@ -185,8 +185,8 @@ export default function Dispatch() {
         <div className="flex-1 min-h-[420px] bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden relative flex flex-col">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <div>
-              <h3 className="text-sm font-700 text-slate-900">Danh sách nhân viên giao hàng (Backend Shippers)</h3>
-              <p className="text-xs text-slate-500">Thông tin nhân sự đội vận tải từ CSDL</p>
+              <h3 className="text-sm font-700 text-slate-900">Danh sách nhân viên giao hàng</h3>
+              <p className="text-xs text-slate-500">Thông tin đội ngũ vận chuyển</p>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">

@@ -41,11 +41,11 @@ const permissionGroups = [
     ]
   },
   {
-    group: 'Báo cáo & Hệ thống',
+    group: 'Báo cáo & Quản lý',
     permissions: [
       { id: 'view_reports', label: 'Xem báo cáo', Admin: true, Staff: true, Shipper: false, Customer: false },
       { id: 'export_data', label: 'Xuất dữ liệu', Admin: true, Staff: true, Shipper: false, Customer: false },
-      { id: 'system_settings', label: 'Cài đặt hệ thống', Admin: true, Staff: false, Shipper: false, Customer: false },
+      { id: 'system_settings', label: 'Cài đặt ứng dụng', Admin: true, Staff: false, Shipper: false, Customer: false },
       { id: 'view_notifications', label: 'Thông báo', Admin: true, Staff: true, Shipper: true, Customer: true },
     ]
   }
@@ -105,7 +105,7 @@ export default function Permissions() {
             </div>
             <p className="text-sm font-700 text-slate-900">{role}</p>
             <p className="text-xs text-slate-500 mt-1">
-              {role === 'Admin' && 'Toàn quyền hệ thống'}
+              {role === 'Admin' && 'Toàn quyền quản lý'}
               {role === 'Staff' && 'Quản lý vận hành'}
               {role === 'Shipper' && 'Giao hàng & cập nhật'}
               {role === 'Customer' && 'Tạo và theo dõi đơn'}

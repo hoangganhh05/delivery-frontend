@@ -104,7 +104,7 @@ export default function Dashboard() {
       icon: Package,
       change: '+12.5%',
       trend: 'up',
-      sub: 'Dữ liệu thực từ Spring Boot DB',
+      sub: 'Tổng số đơn đã ghi nhận',
       color: 'text-blue-600',
       bg: 'bg-blue-50',
     },
@@ -166,13 +166,13 @@ export default function Dashboard() {
       {/* Welcome bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-slate-500">Hệ thống Quản lý Giao hàng Viettel</p>
+          <p className="text-sm text-slate-500">Không gian quản lý giao hàng</p>
           <h2 className="text-xl font-700 text-slate-900">
             Xin chào, {user?.fullName || user?.username || 'Quản trị viên'}! 👋
           </h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Backend API: Online</span>
+          <span className="text-xs text-slate-500">Dữ liệu đang cập nhật</span>
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
         </div>
       </div>
@@ -204,7 +204,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
             <div>
               <h3 className="text-sm font-600 text-slate-900">Thống kê đơn hàng</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Tổng quan đơn hàng từ database</p>
+              <p className="text-xs text-slate-400 mt-0.5">Tổng quan hoạt động đơn hàng</p>
             </div>
             <div className="flex overflow-x-auto bg-slate-50 rounded-lg p-0.5">
               {timeFilters.map(f => (
@@ -286,7 +286,7 @@ export default function Dashboard() {
         {/* Recent Orders */}
         <div className="xl:col-span-2 bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100 min-w-0">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-600 text-slate-900">Đơn hàng mới nhất (Backend Database)</h3>
+            <h3 className="text-sm font-600 text-slate-900">Đơn hàng mới nhất</h3>
             <button
               onClick={() => navigate('/orders')}
               className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-500"
@@ -296,7 +296,7 @@ export default function Dashboard() {
           </div>
           {recentOrders.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400">
-              {loading ? 'Đang tải đơn hàng...' : 'Chưa có đơn hàng nào trong CSDL backend'}
+              {loading ? 'Đang tải đơn hàng...' : 'Chưa có đơn hàng nào'}
             </div>
           ) : (
             <div className="overflow-x-auto"><table className="w-full min-w-[640px]">

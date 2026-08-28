@@ -34,8 +34,8 @@ export default function Reports() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-700 text-slate-900">Báo cáo & Thống kê Vận hành (Real-time DB)</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Tổng hợp số liệu dữ liệu thực từ Spring Boot Database</p>
+        <h2 className="text-lg font-700 text-slate-900">Báo cáo & Thống kê vận hành</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Tổng hợp hiệu quả giao hàng và doanh thu</p>
       </div>
 
       {/* Summary */}

@@ -15,7 +15,7 @@ const pageTitles: Record<string, string> = {
   '/vouchers': 'Quản lý Voucher',
   '/notifications': 'Thông báo',
   '/reports': 'Báo cáo & Thống kê',
-  '/settings': 'Cài đặt hệ thống',
+  '/settings': 'Cài đặt',
 };
 
 const roleColors: Record<Role, string> = {
@@ -52,7 +52,7 @@ export default function Header() {
     setShowUserMenu(false);
     openConfirm({
       title: 'Đăng xuất',
-      message: 'Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?',
+      message: 'Bạn có chắc chắn muốn đăng xuất không?',
       confirmLabel: 'Đăng xuất',
       danger: true,
       onConfirm: () => {
@@ -123,7 +123,7 @@ export default function Header() {
             animate-in slide-in-from-top-2 fade-in duration-150">
             <div className="px-3 py-2 border-b border-slate-50 mb-1">
               <p className="text-xs font-600 text-slate-900">{displayName}</p>
-              <p className="text-[10px] text-slate-400">{role} · Spring Boot API Session</p>
+              <p className="text-[10px] text-slate-400">{role} · Đang hoạt động</p>
             </div>
             <button onClick={() => { setShowUserMenu(false); navigate('/settings'); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">

@@ -42,7 +42,7 @@ export default function Shippers() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Quản lý Đội ngũ Shipper</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{shippersList.length} nhân viên shipper trong CSDL Backend</p>
+          <p className="text-xs text-slate-500 mt-0.5">{shippersList.length} nhân viên giao hàng</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={fetchShippers} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-600 hover:bg-slate-50">

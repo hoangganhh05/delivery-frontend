@@ -51,7 +51,7 @@ export default function Notifications() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-700 text-slate-900">Thông báo (Backend User Notifications)</h2>
+          <h2 className="text-lg font-700 text-slate-900">Thông báo</h2>
           {unreadCount > 0 && (
             <span className="w-6 h-6 bg-red-500 text-white text-xs font-700 rounded-full flex items-center justify-center">
               {unreadCount}
@@ -73,11 +73,11 @@ export default function Notifications() {
       {/* Notification list */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm divide-y divide-slate-50">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400">Đang tải thông báo từ Spring Boot...</div>
+          <div className="py-12 text-center text-xs text-slate-400">Đang tải thông báo...</div>
         ) : notifs.length === 0 ? (
           <div className="py-16 text-center">
             <Bell size={40} className="text-slate-200 mx-auto mb-3" strokeWidth={1} />
-            <p className="text-sm font-500 text-slate-500">Không có thông báo nào trong hệ thống</p>
+            <p className="text-sm font-500 text-slate-500">Bạn chưa có thông báo nào</p>
           </div>
         ) : notifs.map((notif) => {
           const isRead = notif.isRead || notif.read;
@@ -93,7 +93,7 @@ export default function Notifications() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <p className={`text-sm font-600 ${!isRead ? 'text-slate-900' : 'text-slate-700'}`}>
-                    {notif.title || 'Thông báo hệ thống'}
+                    {notif.title || 'Thông báo mới'}
                   </p>
                   <span className="text-xs text-slate-400 whitespace-nowrap flex-shrink-0">{notif.createdAt || notif.time || ''}</span>
                 </div>

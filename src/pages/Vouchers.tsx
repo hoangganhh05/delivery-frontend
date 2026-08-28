@@ -60,8 +60,8 @@ export default function Vouchers() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-700 text-slate-900">Quản lý Voucher Khuyến Mãi (Backend)</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Tạo và quản lý các mã giảm giá hệ thống Spring Boot</p>
+          <h2 className="text-lg font-700 text-slate-900">Quản lý voucher khuyến mãi</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Tạo và quản lý các mã ưu đãi dành cho khách hàng</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
           <Plus size={14} /> Tạo Voucher Mới
@@ -108,7 +108,7 @@ export default function Vouchers() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-700 text-slate-900">Tạo Voucher Mới (Backend API)</h3>
+              <h3 className="text-base font-700 text-slate-900">Tạo voucher mới</h3>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
                 <X size={16} />
               </button>

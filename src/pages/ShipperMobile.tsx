@@ -215,7 +215,7 @@ export default function ShipperMobile() {
 
             {/* Orders assigned */}
             <div>
-              <p className="text-sm font-700 text-slate-900 mb-2">Đơn hàng trong hệ thống</p>
+              <p className="text-sm font-700 text-slate-900 mb-2">Đơn hàng của bạn</p>
               <div className="space-y-2">
                 {loading ? (
                   <div className="py-8 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>

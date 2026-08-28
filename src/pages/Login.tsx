@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { Truck, Eye, EyeOff, Shield, User, Package, Headphones } from 'lucide-react';
+import { Truck, Eye, EyeOff, Shield, User, Package, X } from 'lucide-react';
 import { useApp, type Role } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { loginApi } from '../api/deliveryApi';
+import { loginApi, registerApi } from '../api/deliveryApi';
 
 const roleCards = [
   {
     role: 'Admin' as Role,
     icon: Shield,
     label: 'Quản trị viên',
-    desc: 'Toàn quyền hệ thống',
+    desc: 'Toàn quyền quản lý',
     color: 'text-red-600',
     bg: 'bg-red-50',
     border: 'border-red-200',
@@ -58,6 +58,11 @@ export default function Login() {
   const [password, setPassword] = useState('admin123');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [registerForm, setRegisterForm] = useState({
+    username: '', password: '', fullName: '', email: '', phoneNumber: '', role: 'CUSTOMER',
+  });
   const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
 
   const handleRoleSelect = (r: Role) => {
@@ -96,16 +101,35 @@ export default function Login() {
           : '/';
         navigate(targetRoute);
       } else {
-        throw new Error('Phản hồi đăng nhập từ backend không hợp lệ');
+        throw new Error('Không nhận được thông tin đăng nhập hợp lệ');
       }
     } catch (err: any) {
       addToast({
         type: 'error',
         title: 'Đăng nhập thất bại',
-        message: err.message || 'Không thể kết nối máy chủ backend. Đang sử dụng chế độ dự phòng.'
+        message: err.message || 'Không thể đăng nhập lúc này. Vui lòng thử lại.'
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!registerForm.username.trim() || !registerForm.password || registerForm.password.length < 6) {
+      addToast({ type: 'warning', title: 'Thông tin chưa hợp lệ', message: 'Tên đăng nhập là bắt buộc và mật khẩu cần ít nhất 6 ký tự.' });
+      return;
+    }
+    try {
+      setRegistering(true);
+      const res = await registerApi({ ...registerForm, username: registerForm.username.trim() });
+      if (!res?.data?.token) throw new Error('Không nhận được thông tin đăng nhập');
+      loginWithAuthData(res.data.token, res.data.username || registerForm.username, res.data.role || registerForm.role, res.data.fullName || registerForm.fullName);
+      addToast({ type: 'success', title: 'Tạo tài khoản thành công', message: 'Chào mừng bạn đến với DeliveryMS!' });
+      navigate(res.data.role === 'SHIPPER' ? '/shipper-mobile' : '/customer');
+    } catch (err: any) {
+      addToast({ type: 'error', title: 'Không thể tạo tài khoản', message: err.message || 'Vui lòng kiểm tra lại thông tin.' });
+    } finally {
+      setRegistering(false);
     }
   };
 
@@ -137,13 +161,13 @@ export default function Login() {
             Quản lý giao<br />hàng thông minh
           </h1>
           <p className="text-blue-200 text-base leading-relaxed">
-            Kết nối trực tiếp hệ thống Spring Boot Backend — từ tạo đơn, phân công shipper đến thanh toán VNPay và theo dõi thời gian thực.
+            Trải nghiệm giao hàng liền mạch — từ tạo đơn, phân công tài xế đến thanh toán và theo dõi hành trình.
           </p>
         </div>
 
         <div className="relative space-y-4">
           {[
-            { label: 'Real-time API', desc: 'Đã kết nối Spring Boot Backend' },
+            { label: 'Cập nhật nhanh', desc: 'Thông tin đơn hàng luôn mới nhất' },
             { label: 'JWT Security', desc: 'Xác thực bảo mật tài khoản' },
             { label: 'VNPay Gateway', desc: 'Thanh toán trực tuyến Sandbox' },
           ].map(({ label, desc }) => (
@@ -172,13 +196,13 @@ export default function Login() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-800 text-slate-900">Đăng nhập hệ thống</h2>
-            <p className="text-slate-500 text-sm mt-1">Chọn vai trò hoặc nhập thông tin tài khoản Backend</p>
+            <h2 className="text-2xl font-800 text-slate-900">Đăng nhập DeliveryMS</h2>
+            <p className="text-slate-500 text-sm mt-1">Chọn vai trò hoặc nhập thông tin tài khoản</p>
           </div>
 
           {/* Role selector */}
           <div className="mb-6">
-            <p className="text-xs font-600 text-slate-600 uppercase tracking-wide mb-3">Tài khoản mẫu từ Backend</p>
+            <p className="text-xs font-600 text-slate-600 uppercase tracking-wide mb-3">Tài khoản trải nghiệm</p>
             <div className="grid grid-cols-3 gap-2">
               {roleCards.map(({ role, icon: Icon, label, desc, color, bg, border, badge }) => {
                 const isSelected = selectedRole === role;
@@ -252,22 +276,60 @@ export default function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Đang xác thực Backend...
+                  Đang đăng nhập...
                 </>
               ) : (
-                `Đăng nhập API (${username})`
+                `Đăng nhập (${username})`
               )}
+            </button>
+            <button type="button" onClick={() => setShowRegister(true)}
+              className="w-full h-10 rounded-xl border border-blue-200 text-blue-700 text-sm font-600 hover:bg-blue-50">
+              Tạo tài khoản mới
             </button>
           </div>
 
           <div className="mt-6 p-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-800">
-            <p className="font-700 mb-1">🔑 Tài khoản hệ thống mẫu (Spring Boot):</p>
+            <p className="font-700 mb-1">🔑 Tài khoản trải nghiệm:</p>
             <ul className="space-y-0.5 text-[11px] text-blue-700">
               <li>• Admin: <code className="bg-blue-100 px-1 rounded">admin</code> / <code className="bg-blue-100 px-1 rounded">admin123</code></li>
               <li>• Shipper: <code className="bg-blue-100 px-1 rounded">shipper1</code> / <code className="bg-blue-100 px-1 rounded">shipper123</code></li>
               <li>• Customer: <code className="bg-blue-100 px-1 rounded">customer</code> / <code className="bg-blue-100 px-1 rounded">customer123</code></li>
             </ul>
           </div>
+
+          {showRegister && (
+            <div className="fixed inset-0 z-50 bg-slate-950/40 p-4 flex items-center justify-center">
+              <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+                <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                  <div><h3 className="text-lg font-800 text-slate-900">Tạo tài khoản</h3><p className="text-xs text-slate-500 mt-1">Bắt đầu trải nghiệm cùng DeliveryMS</p></div>
+                  <button onClick={() => setShowRegister(false)} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400"><X size={17} /></button>
+                </div>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { key: 'fullName', label: 'Họ và tên', placeholder: 'Nguyễn Văn A', type: 'text' },
+                    { key: 'username', label: 'Tên đăng nhập', placeholder: 'nguyenvana', type: 'text' },
+                    { key: 'email', label: 'Email', placeholder: 'email@example.com', type: 'email' },
+                    { key: 'phoneNumber', label: 'Số điện thoại', placeholder: '0912345678', type: 'tel' },
+                    { key: 'password', label: 'Mật khẩu', placeholder: 'Tối thiểu 6 ký tự', type: 'password' },
+                  ].map(field => (
+                    <div key={field.key} className={field.key === 'password' ? 'sm:col-span-2' : ''}>
+                      <label className="block text-xs font-600 text-slate-700 mb-1.5">{field.label}</label>
+                      <input type={field.type} value={registerForm[field.key as keyof typeof registerForm]}
+                        onChange={e => setRegisterForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
+                    </div>
+                  ))}
+                </div>
+                <div className="p-5 pt-0 flex flex-col-reverse sm:flex-row gap-3 justify-end">
+                  <button onClick={() => setShowRegister(false)} className="h-10 px-5 rounded-xl border border-slate-200 text-sm text-slate-600">Hủy</button>
+                  <button onClick={handleRegister} disabled={registering} className="h-10 px-6 rounded-xl bg-blue-600 text-white text-sm font-600 disabled:opacity-60">
+                    {registering ? 'Đang tạo tài khoản...' : 'Đăng ký ngay'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -68,7 +68,7 @@ export default function Tracking() {
         <div className="bg-red-50 border border-red-200 rounded-2xl p-5 text-center">
           <AlertCircle size={32} className="text-red-400 mx-auto mb-2" />
           <p className="text-sm font-600 text-red-700">Không tìm thấy mã vận đơn</p>
-          <p className="text-xs text-red-500 mt-1">Mã vận đơn "{input}" không tồn tại trong hệ thống Spring Boot</p>
+          <p className="text-xs text-red-500 mt-1">Không tìm thấy mã vận đơn "{input}"</p>
         </div>
       )}
 
@@ -87,7 +87,7 @@ export default function Tracking() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs text-slate-500">Mã đơn hệ thống</p>
+                <p className="text-xs text-slate-500">Mã đơn hàng</p>
                 <p className="text-sm font-700 text-slate-800">#{result.orderId}</p>
               </div>
             </div>

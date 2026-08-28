@@ -67,7 +67,7 @@ export default function Sidebar() {
   const handleLogout = () => {
     openConfirm({
       title: 'Đăng xuất',
-      message: 'Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?',
+      message: 'Bạn có chắc chắn muốn đăng xuất không?',
       confirmLabel: 'Đăng xuất',
       danger: true,
       onConfirm: () => {
@@ -145,7 +145,7 @@ export default function Sidebar() {
         {/* Demo views */}
         {sidebarOpen && (
           <div className="mb-4">
-            <p className="text-[10px] font-600 text-slate-400 uppercase tracking-wider px-3 mb-1.5">Demo</p>
+            <p className="text-[10px] font-600 text-slate-400 uppercase tracking-wider px-3 mb-1.5">Trải nghiệm</p>
             {demoViews.map(({ path, label, icon: Icon }) => {
               const isActive = location.pathname === path;
               return (
