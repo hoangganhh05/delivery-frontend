@@ -34,9 +34,9 @@ export default function Settings() {
   const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || '#2563EB');
   const [integrationStates, setIntegrationStates] = useState<Record<string, boolean>>(() => {
     try {
-      return JSON.parse(localStorage.getItem('integrationStates') || '') || { VNPay: true, Momo: true, ZaloPay: false, 'VNPT Pay': false };
+      return JSON.parse(localStorage.getItem('integrationStates') || '') || { 'Vietcombank QR': true, Momo: false, ZaloPay: false, 'VNPT Pay': false };
     } catch {
-      return { VNPay: true, Momo: true, ZaloPay: false, 'VNPT Pay': false };
+      return { 'Vietcombank QR': true, Momo: false, ZaloPay: false, 'VNPT Pay': false };
     }
   });
 
@@ -251,7 +251,7 @@ export default function Settings() {
               <h3 className="text-sm font-700 text-slate-900 mb-4">Tích hợp thanh toán</h3>
               <div className="space-y-3">
                 {[
-                  { name: 'VNPay', status: 'Đã kết nối', connected: true, logo: '🏦' },
+                  { name: 'Vietcombank QR', status: 'Đã kết nối', connected: true, logo: '🏦' },
                   { name: 'Momo', status: 'Đã kết nối', connected: true, logo: '📱' },
                   { name: 'ZaloPay', status: 'Chưa kết nối', connected: false, logo: '💙' },
                   { name: 'VNPT Pay', status: 'Chưa kết nối', connected: false, logo: '📶' },

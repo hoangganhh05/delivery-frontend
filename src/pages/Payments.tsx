@@ -50,7 +50,7 @@ export default function Payments() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-700 text-slate-900">Quản lý Thanh toán & Doanh thu</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Theo dõi thanh toán VNPay và COD</p>
+          <p className="text-xs text-slate-500 mt-0.5">Theo dõi chuyển khoản QR và COD</p>
         </div>
         <button onClick={fetchData} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-600 hover:bg-slate-50">
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Tải lại

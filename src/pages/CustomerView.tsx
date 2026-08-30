@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, MapPin, Search, Bell, ChevronRight, Plus, Clock, CheckCircle2, Truck, Tag, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Search, Bell, ChevronRight, Plus, Clock, CheckCircle2, Truck, Tag, Copy } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import type { OrderStatus } from '../types/domain';
 import { mapBackendStatusToUI } from '../utils/status';
-import { createOrderApi, calculateVoucherApi, searchOrdersApi, createPaymentApi, trackOrderApi } from '../api/deliveryApi';
+import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 
 const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Dịch vụ', 'Voucher', 'Thanh toán', 'Xác nhận'];
@@ -37,11 +37,11 @@ export default function CustomerView() {
   const [selectedService, setSelectedService] = useState({ name: 'Tiêu chuẩn', fee: 30000 });
   const [voucherCode, setVoucherCode] = useState('');
   const [discountFee, setDiscountFee] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('VNPay');
+  const [paymentMethod, setPaymentMethod] = useState('VCB_QR');
 
   const [createdOrderRes, setCreatedOrderRes] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [vnpayUrl, setVnpayUrl] = useState('');
+  const [qrPayment, setQrPayment] = useState<{ amount: number; content: string; imageUrl: string } | null>(null);
 
   const fetchCustomerOrders = async () => {
     try {
@@ -108,16 +108,21 @@ export default function CustomerView() {
         addToast({ type: 'success', title: 'Tạo đơn thành công!', message: `Mã vận đơn: ${res.data.trackingNumber}` });
         fetchCustomerOrders();
 
-        // If VNPay chosen, generate payment link
-        if (paymentMethod === 'VNPay' && res.data.id) {
-          try {
-            const payRes = await createPaymentApi(res.data.id);
-            if (payRes && payRes.data) {
-              setVnpayUrl(payRes.data.paymentUrl);
-            }
-          } catch (e) {
-            console.error('VNPay error:', e);
-          }
+        if (paymentMethod === 'VCB_QR') {
+          const amount = Math.max(0, Number(res.data.totalFee ?? selectedService.fee - discountFee));
+          const content = `DH ${res.data.trackingNumber}`;
+          const query = new URLSearchParams({
+            amount: String(Math.round(amount)),
+            addInfo: content,
+            accountName: 'CAO HOANG ANH',
+          });
+          setQrPayment({
+            amount,
+            content,
+            imageUrl: `https://img.vietqr.io/image/970436-1070980445-compact2.png?${query.toString()}`,
+          });
+        } else {
+          setQrPayment(null);
         }
       }
     } catch (err: any) {
@@ -312,11 +317,11 @@ export default function CustomerView() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'VNPay' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
-                    <input type="radio" name="pay" checked={paymentMethod === 'VNPay'} onChange={() => setPaymentMethod('VNPay')} className="accent-blue-600" />
+                  <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'VCB_QR' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
+                    <input type="radio" name="pay" checked={paymentMethod === 'VCB_QR'} onChange={() => setPaymentMethod('VCB_QR')} className="accent-blue-600" />
                     <div>
-                      <p className="text-sm font-600 text-slate-900">Thanh toán VNPay</p>
-                      <p className="text-xs text-slate-400">Thanh toán trực tuyến an toàn</p>
+                      <p className="text-sm font-600 text-slate-900">Chuyển khoản QR Vietcombank</p>
+                      <p className="text-xs text-slate-400">Quét QR để tự điền số tiền và nội dung đơn hàng</p>
                     </div>
                   </label>
                   <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
@@ -339,12 +344,19 @@ export default function CustomerView() {
                 <p className="text-sm text-slate-500">Mã vận đơn (Tracking): <span className="font-700 text-blue-600">{createdOrderRes.trackingNumber}</span></p>
                 <p className="text-xs text-slate-400">ID Đơn hàng: #{createdOrderRes.id}</p>
 
-                {vnpayUrl && (
-                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-2">
-                    <p className="text-xs text-blue-800 font-600">Đơn hàng sẵn sàng thanh toán qua VNPay:</p>
-                    <a href={vnpayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-600 hover:bg-blue-700">
-                      Thanh toán ngay qua VNPay <ExternalLink size={14} />
-                    </a>
+                {qrPayment && (
+                  <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 space-y-3">
+                    <p className="text-sm text-emerald-900 font-700">Quét QR Vietcombank để thanh toán</p>
+                    <img src={qrPayment.imageUrl} alt="Mã QR thanh toán Vietcombank" className="w-52 max-w-full mx-auto rounded-lg bg-white p-2" />
+                    <div className="text-xs text-emerald-900 space-y-1">
+                      <p>Số tiền: <span className="font-700">{qrPayment.amount.toLocaleString('vi-VN')}đ</span></p>
+                      <p>Nội dung: <span className="font-700">{qrPayment.content}</span></p>
+                    </div>
+                    <button onClick={() => navigator.clipboard.writeText(qrPayment.content).then(() => addToast({ type: 'success', title: 'Đã sao chép', message: 'Đã sao chép nội dung chuyển khoản' }))}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300 text-emerald-800 text-xs font-600 hover:bg-emerald-100">
+                      <Copy size={14} /> Sao chép nội dung
+                    </button>
+                    <p className="text-xs text-emerald-700">Đơn sẽ được xác nhận sau khi hệ thống kiểm tra giao dịch.</p>
                   </div>
                 )}
 

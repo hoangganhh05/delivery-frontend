@@ -100,13 +100,6 @@ export const trackOrderApi = (trackingNumber: string): Promise<ApiResponse> => {
   return axiosClient.get(`/tracking/${trackingNumber}`);
 };
 
-// Payment (VNPay)
-export const createPaymentApi = (
-  orderId: number | string,
-): Promise<ApiResponse> => {
-  return axiosClient.get(`/payment/vnpay/${orderId}`);
-};
-
 // Notifications
 export const getNotificationsApi = (): Promise<ApiResponse> => {
   return axiosClient.get("/notifications");
@@ -144,7 +137,6 @@ export default {
   createVoucherApi,
   getVouchersApi,
   trackOrderApi,
-  createPaymentApi,
   getNotificationsApi,
   getUnreadNotificationCountApi,
   markNotificationAsReadApi,
