@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw, LogOut } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { mapBackendStatusToUI } from '../utils/status';
 import { searchOrdersApi, updateShipmentStatusApi } from '../api/deliveryApi';
@@ -14,6 +14,8 @@ export default function ShipperMobile() {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [failureReason, setFailureReason] = useState('');
 
   const openDirections = (address?: string) => {
     if (!address) {
@@ -26,12 +28,14 @@ export default function ShipperMobile() {
   const fetchShipperOrders = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const res = await searchOrdersApi({ page: 0, size: 20 });
       if (res && res.data && res.data.items) {
         setShipperOrders(res.data.items);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setLoadError(err.message || 'Không thể tải danh sách đơn hàng');
     } finally {
       setLoading(false);
     }
@@ -77,11 +81,19 @@ export default function ShipperMobile() {
     { id: 'profile', icon: User, label: 'Hồ sơ' },
   ];
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  const deliveredOrders = shipperOrders.filter(order => (order.status || '').toUpperCase() === 'DELIVERED').length;
+  const activeOrders = shipperOrders.length - deliveredOrders;
+
   if (selectedOrder) {
     const rawStatus = (selectedOrder.status || 'CREATED').toUpperCase();
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col max-w-sm mx-auto">
-        <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3">
+      <div className="min-h-dvh bg-slate-50 flex flex-col max-w-5xl mx-auto">
+        <div className="sticky top-0 z-20 bg-white border-b border-slate-100 px-4 sm:px-6 py-3 flex items-center gap-3">
           <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center">
             <ArrowLeft size={15} className="text-slate-500" />
           </button>
@@ -90,10 +102,13 @@ export default function ShipperMobile() {
             <p className="text-xs text-slate-400">Mã đơn: #{selectedOrder.id}</p>
           </div>
           <StatusBadge status={mapBackendStatusToUI(rawStatus)} type="order" />
+          <button onClick={handleLogout} title="Đăng xuất" className="hidden sm:flex h-9 px-3 rounded-xl border border-red-200 text-red-600 text-xs font-600 items-center gap-1.5 hover:bg-red-50">
+            <LogOut size={14} /> Đăng xuất
+          </button>
         </div>
 
         {/* Map Header */}
-        <div className="h-44 bg-blue-600 text-white p-4 relative overflow-hidden flex flex-col justify-between">
+        <div className="h-44 sm:h-52 bg-blue-600 text-white p-4 sm:p-6 relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs text-blue-200 uppercase font-600">Điểm giao nhận</p>
@@ -108,7 +123,7 @@ export default function ShipperMobile() {
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 pb-24 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 sm:items-start">
           {/* Receiver info */}
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-2">
             <p className="text-xs font-600 text-slate-500 uppercase">Thông tin người nhận</p>
@@ -158,7 +173,11 @@ export default function ShipperMobile() {
                   <Truck size={15} /> Bắt đầu giao hàng
                 </button>
             ) : rawStatus === 'IN_TRANSIT' || rawStatus === 'SHIPPING' ? (
-                <button disabled={updating} onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED', 'Shipper đã giao thành công')} className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"><CheckCircle2 size={15} /> Xác nhận giao thành công</button>
+                <div className="space-y-2">
+                  <button disabled={updating} onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED', 'Shipper đã giao thành công')} className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"><CheckCircle2 size={15} /> {updating ? 'Đang cập nhật...' : 'Xác nhận giao thành công'}</button>
+                  <textarea value={failureReason} onChange={e => setFailureReason(e.target.value)} placeholder="Lý do giao thất bại (bắt buộc)" className="w-full min-h-20 p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:border-red-300" />
+                  <button disabled={updating || !failureReason.trim()} onClick={() => handleUpdateStatus(selectedOrder.id, 'FAILED', failureReason.trim())} className="w-full h-10 rounded-xl border border-red-200 text-red-600 text-xs font-600 hover:bg-red-50 disabled:opacity-40">Báo giao thất bại</button>
+                </div>
             ) : (
               <p className="py-3 text-center text-xs text-slate-400">Chưa có thao tác phù hợp với trạng thái hiện tại.</p>
             )}
@@ -169,28 +188,40 @@ export default function ShipperMobile() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col max-w-sm mx-auto">
-      {/* Mobile header */}
-      <div className="bg-white border-b border-slate-100 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <button onClick={() => { logout(); navigate('/login'); }} className="text-xs text-slate-400 flex items-center gap-1 hover:text-slate-600">
-            <ArrowLeft size={12} /> Đăng xuất
-          </button>
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
+    <div className="min-h-dvh bg-slate-50 flex flex-col">
+      {/* Responsive header */}
+      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100 px-4 sm:px-6 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm shadow-blue-200">
               <Truck size={12} className="text-white" />
             </div>
-            <span className="text-sm font-700 text-slate-900">Shipper App</span>
+            <div>
+              <span className="text-sm font-700 text-slate-900 block leading-tight">DeliveryMS</span>
+              <span className="text-[10px] text-slate-400">Cổng Shipper</span>
+            </div>
           </div>
-          <button onClick={fetchShipperOrders} className="p-1 text-slate-500 hover:text-blue-600">
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          </button>
+          <nav className="hidden lg:flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+            {tabs.map(({ id, icon: Icon, label }) => (
+              <button key={id} onClick={() => setActiveTab(id)} className={`h-9 px-3 rounded-lg text-xs font-600 flex items-center gap-1.5 transition-colors ${activeTab === id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                <Icon size={14} /> {label}
+              </button>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2">
+            <button onClick={fetchShipperOrders} title="Làm mới đơn hàng" className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200">
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button onClick={handleLogout} className="h-9 px-3 rounded-xl border border-red-200 text-red-600 text-xs font-600 flex items-center gap-1.5 hover:bg-red-50">
+              <LogOut size={14} /> <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 w-full max-w-6xl mx-auto overflow-y-auto pb-20 lg:pb-8">
         {activeTab === 'home' && (
-          <div className="p-4 space-y-4">
+          <div className="p-4 sm:p-6 space-y-4">
             {/* Profile banner */}
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 text-white">
               <div className="flex items-center gap-3">
@@ -204,14 +235,32 @@ export default function ShipperMobile() {
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {[
+                { label: 'Được giao', value: shipperOrders.length, tone: 'bg-blue-50 text-blue-700' },
+                { label: 'Đang xử lý', value: activeOrders, tone: 'bg-amber-50 text-amber-700' },
+                { label: 'Hoàn thành', value: deliveredOrders, tone: 'bg-emerald-50 text-emerald-700' },
+              ].map(item => (
+                <div key={item.label} className={`${item.tone} rounded-xl p-3 sm:p-4`}>
+                  <p className="text-lg sm:text-2xl font-700">{loading ? '–' : item.value}</p>
+                  <p className="text-[10px] sm:text-xs opacity-80">{item.label}</p>
+                </div>
+              ))}
+            </div>
+
             {/* Orders assigned */}
             <div>
               <p className="text-sm font-700 text-slate-900 mb-2">Đơn hàng của bạn</p>
-              <div className="space-y-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 {loading ? (
-                  <div className="py-8 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>
+                  <div className="md:col-span-2 py-10 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>
+                ) : loadError ? (
+                  <div className="md:col-span-2 py-10 text-center bg-white rounded-xl border border-red-100">
+                    <p className="text-sm text-red-600">{loadError}</p>
+                    <button onClick={fetchShipperOrders} className="mt-2 text-xs text-blue-600 font-600">Thử lại</button>
+                  </div>
                 ) : shipperOrders.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-slate-400">Không có đơn hàng nào</div>
+                  <div className="md:col-span-2 py-10 text-center text-xs text-slate-400">Không có đơn hàng nào được phân công</div>
                 ) : (
                   shipperOrders.map(order => (
                     <button key={order.id} onClick={() => setSelectedOrder(order)}
@@ -235,11 +284,18 @@ export default function ShipperMobile() {
         )}
 
         {activeTab === 'orders' && (
-          <div className="p-4 space-y-3">
+          <div className="p-4 sm:p-6 space-y-3">
             <p className="text-base font-700 text-slate-900">Danh sách tất cả đơn hàng</p>
-            {shipperOrders.map(order => (
+            <div className="grid gap-3 md:grid-cols-2">
+            {loading ? (
+              <div className="md:col-span-2 py-12 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>
+            ) : loadError ? (
+              <div className="md:col-span-2 py-12 text-center text-sm text-red-600">{loadError}</div>
+            ) : shipperOrders.length === 0 ? (
+              <div className="md:col-span-2 py-12 text-center text-xs text-slate-400">Không có đơn hàng nào được phân công</div>
+            ) : shipperOrders.map(order => (
               <button key={order.id} onClick={() => setSelectedOrder(order)}
-                className="w-full bg-white rounded-xl border border-slate-100 shadow-sm p-4 text-left">
+                className="w-full bg-white rounded-xl border border-slate-100 shadow-sm p-4 text-left hover:border-blue-200">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-sm font-700 text-blue-600">{order.trackingNumber}</p>
                   <StatusBadge status={mapBackendStatusToUI(order.status)} type="order" />
@@ -247,16 +303,22 @@ export default function ShipperMobile() {
                 <p className="text-xs text-slate-600">Nhận: {order.receiverName} ({order.receiverAddress})</p>
               </button>
             ))}
+            </div>
           </div>
         )}
 
         {activeTab === 'map' && (
-          <div className="p-4 space-y-3">
+          <div className="p-4 sm:p-6 space-y-3">
             <div>
               <p className="text-base font-700 text-slate-900">Điểm giao hàng</p>
               <p className="text-xs text-slate-400 mt-0.5">Chọn một địa chỉ để mở chỉ đường</p>
             </div>
-            {shipperOrders.length === 0 ? (
+            <div className="grid gap-3 md:grid-cols-2">
+            {loading ? (
+              <div className="md:col-span-2 py-10 text-center text-xs text-slate-400">Đang tải điểm giao hàng...</div>
+            ) : loadError ? (
+              <div className="md:col-span-2 py-10 text-center text-sm text-red-600">{loadError}</div>
+            ) : shipperOrders.length === 0 ? (
               <div className="py-10 text-center text-xs text-slate-400">Chưa có điểm giao hàng được phân công</div>
             ) : shipperOrders.map(order => (
               <button
@@ -277,25 +339,41 @@ export default function ShipperMobile() {
                 </div>
               </button>
             ))}
+            </div>
           </div>
         )}
 
         {activeTab === 'profile' && (
-          <div className="p-4 space-y-4">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 text-center">
-              <h3 className="text-base font-700 text-slate-900">{user?.fullName || user?.username || 'Shipper'}</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Role: SHIPPER</p>
+          <div className="p-4 sm:p-6 space-y-4 max-w-2xl">
+            <h2 className="text-base font-700 text-slate-900">Hồ sơ Shipper</h2>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-700">
+                  {(user?.fullName || user?.username || 'S').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-base font-700 text-slate-900">{user?.fullName || user?.username || 'Shipper'}</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">@{user?.username || 'shipper'}</p>
+                </div>
+              </div>
+              <div className="py-4 flex items-center justify-between text-sm">
+                <span className="text-slate-500">Trạng thái tài khoản</span>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-600">Đang hoạt động</span>
+              </div>
+              <button onClick={handleLogout} className="w-full h-11 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-600 flex items-center justify-center gap-2 hover:bg-red-100">
+                <LogOut size={16} /> Đăng xuất khỏi tài khoản
+              </button>
             </div>
           </div>
         )}
       </div>
 
       {/* Bottom Nav */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white border-t border-slate-100 px-4 py-3 z-20">
+      <div className="fixed lg:hidden bottom-0 left-0 right-0 w-full bg-white border-t border-slate-100 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-20">
         <div className="flex justify-around">
           {tabs.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setActiveTab(id)}
-              className={`flex flex-col items-center gap-0.5 ${activeTab === id ? 'text-blue-600' : 'text-slate-400'}`}>
+              className={`min-w-16 min-h-11 flex flex-col items-center justify-center gap-0.5 ${activeTab === id ? 'text-blue-600' : 'text-slate-400'}`}>
               <Icon size={20} />
               <span className="text-[10px] font-500">{label}</span>
             </button>
