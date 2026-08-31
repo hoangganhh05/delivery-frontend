@@ -44,7 +44,11 @@ axiosClient.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("username");
       localStorage.removeItem("role");
+      localStorage.removeItem("fullName");
       window.dispatchEvent(new Event("auth:unauthorized"));
+      if (window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
     }
 
     let errorMessage = "";

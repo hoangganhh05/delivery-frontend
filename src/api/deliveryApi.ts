@@ -6,6 +6,14 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
+export interface VoucherCalculationResponse {
+  code: string;
+  orderAmount: number;
+  shippingFee: number | null;
+  discountAmount: number;
+  finalAmount: number;
+}
+
 // Authentication
 export const loginApi = (data: any): Promise<ApiResponse> => {
   return axiosClient.post("/auth/login", data);
@@ -83,7 +91,7 @@ export const calculateVoucherApi = (data: {
   voucherCode: string;
   orderAmount: number;
   shippingFee?: number;
-}): Promise<ApiResponse> => {
+}): Promise<ApiResponse<VoucherCalculationResponse>> => {
   return axiosClient.post("/vouchers/calculate", data);
 };
 

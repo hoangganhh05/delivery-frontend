@@ -68,9 +68,9 @@ export default function CustomerView() {
         shippingFee: selectedService.fee,
       });
       if (res && res.data != null) {
-        setDiscountFee(Number(res.data));
+        setDiscountFee(Number(res.data.discountAmount));
         setVoucherCode(code.trim().toUpperCase());
-        addToast({ type: 'success', title: 'Áp dụng Voucher', message: `Giảm ${(Number(res.data)).toLocaleString()}đ cước phí` });
+        addToast({ type: 'success', title: 'Áp dụng Voucher', message: `Giảm ${Number(res.data.discountAmount).toLocaleString()}đ cước phí` });
       }
     } catch (err: any) {
       addToast({ type: 'error', title: 'Lỗi Voucher', message: err.message || 'Voucher không hợp lệ' });
