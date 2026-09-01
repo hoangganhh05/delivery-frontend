@@ -64,7 +64,7 @@ function AppRoutes() {
           <Route path="/notifications" element={allow(['Admin', 'Staff'], <Notifications />)} />
           <Route path="/tracking" element={allow(['Admin', 'Staff'], <Tracking />)} />
           <Route path="/reports" element={allow(['Admin', 'Staff'], <Reports />)} />
-          <Route path="/settings" element={allow(['Admin'], <Settings />)} />
+          <Route path="/settings" element={allow(['Admin', 'Staff'], <Settings />)} />
         </Route>
       ) : (
         <Route path="*" element={<Navigate to="/login" replace />} />

@@ -1,9 +1,20 @@
 import axiosClient from "./axiosClient";
+import type {
+  ChangePasswordRequest,
+  PasswordChangeResponse,
+  UpdateProfileRequest,
+  UpdateUserSettingsRequest,
+  UserAddress,
+  UserAddressRequest,
+  UserMe,
+  UserSettings,
+} from "../types/account";
 
 export interface ApiResponse<T = any> {
   code: string;
   message: string;
   data: T;
+  httpStatus: number;
 }
 
 export interface VoucherCalculationResponse {
@@ -86,6 +97,57 @@ export const getUsersApi = (): Promise<ApiResponse> => {
   return axiosClient.get("/users");
 };
 
+export const getCurrentUserApi = (): Promise<ApiResponse<UserMe>> => {
+  return axiosClient.get("/users/me");
+};
+
+export const updateCurrentUserProfileApi = (
+  data: UpdateProfileRequest,
+): Promise<ApiResponse<UserMe>> => {
+  return axiosClient.put("/users/profile", data);
+};
+
+export const changePasswordApi = (
+  data: ChangePasswordRequest,
+): Promise<ApiResponse<PasswordChangeResponse>> => {
+  return axiosClient.put("/users/change-password", data);
+};
+
+export const getUserAddressesApi = (): Promise<ApiResponse<UserAddress[]>> => {
+  return axiosClient.get("/users/addresses");
+};
+
+export const createUserAddressApi = (
+  data: UserAddressRequest,
+): Promise<ApiResponse<UserAddress>> => {
+  return axiosClient.post("/users/addresses", data);
+};
+
+export const updateUserAddressApi = (
+  id: number,
+  data: UserAddressRequest,
+): Promise<ApiResponse<UserAddress>> => {
+  return axiosClient.put(`/users/addresses/${id}`, data);
+};
+
+export const deleteUserAddressApi = (
+  id: number,
+): Promise<ApiResponse<UserAddress[]>> => {
+  return axiosClient.delete(`/users/addresses/${id}`);
+};
+
+export const setDefaultUserAddressApi = (
+  id: number,
+): Promise<ApiResponse<UserAddress>> => {
+  return axiosClient.put(`/users/addresses/${id}/default`);
+};
+
+export const updateCurrentUserSettingsApi = (
+  data: UpdateUserSettingsRequest,
+): Promise<ApiResponse<UserSettings>> => {
+  return axiosClient.put("/users/settings", data);
+};
+
 // Vouchers
 export const calculateVoucherApi = (data: {
   voucherCode: string;
@@ -141,6 +203,15 @@ export default {
   getShipperApi,
   getShipperOrdersApi,
   getUsersApi,
+  getCurrentUserApi,
+  updateCurrentUserProfileApi,
+  changePasswordApi,
+  getUserAddressesApi,
+  createUserAddressApi,
+  updateUserAddressApi,
+  deleteUserAddressApi,
+  setDefaultUserAddressApi,
+  updateCurrentUserSettingsApi,
   calculateVoucherApi,
   createVoucherApi,
   getVouchersApi,

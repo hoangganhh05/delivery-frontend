@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import { mapBackendStatusToUI } from '../utils/status';
 import { searchOrdersApi, updateShipmentStatusApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
+import AccountSettings from '../components/AccountSettings';
 
 export default function ShipperMobile() {
   const navigate = useNavigate();
@@ -344,26 +345,8 @@ export default function ShipperMobile() {
         )}
 
         {activeTab === 'profile' && (
-          <div className="p-4 sm:p-6 space-y-4 max-w-2xl">
-            <h2 className="text-base font-700 text-slate-900">Hồ sơ Shipper</h2>
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-700">
-                  {(user?.fullName || user?.username || 'S').charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="text-base font-700 text-slate-900">{user?.fullName || user?.username || 'Shipper'}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">@{user?.username || 'shipper'}</p>
-                </div>
-              </div>
-              <div className="py-4 flex items-center justify-between text-sm">
-                <span className="text-slate-500">Trạng thái tài khoản</span>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-600">Đang hoạt động</span>
-              </div>
-              <button onClick={handleLogout} className="w-full h-11 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-600 flex items-center justify-center gap-2 hover:bg-red-100">
-                <LogOut size={16} /> Đăng xuất khỏi tài khoản
-              </button>
-            </div>
+          <div className="p-4 sm:p-6">
+            <AccountSettings embedded />
           </div>
         )}
       </div>

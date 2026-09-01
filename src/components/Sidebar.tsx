@@ -42,7 +42,7 @@ const allNavGroups = [
     items: [
       { path: '/notifications', icon: Bell, label: 'Thông báo', roles: ['Admin', 'Staff'] },
       { path: '/reports', icon: BarChart2, label: 'Báo cáo', roles: ['Admin', 'Staff'] },
-      { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin'] },
+      { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin', 'Staff'] },
     ]
   },
 ];

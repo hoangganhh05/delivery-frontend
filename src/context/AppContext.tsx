@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { getCurrentUserApi } from '../api/deliveryApi';
+import type { UserMe, UserSettings } from '../types/account';
+import { applyUserPreferences } from '../utils/userPreferences';
 
 export type Role = 'Admin' | 'Staff' | 'Shipper' | 'Customer';
 
@@ -18,9 +21,17 @@ interface ConfirmDialog {
 }
 
 export interface UserInfo {
+  id?: number;
   username: string;
   fullName: string;
   role: Role;
+  email?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string | null;
+  gender?: UserMe['gender'];
+  avatarUrl?: string | null;
+  status?: string;
+  settings?: UserSettings;
 }
 
 interface AppContextValue {
@@ -30,6 +41,9 @@ interface AppContextValue {
   user: UserInfo | null;
   login: (r: Role) => void;
   loginWithAuthData: (token: string, username: string, rawRole: string, fullName?: string) => void;
+  updateCurrentUser: (profile: UserMe) => void;
+  updateCurrentUserSettings: (settings: UserSettings) => void;
+  refreshCurrentUser: () => Promise<UserMe | null>;
   logout: () => void;
   toasts: Toast[];
   addToast: (t: Omit<Toast, 'id'>) => void;
@@ -66,9 +80,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token');
     const username = localStorage.getItem('username');
     const savedRole = localStorage.getItem('role');
-    const fullName = localStorage.getItem('fullName') || username || '';
     if (token && username) {
-      return { username, fullName, role: normalizeRole(savedRole || 'Admin') };
+      return { username, fullName: username, role: normalizeRole(savedRole || 'Customer') };
     }
     return null;
   });
@@ -87,12 +100,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token);
     localStorage.setItem('username', username);
     localStorage.setItem('role', parsedRole);
-    if (fullName) localStorage.setItem('fullName', fullName);
+    localStorage.removeItem('fullName');
 
     setRoleState(parsedRole);
     setUser({ username, fullName: fullName || username, role: parsedRole });
     setIsLoggedIn(true);
   }, []);
+
+  const updateCurrentUser = useCallback((profile: UserMe) => {
+    const parsedRole = normalizeRole(profile.role);
+    localStorage.setItem('username', profile.username);
+    localStorage.setItem('role', parsedRole);
+    setRoleState(parsedRole);
+    setUser({
+      id: profile.id,
+      username: profile.username,
+      fullName: profile.fullName || profile.username,
+      role: parsedRole,
+      email: profile.email,
+      phoneNumber: profile.phoneNumber,
+      dateOfBirth: profile.dateOfBirth,
+      gender: profile.gender,
+      avatarUrl: profile.avatarUrl,
+      status: profile.status,
+      settings: profile.settings,
+    });
+    applyUserPreferences(profile.settings);
+  }, []);
+
+  const updateCurrentUserSettings = useCallback((settings: UserSettings) => {
+    setUser((current) => current ? { ...current, settings } : current);
+    applyUserPreferences(settings);
+  }, []);
+
+  const refreshCurrentUser = useCallback(async (): Promise<UserMe | null> => {
+    if (!localStorage.getItem('token')) return null;
+    try {
+      const response = await getCurrentUserApi();
+      if (response.httpStatus === 200 && response.data) {
+        updateCurrentUser(response.data);
+        return response.data;
+      }
+    } catch {
+      // Lỗi 401 đã được interceptor xử lý. Các lỗi mạng tạm thời không xóa phiên.
+    }
+    return null;
+  }, [updateCurrentUser]);
 
   const login = useCallback((r: Role) => {
     setRoleState(r);
@@ -106,7 +159,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('fullName');
     setIsLoggedIn(false);
     setUser(null);
+    applyUserPreferences(null);
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) void refreshCurrentUser();
+  }, [isLoggedIn, refreshCurrentUser]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -131,7 +189,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      role, setRole, isLoggedIn, user, login, loginWithAuthData, logout,
+      role, setRole, isLoggedIn, user, login, loginWithAuthData,
+      updateCurrentUser, updateCurrentUserSettings, refreshCurrentUser, logout,
       toasts, addToast, removeToast,
       confirm, openConfirm, closeConfirm,
       sidebarOpen, setSidebarOpen,

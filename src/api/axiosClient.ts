@@ -32,8 +32,12 @@ axiosClient.interceptors.request.use(
 // Response interceptor: Bóc tách ResponseData & xử lý lỗi hệ thống/xác thực
 axiosClient.interceptors.response.use(
   (response) => {
-    // Backend trả về ResponseData { code, message, data } -> trả về response.data
-    return response.data;
+    // Giữ HTTP status bên cạnh envelope ResponseData để UI chỉ báo thành công
+    // khi đúng status mà từng thao tác yêu cầu.
+    return {
+      ...response.data,
+      httpStatus: response.status,
+    };
   },
   (error) => {
     const status = error.response ? error.response.status : null;

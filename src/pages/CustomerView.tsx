@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import { mapBackendStatusToUI } from '../utils/status';
 import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
+import AccountSettings from '../components/AccountSettings';
 
 const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Dịch vụ', 'Voucher', 'Thanh toán', 'Xác nhận'];
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -670,26 +671,8 @@ export default function CustomerView() {
         )}
 
         {tab === 'profile' && (
-          <div className="space-y-4 max-w-2xl">
-            <h2 className="text-base font-700 text-slate-900">Tài khoản của tôi</h2>
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-700">
-                  {(user?.fullName || user?.username || 'K').charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-base font-700 text-slate-900">{user?.fullName || user?.username || 'Khách hàng'}</p>
-                  <p className="text-xs text-slate-500">@{user?.username || 'customer'}</p>
-                </div>
-              </div>
-              <div className="py-4 flex items-center justify-between text-sm">
-                <span className="text-slate-500">Vai trò</span>
-                <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-600">Khách hàng</span>
-              </div>
-              <button onClick={handleLogout} className="w-full h-11 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-600 flex items-center justify-center gap-2 hover:bg-red-100">
-                <LogOut size={16} /> Đăng xuất khỏi tài khoản
-              </button>
-            </div>
+          <div className="w-full">
+            <AccountSettings embedded />
           </div>
         )}
       </div>
