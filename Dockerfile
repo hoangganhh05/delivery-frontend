@@ -11,6 +11,8 @@ RUN npm ci
 
 # Copy source code and build
 COPY . .
+ARG VITE_API_BASE_URL=https://delivery-management-backend-fqen.onrender.com/api/v1
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
 # ===================================================

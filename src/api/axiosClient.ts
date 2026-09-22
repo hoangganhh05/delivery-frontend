@@ -1,9 +1,10 @@
 import axios from "axios";
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.PROD
-    ? "https://delivery-management-backend-fqen.onrender.com/api/v1"
-    : "http://localhost:8080/api/v1");
+// The hosted API is the safe default for Figma Make and standalone previews.
+// Override this at build time for a local backend or the Docker reverse proxy.
+const DEFAULT_API_BASE_URL =
+  "https://delivery-management-backend-fqen.onrender.com/api/v1";
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
 const API_BASE_URL = rawBaseUrl.endsWith("/")
   ? rawBaseUrl.slice(0, -1)
   : rawBaseUrl;
