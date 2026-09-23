@@ -85,23 +85,23 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-40 w-60 min-h-screen bg-white border-r border-slate-100
+    <aside className={`app-sidebar fixed inset-y-0 left-0 z-40 w-60 min-h-screen border-r
       flex flex-col flex-shrink-0 transition-all duration-200 lg:static lg:z-auto
       ${sidebarOpen ? 'translate-x-0 lg:w-60' : '-translate-x-full lg:translate-x-0 lg:w-16'}`}>
       {/* Logo */}
-      <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-100 overflow-hidden">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+      <div className="sidebar-brand h-[4.25rem] px-4 flex items-center gap-3 border-b overflow-hidden">
+        <div className="sidebar-logo w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0">
           <Truck size={16} className="text-white" />
         </div>
         {sidebarOpen && (
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-700 text-slate-900 leading-tight truncate">DeliveryMS</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Giao hàng thông minh</p>
+            <p className="sidebar-title text-sm font-800 leading-tight truncate tracking-tight">DeliveryMS</p>
+            <p className="sidebar-caption text-[10px] leading-tight mt-0.5">Giao hàng thông minh</p>
           </div>
         )}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="w-6 h-6 rounded-md hover:bg-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0"
+          className="sidebar-toggle w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
         >
           {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
         </button>
@@ -115,7 +115,7 @@ export default function Sidebar() {
           return (
             <div key={group.label} className="mb-5">
               {sidebarOpen && (
-                <p className="text-[10px] font-600 text-slate-400 uppercase tracking-wider px-3 mb-1.5">
+                <p className="sidebar-group text-[10px] font-700 uppercase tracking-[0.15em] px-3 mb-2">
                   {group.label}
                 </p>
               )}
@@ -127,10 +127,10 @@ export default function Sidebar() {
                     to={path}
                     onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
                     title={!sidebarOpen ? label : undefined}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-sm font-500 transition-colors
-                      ${isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                    className={`sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 text-sm font-600
+                      ${isActive ? 'sidebar-link-active' : ''}`}
                   >
-                    <Icon size={16} className={`flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <Icon size={16} className="flex-shrink-0" />
                     {sidebarOpen && (
                       <>
                         <span className="flex-1 truncate">{label}</span>
@@ -147,14 +147,13 @@ export default function Sidebar() {
         {/* Demo views */}
         {sidebarOpen && (
           <div className="mb-4">
-            <p className="text-[10px] font-600 text-slate-400 uppercase tracking-wider px-3 mb-1.5">Trải nghiệm</p>
+            <p className="sidebar-group text-[10px] font-700 uppercase tracking-[0.15em] px-3 mb-2">Trải nghiệm</p>
             {demoViews.map(({ path, label, icon: Icon }) => {
               const isActive = location.pathname === path;
               return (
                 <NavLink key={path} to={path} onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-xs font-500 transition-colors
-                    ${isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
-                  <Icon size={13} className="text-slate-400 flex-shrink-0" />
+                  className={`sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 text-xs font-600 ${isActive ? 'sidebar-link-active' : ''}`}>
+                  <Icon size={14} className="flex-shrink-0" />
                   <span className="truncate">{label}</span>
                 </NavLink>
               );
@@ -164,15 +163,15 @@ export default function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-slate-100 p-3">
+      <div className="sidebar-user border-t p-3">
         {sidebarOpen ? (
           <div>
-            <NavLink to="/settings" className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50 cursor-pointer mb-1">
+            <NavLink to="/settings" className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 cursor-pointer mb-1">
               <div className={`w-8 h-8 ${info.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
                 <span className={`text-xs font-700 ${info.color}`}>{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-600 text-slate-900 truncate">{displayName}</p>
+                <p className="sidebar-user-name text-xs font-700 truncate">{displayName}</p>
                 <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-600 ${info.bg} ${info.color}`}>
                   {role.toUpperCase()}
                 </span>

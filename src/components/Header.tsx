@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Bell, HelpCircle, ChevronDown, LogOut, User, Settings, Menu, X } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut, Settings, Menu, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp, type Role } from '../context/AppContext';
 
@@ -67,7 +67,7 @@ export default function Header() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center px-3 sm:px-4 gap-2 sm:gap-3 flex-shrink-0">
+    <header className="app-header z-20 border-b flex items-center px-3 sm:px-5 gap-2 sm:gap-3 flex-shrink-0">
       {/* Mobile hamburger */}
       <button onClick={() => setSidebarOpen(!sidebarOpen)}
         className="w-8 h-8 rounded-lg hover:bg-slate-50 flex items-center justify-center text-slate-400 lg:hidden">
@@ -76,7 +76,8 @@ export default function Header() {
 
       {/* Page title */}
       <div className="flex-1">
-        <h1 className="text-sm font-600 text-slate-900 truncate">{title}</h1>
+        <p className="text-[10px] font-700 uppercase tracking-[0.16em] text-slate-400">DeliveryMS</p>
+        <h1 className="text-sm font-700 text-slate-900 truncate">{title}</h1>
       </div>
 
       {/* Search */}
@@ -92,8 +93,8 @@ export default function Header() {
               navigate(`/orders?keyword=${encodeURIComponent(search.trim())}`);
             }
           }}
-          className="h-9 w-64 pl-9 pr-4 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none
-            focus:border-blue-400 focus:bg-white placeholder-slate-400 text-slate-700 transition-all
+          className="h-10 w-64 pl-9 pr-4 text-sm bg-slate-100/70 border border-slate-200/80 rounded-xl outline-none shadow-inner
+            focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100 placeholder-slate-400 text-slate-700
             focus:w-80"
         />
       </div>
@@ -101,7 +102,7 @@ export default function Header() {
       {/* Notifications */}
       <button
         onClick={() => navigate('/notifications')}
-        className="w-8 h-8 rounded-lg hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 relative"
+        className="w-10 h-10 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white flex items-center justify-center text-slate-400 hover:text-slate-700 relative"
       >
         <Bell size={17} />
         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
@@ -111,9 +112,9 @@ export default function Header() {
       <div className="relative" ref={userMenuRef}>
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="flex items-center gap-2.5 pl-3 border-l border-slate-100 hover:opacity-80"
+          className="flex items-center gap-2.5 pl-3 border-l border-slate-200/70 hover:opacity-90"
         >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-700 ${roleColors[role]}`}>
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-800 ring-2 ring-white shadow-sm ${roleColors[role]}`}>
             {initial}
           </div>
           <div className="hidden sm:block text-left">
@@ -124,7 +125,7 @@ export default function Header() {
         </button>
 
         {showUserMenu && (
-          <div className="absolute right-0 top-12 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50
+          <div className="absolute right-0 top-14 w-60 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50
             animate-in slide-in-from-top-2 fade-in duration-150">
             <div className="px-3 py-2 border-b border-slate-50 mb-1">
               <p className="text-xs font-600 text-slate-900">{displayName}</p>

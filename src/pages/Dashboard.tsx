@@ -143,34 +143,35 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
+    <div className="p-4 sm:p-6 lg:p-7 space-y-5 sm:space-y-6 max-w-[1600px] mx-auto">
       {/* Welcome bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm text-slate-500">Không gian quản lý giao hàng</p>
-          <h2 className="text-xl font-700 text-slate-900">
+      <div className="dashboard-hero rounded-2xl p-5 sm:p-7 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between text-white">
+        <div className="relative z-10">
+          <p className="text-xs font-700 uppercase tracking-[0.18em] text-indigo-200 mb-2">Trung tâm vận hành</p>
+          <h2 className="text-2xl sm:text-3xl font-800 tracking-tight text-white">
             Xin chào, {user?.fullName || user?.username || 'Quản trị viên'}! 👋
           </h2>
+          <p className="text-sm text-indigo-100/80 mt-2 max-w-xl">Theo dõi đơn hàng, doanh thu và hiệu suất giao nhận trong một không gian thống nhất.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Dữ liệu đang cập nhật</span>
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <div className="relative z-10 flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-2 self-start sm:self-auto backdrop-blur-sm">
+          <div className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse shadow-[0_0_0_4px_rgba(110,231,183,0.12)]" />
+          <span className="text-xs font-600 text-white/90">Hệ thống đang hoạt động</span>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {kpis.map(({ label, value, icon: Icon, change, trend, sub, color, bg }) => (
-          <div key={label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+          <div key={label} className="kpi-card bg-white rounded-2xl p-5 border border-slate-100">
             <div className="flex items-start justify-between mb-4">
-              <div className={`w-10 h-10 ${bg} rounded-lg flex items-center justify-center`}>
+              <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center ring-1 ring-inset ring-black/[0.03]`}>
                 <Icon size={18} className={color} />
               </div>
               <div className="flex items-center gap-1 text-xs font-500 text-slate-500">
                 {change}
               </div>
             </div>
-            <p className="text-2xl font-700 text-slate-900 mb-1">{value}</p>
+            <p className="text-2xl font-800 tracking-tight text-slate-900 mb-1">{value}</p>
             <p className="text-sm font-500 text-slate-600 mb-0.5">{label}</p>
             <p className="text-xs text-slate-400">{sub}</p>
           </div>
@@ -180,7 +181,7 @@ export default function Dashboard() {
       {/* Charts row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Order Analytics - 2/3 */}
-        <div className="xl:col-span-2 bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100 min-w-0">
+        <div className="xl:col-span-2 bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 min-w-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
             <div>
               <h3 className="text-sm font-600 text-slate-900">Thống kê đơn hàng</h3>
@@ -205,7 +206,7 @@ export default function Dashboard() {
         </div>
 
         {/* Order Status Donut - 1/3 */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-100">
           <h3 className="text-sm font-600 text-slate-900 mb-1">Tỷ lệ trạng thái đơn</h3>
           <p className="text-xs text-slate-400 mb-4">Phân bổ dữ liệu thực tế</p>
           <ResponsiveContainer width="100%" height={140}>
@@ -237,7 +238,7 @@ export default function Dashboard() {
       {/* Revenue chart + Recent orders */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Revenue */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-100">
           <h3 className="text-sm font-600 text-slate-900 mb-1">Doanh thu cước vận chuyển</h3>
           <p className="text-xs text-slate-400 mb-4">VNĐ</p>
           <ResponsiveContainer width="100%" height={180}>
@@ -252,7 +253,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Orders */}
-        <div className="xl:col-span-2 bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-100 min-w-0">
+        <div className="xl:col-span-2 bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-600 text-slate-900">Đơn hàng mới nhất</h3>
             <button

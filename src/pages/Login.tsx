@@ -125,9 +125,9 @@ export default function Login() {
   const selected = roleCards.find(c => c.role === selectedRole) || roleCards[0];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex">
+    <div className="login-shell min-h-screen flex">
       {/* Left decorative panel */}
-      <div className="hidden lg:flex w-[480px] bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 flex-col justify-between p-12 flex-shrink-0 relative overflow-hidden">
+      <div className="login-aside hidden lg:flex w-[500px] flex-col justify-between p-12 flex-shrink-0 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
             <circle cx="350" cy="50" r="200" fill="white" />
@@ -137,7 +137,7 @@ export default function Login() {
 
         <div className="relative">
           <div className="flex items-center gap-3 mb-16">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-11 h-11 bg-white/15 border border-white/20 rounded-2xl flex items-center justify-center shadow-xl">
               <Truck size={20} className="text-white" />
             </div>
             <div>
@@ -146,7 +146,7 @@ export default function Login() {
             </div>
           </div>
 
-          <h1 className="text-4xl font-800 text-white leading-tight mb-5">
+          <h1 className="text-[2.65rem] font-800 tracking-tight text-white leading-[1.12] mb-5">
             Quản lý giao<br />hàng thông minh
           </h1>
           <p className="text-blue-200 text-base leading-relaxed">
@@ -174,8 +174,8 @@ export default function Login() {
       </div>
 
       {/* Right login panel */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-5 sm:p-8 lg:p-12">
+        <div className="login-panel w-full max-w-lg rounded-[2rem] p-6 sm:p-9">
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-10 lg:hidden">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -185,7 +185,8 @@ export default function Login() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-800 text-slate-900">Đăng nhập DeliveryMS</h2>
+            <p className="text-[11px] font-700 uppercase tracking-[0.18em] text-blue-600 mb-2">Chào mừng trở lại</p>
+            <h2 className="text-2xl sm:text-3xl font-800 tracking-tight text-slate-900">Đăng nhập DeliveryMS</h2>
             <p className="text-slate-500 text-sm mt-1">Chọn vai trò hoặc nhập thông tin tài khoản</p>
           </div>
 
@@ -199,8 +200,8 @@ export default function Login() {
                   <button
                     key={role}
                     onClick={() => handleRoleSelect(role)}
-                    className={`p-3 rounded-xl border-2 text-left transition-all
-                      ${isSelected ? `${border} ${bg}` : 'border-slate-100 bg-white hover:border-slate-200'}`}
+                    className={`p-3 rounded-2xl border text-left transition-all
+                      ${isSelected ? `${border} ${bg} shadow-sm` : 'border-slate-200/70 bg-white/70 hover:border-slate-300 hover:-translate-y-0.5'}`}
                   >
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 ${isSelected ? bg : 'bg-slate-100'}`}>
                       <Icon size={14} className={isSelected ? color : 'text-slate-400'} />
@@ -256,8 +257,8 @@ export default function Login() {
             <button
               onClick={handleLogin}
               disabled={loading}
-              className="w-full h-11 rounded-xl bg-blue-600 text-white text-sm font-600 hover:bg-blue-700 disabled:opacity-70
-                flex items-center justify-center gap-2 transition-colors"
+              className="w-full h-12 rounded-xl bg-blue-600 text-white text-sm font-700 hover:bg-blue-700 disabled:opacity-70
+                flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
             >
               {loading ? (
                 <>

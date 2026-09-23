@@ -63,7 +63,7 @@ const INITIAL_SETTINGS: UserSettings = {
   serviceAlertNotifications: true,
   language: "vi",
   theme: "LIGHT",
-  accentColor: "#2563EB",
+  accentColor: "#4F46E5",
 };
 
 const EMPTY_ADDRESS: UserAddressRequest = {
@@ -856,7 +856,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
               <div>
                 <FieldLabel>Màu chủ đạo</FieldLabel>
                 <div className="flex flex-wrap gap-2">
-                  {["#2563EB", "#7C3AED", "#059669", "#DC2626", "#D97706", "#0891B2"].map((color) => (
+                  {["#4F46E5", "#2563EB", "#7C3AED", "#059669", "#DC2626", "#D97706", "#0891B2"].map((color) => (
                     <button key={color} type="button" disabled={savingSettings} aria-label={`Chọn màu ${color}`} onClick={() => setSettings((current) => ({ ...current, accentColor: color }))} className={`h-9 w-9 rounded-full border-2 disabled:opacity-50 ${settings.accentColor === color ? "scale-110 border-slate-500" : "border-transparent"}`} style={{ backgroundColor: color }} />
                   ))}
                 </div>
