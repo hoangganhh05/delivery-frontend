@@ -33,6 +33,7 @@ axiosClient.interceptors.request.use(
 // Response interceptor: Bóc tách ResponseData & xử lý lỗi hệ thống/xác thực
 axiosClient.interceptors.response.use(
   (response) => {
+    if (response.config.responseType === "blob") return response.data;
     // Giữ HTTP status bên cạnh envelope ResponseData để UI chỉ báo thành công
     // khi đúng status mà từng thao tác yêu cầu.
     return {

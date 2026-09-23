@@ -11,38 +11,38 @@ const allNavGroups = [
   {
     label: 'Tổng quan',
     items: [
-      { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Staff'] },
+      { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Staff'], permission: 'VIEW_REPORTS' },
     ]
   },
   {
     label: 'Vận hành',
     items: [
-      { path: '/orders', icon: Package, label: 'Đơn hàng', roles: ['Admin', 'Staff'] },
-      { path: '/dispatch', icon: Navigation, label: 'Điều phối', roles: ['Admin', 'Staff'] },
-      { path: '/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Staff'] },
+      { path: '/orders', icon: Package, label: 'Đơn hàng', roles: ['Admin', 'Staff'], permission: 'VIEW_ORDERS' },
+      { path: '/dispatch', icon: Navigation, label: 'Điều phối', roles: ['Admin', 'Staff'], permission: 'ASSIGN_SHIPPER' },
+      { path: '/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Staff'], permission: 'VIEW_ORDERS' },
     ]
   },
   {
     label: 'Quản lý',
     items: [
-      { path: '/shippers', icon: Truck, label: 'Shipper', roles: ['Admin', 'Staff'] },
-      { path: '/users', icon: Users, label: 'Người dùng', roles: ['Admin'] },
-      { path: '/permissions', icon: Settings, label: 'Phân quyền', roles: ['Admin'] },
+      { path: '/shippers', icon: Truck, label: 'Shipper', roles: ['Admin', 'Staff'], permission: 'VIEW_SHIPPERS' },
+      { path: '/users', icon: Users, label: 'Người dùng', roles: ['Admin', 'Staff'], permission: 'VIEW_USERS' },
+      { path: '/permissions', icon: Settings, label: 'Phân quyền', roles: ['Admin', 'Staff'], permission: 'MANAGE_ROLES' },
     ]
   },
   {
     label: 'Tài chính',
     items: [
-      { path: '/payments', icon: CreditCard, label: 'Thanh toán', roles: ['Admin', 'Staff'] },
-      { path: '/vouchers', icon: Tag, label: 'Voucher', roles: ['Admin', 'Staff'] },
+      { path: '/payments', icon: CreditCard, label: 'Thanh toán', roles: ['Admin', 'Staff'], permission: 'VIEW_PAYMENTS' },
+      { path: '/vouchers', icon: Tag, label: 'Voucher', roles: ['Admin', 'Staff'], permission: 'MANAGE_VOUCHERS' },
     ]
   },
   {
     label: 'Khác',
     items: [
-      { path: '/notifications', icon: Bell, label: 'Thông báo', roles: ['Admin', 'Staff'] },
-      { path: '/reports', icon: BarChart2, label: 'Báo cáo', roles: ['Admin', 'Staff'] },
-      { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin', 'Staff'] },
+      { path: '/notifications', icon: Bell, label: 'Thông báo', roles: ['Admin', 'Staff'], permission: 'VIEW_NOTIFICATIONS' },
+      { path: '/reports', icon: BarChart2, label: 'Báo cáo', roles: ['Admin', 'Staff'], permission: 'VIEW_REPORTS' },
+      { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin', 'Staff'], permission: 'SYSTEM_SETTINGS' },
     ]
   },
 ];
@@ -61,7 +61,7 @@ const roleInfo: Record<Role, { color: string; bg: string; initials: string }> = 
 
 export default function Sidebar() {
   const location = useLocation();
-  const { role, user, logout, openConfirm, sidebarOpen, setSidebarOpen, addToast } = useApp();
+  const { role, user, logout, openConfirm, sidebarOpen, setSidebarOpen, addToast, hasPermission } = useApp();
   const info = roleInfo[role];
   const displayName = user?.fullName || user?.username || role;
   const initials = displayName
@@ -110,7 +110,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2">
         {allNavGroups.map((group) => {
-          const visibleItems = group.items.filter(item => item.roles.includes(role));
+          const visibleItems = group.items.filter(item => item.roles.includes(role) && hasPermission(item.permission));
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label} className="mb-5">

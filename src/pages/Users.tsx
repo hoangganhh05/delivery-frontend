@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Shield, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import { getUsersApi } from '../api/deliveryApi';
+import { getUsersApi, updateUserRoleApi, type ApiRole } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 
 export default function Users() {
@@ -32,6 +32,19 @@ export default function Users() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const changeRole = async (id: number, role: string) => {
+    try {
+      const response = await updateUserRoleApi(id, role.toUpperCase() as ApiRole);
+      const updated = response.data;
+      setUsersList(current => current.map(user => user.id === id ? {
+        ...user, role: updated.role.charAt(0) + updated.role.slice(1).toLowerCase(),
+      } : user));
+      addToast({ type: 'success', title: 'Đã cập nhật vai trò' });
+    } catch (error: any) {
+      addToast({ type: 'error', title: 'Không thể đổi vai trò', message: error.message });
+    }
+  };
 
   const filtered = usersList.filter(u => {
     const name = u.fullName || u.username;
@@ -80,10 +93,11 @@ export default function Users() {
                 <td className="py-3 px-4 text-xs text-slate-600">{user.phone}</td>
                 <td className="py-3 px-4 text-xs text-slate-500">{user.email}</td>
                 <td className="py-3 px-4">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-600 bg-blue-50 text-blue-700">
-                    <Shield size={10} />
-                    {user.role}
-                  </span>
+                  <div className="flex items-center gap-1 text-blue-700"><Shield size={11} />
+                    <select value={user.role} onChange={event => changeRole(user.id, event.target.value)} className="h-8 px-2 rounded-lg bg-blue-50 text-xs font-600 border-0">
+                      {['Admin', 'Staff', 'Shipper', 'Customer'].map(role => <option key={role}>{role}</option>)}
+                    </select>
+                  </div>
                 </td>
                 <td className="py-3 px-4">
                   <StatusBadge status={user.status} type="user" />

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { mapBackendStatusToUI } from '../utils/status';
-import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi } from '../api/deliveryApi';
+import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 
@@ -121,6 +121,7 @@ export default function CustomerView() {
         shippingFee: selectedService.fee,
         voucherCode: voucherCode || null,
         codAmount: Number(codAmount),
+        paymentMethod,
         items: [
           {
             itemName: itemName || 'Kiện hàng',
@@ -139,17 +140,19 @@ export default function CustomerView() {
         fetchCustomerOrders();
 
         if (paymentMethod === 'VCB_QR') {
-          const amount = Math.max(0, Number(res.data.totalFee ?? selectedService.fee - discountFee));
-          const content = `DH ${res.data.trackingNumber}`;
+          const qrResponse = await getOrderQrPaymentApi(Number(res.data.id));
+          const qr = qrResponse.data;
+          const amount = Number(qr.amount);
+          const content = qr.transferContent;
           const query = new URLSearchParams({
             amount: String(Math.round(amount)),
             addInfo: content,
-            accountName: 'CAO HOANG ANH',
+            accountName: qr.accountName,
           });
           setQrPayment({
             amount,
             content,
-            imageUrl: `https://img.vietqr.io/image/970436-1070980445-compact2.png?${query.toString()}`,
+            imageUrl: `https://img.vietqr.io/image/${qr.bankId}-${qr.accountNumber}-compact2.png?${query.toString()}`,
           });
         } else {
           setQrPayment(null);

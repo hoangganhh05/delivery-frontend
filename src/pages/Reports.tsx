@@ -1,92 +1,36 @@
-import { useState, useEffect } from 'react';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Package, Truck, DollarSign } from 'lucide-react';
-import { getDashboardStatsApi } from '../api/deliveryApi';
+import { useEffect, useState } from "react";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Download, DollarSign, Package, TrendingUp, Truck } from "lucide-react";
+import { exportOrdersReportApi, getOperationsReportApi, type OperationsReport } from "../api/deliveryApi";
+import { useApp } from "../context/AppContext";
 
+const iso = (date: Date) => date.toISOString().slice(0, 10);
 export default function Reports() {
-  const [stats, setStats] = useState({ totalOrders: 0, successOrders: 0, cancelledOrders: 0, totalRevenue: 0 });
-
-  useEffect(() => {
-    getDashboardStatsApi()
-      .then(res => res && res.data && setStats({
-        totalOrders: Number(res.data.totalOrders || 0),
-        successOrders: Number(res.data.deliveredOrders ?? res.data.successOrders ?? 0),
-        cancelledOrders: Number(res.data.cancelledOrders || 0),
-        totalRevenue: Number(res.data.totalRevenue || 0),
-      }))
-      .catch(err => console.error(err));
-  }, []);
-
-  const revenueData = [
-    { month: 'Hiện tại', revenue: stats.totalRevenue || 0 },
-  ];
-
-  const orderAnalyticsData = [
-    { date: 'Hoàn thành', orders: stats.successOrders },
-    { date: 'Đang xử lý', orders: Math.max(0, stats.totalOrders - stats.successOrders - stats.cancelledOrders) },
-    { date: 'Đã hủy', orders: stats.cancelledOrders },
-  ];
-
-  return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-700 text-slate-900">Báo cáo & Thống kê vận hành</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Tổng hợp hiệu quả giao hàng và doanh thu</p>
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {[
-          { label: 'Tổng đơn hàng', value: stats.totalOrders.toLocaleString(), icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Đơn giao thành công', value: stats.successOrders.toLocaleString(), icon: Truck, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Doanh thu cước', value: `₫${(stats.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Tỷ lệ hoàn thành', value: stats.totalOrders > 0 ? `${((stats.successOrders / stats.totalOrders) * 100).toFixed(1)}%` : '100%', icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-            <div className={`w-9 h-9 ${bg} rounded-lg flex items-center justify-center mb-3`}>
-              <Icon size={16} className={color} />
-            </div>
-            <p className="text-xl font-700 text-slate-900">{value}</p>
-            <p className="text-xs text-slate-600 mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Revenue trend */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-          <h3 className="text-sm font-600 text-slate-900 mb-4">Doanh thu đã ghi nhận</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563EB" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={v => `₫${v.toLocaleString()}`} />
-              <Tooltip formatter={(v: any) => [`₫${Number(v).toLocaleString()}`, 'Doanh thu']} />
-              <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} fill="url(#revGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Daily orders */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-          <h3 className="text-sm font-600 text-slate-900 mb-4">Phân bổ trạng thái đơn</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={orderAnalyticsData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-              <Tooltip />
-              <Bar dataKey="orders" name="Đơn hàng" fill="#2563EB" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  );
+  const { addToast } = useApp();
+  const today = new Date(); const monthAgo = new Date(); monthAgo.setDate(today.getDate() - 29);
+  const [from, setFrom] = useState(iso(monthAgo)); const [to, setTo] = useState(iso(today));
+  const [report, setReport] = useState<OperationsReport | null>(null); const [loading, setLoading] = useState(false);
+  const load = async () => { try { setLoading(true); setReport((await getOperationsReportApi({ from, to })).data); }
+    catch (error: any) { addToast({ type: "error", title: "Không thể tải báo cáo", message: error.message }); } finally { setLoading(false); } };
+  useEffect(() => { void load(); }, []);
+  const download = async () => { try { const blob = await exportOrdersReportApi({ from, to }); const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a"); anchor.href = url; anchor.download = `bao-cao-${from}-${to}.csv`; anchor.click(); URL.revokeObjectURL(url);
+    } catch (error: any) { addToast({ type: "error", title: "Xuất báo cáo thất bại", message: error.message }); } };
+  const stats = report || { from, to, totalOrders: 0, deliveredOrders: 0, failedOrders: 0, revenue: 0, statusDistribution: {}, timeline: [] };
+  const statusData = Object.entries(stats.statusDistribution).map(([status, orders]) => ({ status, orders }));
+  return <div className="p-4 sm:p-6 space-y-6">
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-3"><div><h2 className="text-lg font-700 text-slate-900">Báo cáo & Thống kê vận hành</h2><p className="text-xs text-slate-500">Dữ liệu thực theo khoảng ngày</p></div>
+      <div className="flex flex-wrap gap-2 items-end"><label className="text-xs text-slate-500">Từ ngày<input type="date" value={from} onChange={e => setFrom(e.target.value)} className="block h-9 border rounded-lg px-2 mt-1" /></label>
+        <label className="text-xs text-slate-500">Đến ngày<input type="date" value={to} onChange={e => setTo(e.target.value)} className="block h-9 border rounded-lg px-2 mt-1" /></label>
+        <button onClick={load} disabled={loading} className="h-9 px-4 rounded-lg bg-blue-600 text-white text-xs">{loading ? "Đang tải..." : "Áp dụng"}</button>
+        <button onClick={download} className="h-9 px-3 rounded-lg border bg-white text-xs flex items-center gap-1"><Download size={14} /> CSV</button></div></div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">{[
+      { label: "Tổng đơn hàng", value: stats.totalOrders.toLocaleString(), icon: Package },
+      { label: "Đơn giao thành công", value: stats.deliveredOrders.toLocaleString(), icon: Truck },
+      { label: "Doanh thu đã thu", value: `${Number(stats.revenue).toLocaleString("vi-VN")}đ`, icon: DollarSign },
+      { label: "Tỷ lệ hoàn thành", value: stats.totalOrders ? `${(stats.deliveredOrders / stats.totalOrders * 100).toFixed(1)}%` : "0%", icon: TrendingUp },
+    ].map(({ label, value, icon: Icon }) => <div key={label} className="bg-white rounded-xl p-4 shadow-sm border"><Icon size={17} className="text-blue-600 mb-3" /><p className="text-xl font-700">{value}</p><p className="text-xs text-slate-600">{label}</p></div>)}</div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5"><div className="bg-white rounded-xl p-5 border"><h3 className="text-sm font-600 mb-4">Doanh thu theo ngày</h3><ResponsiveContainer width="100%" height={220}><AreaChart data={stats.timeline}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} /><Tooltip /><Area dataKey="revenue" name="Doanh thu" stroke="#2563EB" fill="#DBEAFE" /></AreaChart></ResponsiveContainer></div>
+      <div className="bg-white rounded-xl p-5 border"><h3 className="text-sm font-600 mb-4">Phân bổ trạng thái</h3><ResponsiveContainer width="100%" height={220}><BarChart data={statusData}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="status" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} /><Tooltip /><Bar dataKey="orders" name="Đơn hàng" fill="#2563EB" /></BarChart></ResponsiveContainer></div></div>
+  </div>;
 }

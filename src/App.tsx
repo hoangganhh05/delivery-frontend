@@ -23,11 +23,13 @@ const CustomerView = lazy(() => import('./pages/CustomerView'));
 const ShipperMobile = lazy(() => import('./pages/ShipperMobile'));
 
 function AppRoutes() {
-  const { isLoggedIn, role } = useApp();
+  const { isLoggedIn, role, hasPermission } = useApp();
   const homeRoute = role === 'Customer' ? '/customer' : role === 'Shipper' ? '/shipper-mobile' : '/';
 
   const allow = (roles: Role[], element: ReactNode) =>
     roles.includes(role) ? element : <Navigate to={homeRoute} replace />;
+  const permit = (code: string, element: ReactNode) =>
+    hasPermission(code) ? element : <Navigate to={homeRoute} replace />;
 
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-sm text-slate-400">Đang tải giao diện...</div>}>
@@ -52,19 +54,19 @@ function AppRoutes() {
       {isLoggedIn ? (
         <Route element={<Layout />}>
           <Route path="/" element={allow(['Admin', 'Staff'], <Dashboard />)} />
-          <Route path="/orders" element={allow(['Admin', 'Staff'], <Orders />)} />
-          <Route path="/orders/:id" element={allow(['Admin', 'Staff'], <OrderDetail />)} />
-          <Route path="/dispatch" element={allow(['Admin', 'Staff'], <Dispatch />)} />
-          <Route path="/shippers" element={allow(['Admin', 'Staff'], <Shippers />)} />
-          <Route path="/shippers/:id" element={allow(['Admin', 'Staff'], <ShipperDetail />)} />
-          <Route path="/users" element={allow(['Admin'], <Users />)} />
-          <Route path="/permissions" element={allow(['Admin'], <Permissions />)} />
-          <Route path="/payments" element={allow(['Admin', 'Staff'], <Payments />)} />
-          <Route path="/vouchers" element={allow(['Admin', 'Staff'], <Vouchers />)} />
-          <Route path="/notifications" element={allow(['Admin', 'Staff'], <Notifications />)} />
+          <Route path="/orders" element={permit('VIEW_ORDERS', <Orders />)} />
+          <Route path="/orders/:id" element={permit('VIEW_ORDERS', <OrderDetail />)} />
+          <Route path="/dispatch" element={permit('ASSIGN_SHIPPER', <Dispatch />)} />
+          <Route path="/shippers" element={permit('VIEW_SHIPPERS', <Shippers />)} />
+          <Route path="/shippers/:id" element={permit('VIEW_SHIPPERS', <ShipperDetail />)} />
+          <Route path="/users" element={permit('VIEW_USERS', <Users />)} />
+          <Route path="/permissions" element={permit('MANAGE_ROLES', <Permissions />)} />
+          <Route path="/payments" element={permit('VIEW_PAYMENTS', <Payments />)} />
+          <Route path="/vouchers" element={permit('MANAGE_VOUCHERS', <Vouchers />)} />
+          <Route path="/notifications" element={permit('VIEW_NOTIFICATIONS', <Notifications />)} />
           <Route path="/tracking" element={allow(['Admin', 'Staff'], <Tracking />)} />
-          <Route path="/reports" element={allow(['Admin', 'Staff'], <Reports />)} />
-          <Route path="/settings" element={allow(['Admin', 'Staff'], <Settings />)} />
+          <Route path="/reports" element={permit('VIEW_REPORTS', <Reports />)} />
+          <Route path="/settings" element={permit('SYSTEM_SETTINGS', <Settings />)} />
         </Route>
       ) : (
         <Route path="*" element={<Navigate to="/login" replace />} />

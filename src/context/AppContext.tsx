@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { getCurrentUserApi } from '../api/deliveryApi';
+import { getCurrentUserApi, getMyPermissionsApi } from '../api/deliveryApi';
 import type { UserMe, UserSettings } from '../types/account';
 import { applyUserPreferences } from '../utils/userPreferences';
 
@@ -44,6 +44,9 @@ interface AppContextValue {
   updateCurrentUser: (profile: UserMe) => void;
   updateCurrentUserSettings: (settings: UserSettings) => void;
   refreshCurrentUser: () => Promise<UserMe | null>;
+  permissions: Set<string>;
+  hasPermission: (code: string) => boolean;
+  refreshPermissions: () => Promise<void>;
   logout: () => void;
   toasts: Toast[];
   addToast: (t: Omit<Toast, 'id'>) => void;
@@ -89,6 +92,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confirm, setConfirm] = useState<ConfirmDialog | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
+  const [permissions, setPermissions] = useState<Set<string>>(new Set());
 
   const setRole = useCallback((r: Role) => {
     setRoleState(r);
@@ -147,6 +151,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null;
   }, [updateCurrentUser]);
 
+  const refreshPermissions = useCallback(async () => {
+    if (!localStorage.getItem('token')) return;
+    try { setPermissions(new Set((await getMyPermissionsApi()).data.permissions || [])); }
+    catch { setPermissions(new Set()); }
+  }, []);
+
+  const hasPermission = useCallback((code: string) => role === 'Admin' || permissions.has(code), [role, permissions]);
+
   const login = useCallback((r: Role) => {
     setRoleState(r);
     setIsLoggedIn(true);
@@ -159,12 +171,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('fullName');
     setIsLoggedIn(false);
     setUser(null);
+    setPermissions(new Set());
     applyUserPreferences(null);
   }, []);
 
   useEffect(() => {
-    if (isLoggedIn) void refreshCurrentUser();
-  }, [isLoggedIn, refreshCurrentUser]);
+    if (isLoggedIn) { void refreshCurrentUser(); void refreshPermissions(); }
+  }, [isLoggedIn, refreshCurrentUser, refreshPermissions]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -191,6 +204,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider value={{
       role, setRole, isLoggedIn, user, login, loginWithAuthData,
       updateCurrentUser, updateCurrentUserSettings, refreshCurrentUser, logout,
+      permissions, hasPermission, refreshPermissions,
       toasts, addToast, removeToast,
       confirm, openConfirm, closeConfirm,
       sidebarOpen, setSidebarOpen,
