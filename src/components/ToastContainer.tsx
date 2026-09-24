@@ -12,13 +12,14 @@ export default function ToastContainer() {
   const { toasts, removeToast } = useApp();
 
   return (
-    <div className="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none">
+    <section aria-label="Thông báo hệ thống" aria-live="polite" aria-atomic="false" className="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none">
       {toasts.map(toast => {
         const cfg = configs[toast.type];
         const Icon = cfg.icon;
         return (
           <div
             key={toast.id}
+            role={toast.type === 'error' ? 'alert' : 'status'}
             className={`relative ${cfg.bg} ${cfg.border} border rounded-xl shadow-xl flex items-start gap-3 p-4 min-w-72 max-w-sm pointer-events-auto
               animate-in slide-in-from-right-4 fade-in duration-200`}
           >
@@ -29,15 +30,15 @@ export default function ToastContainer() {
               <p className="text-sm font-600 text-slate-900">{toast.title}</p>
               {toast.message && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{toast.message}</p>}
             </div>
-            <button onClick={() => removeToast(toast.id)}
+            <button type="button" onClick={() => removeToast(toast.id)} aria-label={`Đóng thông báo: ${toast.title}`}
               className="w-5 h-5 flex-shrink-0 text-slate-300 hover:text-slate-500 flex items-center justify-center">
               <X size={14} />
             </button>
             {/* Progress bar */}
-            <div className={`absolute bottom-0 left-0 h-0.5 ${cfg.bar} rounded-b-xl animate-shrink`} style={{ width: '100%' }} />
+            <div aria-hidden="true" className={`absolute bottom-0 left-0 h-0.5 ${cfg.bar} rounded-b-xl animate-shrink`} style={{ width: '100%' }} />
           </div>
         );
       })}
-    </div>
+    </section>
   );
 }

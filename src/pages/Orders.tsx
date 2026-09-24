@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Filter, Download, ChevronLeft, ChevronRight, Eye, X, XCircle, RefreshCw } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Eye, X, XCircle, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import type { OrderStatus, PaymentStatus } from '../types/domain';
 import { mapBackendStatusToUI } from '../utils/status';
 import { useApp } from '../context/AppContext';
 import { cancelOrderApi, searchOrdersApi } from '../api/deliveryApi';
@@ -18,54 +17,149 @@ const statusOptions = [
   { label: 'Đã hủy', value: 'CANCELLED' },
 ];
 
+const ORDER_FILTERS_STORAGE_KEY = 'giaotin.orders.filters.v1';
+const AUTO_REFRESH_INTERVAL_MS = 60_000;
+
+type SavedOrderFilters = {
+  search?: string;
+  status?: string;
+};
+
+function getSavedOrderFilters(): SavedOrderFilters {
+  try {
+    const raw = window.localStorage.getItem(ORDER_FILTERS_STORAGE_KEY);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw) as SavedOrderFilters;
+    return {
+      search: typeof parsed.search === 'string' ? parsed.search : '',
+      status: statusOptions.some((option) => option.value === parsed.status) ? parsed.status : '',
+    };
+  } catch {
+    return {};
+  }
+}
+
 export default function Orders() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { openConfirm, addToast } = useApp();
   const queryKeyword = searchParams.get('keyword') || '';
-  const [search, setSearch] = useState(queryKeyword);
-  const [statusFilter, setStatusFilter] = useState('');
+  const savedFilters = useRef(getSavedOrderFilters()).current;
+  const initialQueryKeyword = useRef(queryKeyword).current;
+  const initialSearch = queryKeyword || savedFilters.search || '';
+  const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch.trim());
+  const [statusFilter, setStatusFilter] = useState(savedFilters.status || '');
   const [selected, setSelected] = useState<string[]>([]);
   const [ordersList, setOrdersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const requestIdRef = useRef(0);
+  const fetchingRef = useRef(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async ({ background = false }: { background?: boolean } = {}) => {
+    if (background && fetchingRef.current) return;
+
+    const requestId = ++requestIdRef.current;
+    fetchingRef.current = true;
     try {
-      setLoading(true);
+      if (!background) setLoading(true);
       const res = await searchOrdersApi({
-        keyword: search || undefined,
+        keyword: debouncedSearch || undefined,
         status: statusFilter || undefined,
         page,
         size: 10,
       });
 
+      if (requestId !== requestIdRef.current) return;
+
       if (res && res.data) {
         setOrdersList(res.data.items || []);
         setTotalPages(res.data.totalPages || 1);
         setTotalElements(res.data.totalElements || 0);
+        setLastUpdated(new Date());
       }
     } catch (err: any) {
-      addToast({
-        type: 'error',
-        title: 'Lỗi tải danh sách đơn hàng',
-        message: err.message || 'Không thể tải danh sách đơn hàng'
-      });
+      if (requestId === requestIdRef.current && !background) {
+        addToast({
+          type: 'error',
+          title: 'Lỗi tải danh sách đơn hàng',
+          message: err.message || 'Không thể tải danh sách đơn hàng'
+        });
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        fetchingRef.current = false;
+        if (!background) setLoading(false);
+      }
     }
+  }, [addToast, debouncedSearch, page, statusFilter]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 350);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [search]);
+
+  useEffect(() => {
+    void fetchOrders();
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ORDER_FILTERS_STORAGE_KEY, JSON.stringify({
+        search: search.trim(),
+        status: statusFilter,
+      } satisfies SavedOrderFilters));
+    } catch {
+      // Không chặn người dùng nếu trình duyệt không cho phép lưu cài đặt cục bộ.
+    }
+  }, [search, statusFilter]);
+
+  useEffect(() => {
+    if (queryKeyword === initialQueryKeyword) return;
+    setSearch(queryKeyword);
+    setDebouncedSearch(queryKeyword.trim());
+    setPage(0);
+  }, [initialQueryKeyword, queryKeyword]);
+
+  useEffect(() => {
+    setSelected((current) => current.filter((tracking) =>
+      ordersList.some((order) => (order.trackingNumber || String(order.id)) === tracking),
+    ));
+  }, [ordersList]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchOrders({ background: true });
+      }
+    };
+
+    const intervalId = window.setInterval(refreshWhenVisible, AUTO_REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [fetchOrders]);
+
+  const clearFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setStatusFilter('');
+    setPage(0);
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, [search, statusFilter, page]);
-
-  useEffect(() => {
-    setSearch(queryKeyword);
-    setPage(0);
-  }, [queryKeyword]);
+  const hasActiveFilters = Boolean(search.trim() || statusFilter);
+  const isApplyingSearch = search.trim() !== debouncedSearch;
 
   const handleCancel = (trackingNumber: string) => {
     openConfirm({
@@ -97,7 +191,10 @@ export default function Orders() {
           <p className="text-xs text-slate-500 mt-0.5">{totalElements} đơn hàng</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={fetchOrders} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 hover:bg-slate-50">
+          <span className="hidden lg:inline text-[11px] text-slate-400" title={lastUpdated ? `Cập nhật lúc ${lastUpdated.toLocaleTimeString('vi-VN')}` : undefined}>
+            {lastUpdated ? `Cập nhật ${lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Chưa có dữ liệu'}
+          </span>
+          <button onClick={() => void fetchOrders()} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 hover:bg-slate-50">
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Tải lại
           </button>
           <button
@@ -123,6 +220,16 @@ export default function Orders() {
             />
           </div>
 
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="h-9 px-3 rounded-lg text-xs font-500 text-slate-600 hover:bg-slate-100"
+            >
+              Xóa bộ lọc
+            </button>
+          )}
+
           {/* Status quick filter */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full pb-1">
             {statusOptions.map(s => (
@@ -137,6 +244,11 @@ export default function Orders() {
             ))}
           </div>
         </div>
+        <p className="mt-3 text-[11px] text-slate-400" aria-live="polite">
+          {isApplyingSearch
+            ? 'Đang áp dụng từ khóa tìm kiếm...'
+            : 'Từ khóa và trạng thái lọc được ghi nhớ trên thiết bị này. Danh sách tự cập nhật khi trang đang mở.'}
+        </p>
       </div>
 
       {/* Selected actions */}

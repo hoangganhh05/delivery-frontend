@@ -16,6 +16,7 @@ const pageTitles: Record<string, string> = {
   "/notifications": "Thông báo",
   "/reports": "Báo cáo giao hàng",
   "/settings": "Cài đặt",
+  "/account": "Tài khoản của tôi",
   "/customer": "Trang khách hàng",
   "/shipper-mobile": "Đơn giao của tôi",
 };

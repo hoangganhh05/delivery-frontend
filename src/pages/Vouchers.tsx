@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Tag, Copy, X, Check, RefreshCw } from 'lucide-react';
 import { createVoucherApi, getVouchersApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
+import { EmptyState, SkeletonCard } from '../components/Skeleton';
 
 export default function Vouchers() {
   const { addToast } = useApp();
@@ -9,6 +10,7 @@ export default function Vouchers() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   // Form State
   const [code, setCode] = useState('');
@@ -17,13 +19,18 @@ export default function Vouchers() {
   const [minOrderAmount, setMinOrderAmount] = useState(100000);
   const [usageLimit, setUsageLimit] = useState(100);
   const [submitting, setSubmitting] = useState(false);
+  const voucherDialogRef = useRef<HTMLDivElement>(null);
+  const voucherCodeInputRef = useRef<HTMLInputElement>(null);
+  const voucherReturnFocusRef = useRef<HTMLElement | null>(null);
 
   const fetchVouchers = async () => {
     try {
       setLoading(true);
+      setLoadError(false);
       const res = await getVouchersApi();
       setVouchers(Array.isArray(res?.data) ? res.data : []);
     } catch (err: any) {
+      setLoadError(true);
       addToast({ type: 'error', title: 'Không thể tải mã giảm giá', message: err.message });
     } finally {
       setLoading(false);
@@ -33,6 +40,48 @@ export default function Vouchers() {
   useEffect(() => {
     fetchVouchers();
   }, []);
+
+  useEffect(() => {
+    if (!showModal) return;
+    voucherReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return () => {
+      voucherReturnFocusRef.current?.focus();
+      voucherReturnFocusRef.current = null;
+    };
+  }, [showModal]);
+
+  useEffect(() => {
+    if (!showModal) return;
+    const focusTimer = window.setTimeout(() => voucherCodeInputRef.current?.focus(), 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !submitting) {
+        event.preventDefault();
+        setShowModal(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !voucherDialogRef.current) return;
+      const focusable = Array.from(voucherDialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showModal, submitting]);
 
   const copyCode = (c: string) => {
     navigator.clipboard.writeText(c);
@@ -77,10 +126,10 @@ export default function Vouchers() {
           <p className="text-xs text-slate-500 mt-0.5">Tạo và quản lý các mã ưu đãi dành cho khách hàng</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={fetchVouchers} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600">
+          <button type="button" onClick={fetchVouchers} disabled={loading} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-600 disabled:opacity-60">
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Tải lại
           </button>
-          <button onClick={() => setShowModal(true)} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
+          <button type="button" onClick={() => setShowModal(true)} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
             <Plus size={14} /> Tạo mã mới
           </button>
         </div>
@@ -88,12 +137,21 @@ export default function Vouchers() {
 
       {/* Cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {!loading && vouchers.length === 0 && (
-          <div className="sm:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-slate-200 bg-white py-12 text-center text-sm text-slate-400">
-            Chưa có mã giảm giá nào
-          </div>
-        )}
-        {vouchers.map((v) => (
+        {loading ? [1, 2, 3].map(item => <SkeletonCard key={item} />) : loadError && vouchers.length === 0 ? (
+          <EmptyState
+            className="sm:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-slate-200 bg-white"
+            title="Không thể tải mã giảm giá"
+            description="Kiểm tra kết nối mạng rồi thử tải lại dữ liệu."
+            action={<button type="button" onClick={() => void fetchVouchers()} className="h-9 rounded-lg bg-blue-600 px-4 text-xs font-600 text-white hover:bg-blue-700">Thử lại</button>}
+          />
+        ) : vouchers.length === 0 ? (
+          <EmptyState
+            className="sm:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-slate-200 bg-white"
+            icon={<Tag size={22} strokeWidth={1.7} aria-hidden="true" />}
+            title="Chưa có mã giảm giá nào"
+            description="Tạo mã giảm giá đầu tiên để gửi ưu đãi đến khách hàng."
+          />
+        ) : vouchers.map((v) => (
           <div key={v.id} className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 to-blue-400" />
             <div className="p-4">
@@ -105,7 +163,7 @@ export default function Vouchers() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-700 text-slate-900 font-mono tracking-wide">{v.code}</p>
-                      <button onClick={() => copyCode(v.code)}
+                      <button type="button" onClick={() => copyCode(v.code)} aria-label={`Sao chép mã giảm giá ${v.code}`} title={`Sao chép ${v.code}`}
                         className="w-5 h-5 rounded flex items-center justify-center text-slate-300 hover:text-blue-500">
                         {copiedCode === v.code ? <Check size={11} className="text-green-500" /> : <Copy size={11} />}
                       </button>
@@ -130,46 +188,52 @@ export default function Vouchers() {
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 sm:p-6">
+          <div
+            ref={voucherDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="voucher-dialog-title"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 sm:p-6"
+          >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-700 text-slate-900">Tạo mã giảm giá mới</h3>
-              <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
+              <h3 id="voucher-dialog-title" className="text-base font-700 text-slate-900">Tạo mã giảm giá mới</h3>
+              <button type="button" onClick={() => setShowModal(false)} disabled={submitting} aria-label="Đóng biểu mẫu tạo mã giảm giá" className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 disabled:opacity-50">
                 <X size={16} />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-600 text-slate-700 mb-1.5">Mã giảm giá</label>
-                <input type="text" value={code} onChange={e => setCode(e.target.value)} placeholder="VD: VIETTEL100"
+                <label htmlFor="voucher-code" className="block text-xs font-600 text-slate-700 mb-1.5">Mã giảm giá</label>
+                <input ref={voucherCodeInputRef} id="voucher-code" type="text" value={code} onChange={e => setCode(e.target.value)} placeholder="VD: VIETTEL100" aria-required="true"
                   className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 uppercase font-mono" />
               </div>
               <div>
-                <label className="block text-xs font-600 text-slate-700 mb-1.5">Phần trăm giảm (%)</label>
-                <input type="number" value={discountPercent} onChange={e => setDiscountPercent(Number(e.target.value))}
+                <label htmlFor="voucher-discount-percent" className="block text-xs font-600 text-slate-700 mb-1.5">Phần trăm giảm (%)</label>
+                <input id="voucher-discount-percent" type="number" min="1" max="100" value={discountPercent} onChange={e => setDiscountPercent(Number(e.target.value))}
                   className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50" />
               </div>
               <div>
-                <label className="block text-xs font-600 text-slate-700 mb-1.5">Giảm tối đa (VNĐ)</label>
-                <input type="number" value={maxDiscountAmount} onChange={e => setMaxDiscountAmount(Number(e.target.value))}
+                <label htmlFor="voucher-max-discount" className="block text-xs font-600 text-slate-700 mb-1.5">Giảm tối đa (VNĐ)</label>
+                <input id="voucher-max-discount" type="number" min="0" value={maxDiscountAmount} onChange={e => setMaxDiscountAmount(Number(e.target.value))}
                   className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50" />
               </div>
               <div>
-                <label className="block text-xs font-600 text-slate-700 mb-1.5">Đơn hàng tối thiểu (VNĐ)</label>
-                <input type="number" value={minOrderAmount} onChange={e => setMinOrderAmount(Number(e.target.value))}
+                <label htmlFor="voucher-min-order" className="block text-xs font-600 text-slate-700 mb-1.5">Đơn hàng tối thiểu (VNĐ)</label>
+                <input id="voucher-min-order" type="number" min="0" value={minOrderAmount} onChange={e => setMinOrderAmount(Number(e.target.value))}
                   className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50" />
               </div>
               <div>
-                <label className="block text-xs font-600 text-slate-700 mb-1.5">Lượt sử dụng tối đa</label>
-                <input type="number" value={usageLimit} onChange={e => setUsageLimit(Number(e.target.value))}
+                <label htmlFor="voucher-usage-limit" className="block text-xs font-600 text-slate-700 mb-1.5">Lượt sử dụng tối đa</label>
+                <input id="voucher-usage-limit" type="number" min="0" value={usageLimit} onChange={e => setUsageLimit(Number(e.target.value))}
                   className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50" />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowModal(false)}
+              <button type="button" onClick={() => setShowModal(false)} disabled={submitting}
                 className="flex-1 h-10 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">
                 Hủy
               </button>
-              <button onClick={handleCreateVoucher} disabled={submitting}
+              <button type="button" onClick={handleCreateVoucher} disabled={submitting}
                 className="flex-1 h-10 rounded-xl bg-blue-600 text-sm text-white font-500 hover:bg-blue-700 disabled:opacity-50">
                 {submitting ? 'Đang tạo...' : 'Tạo mã giảm giá'}
               </button>

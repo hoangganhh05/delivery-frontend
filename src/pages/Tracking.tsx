@@ -1,33 +1,116 @@
-import { useState } from 'react';
-import { Search, Package, Truck, MapPin, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Search, Package, Truck, MapPin, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import { trackOrderApi } from '../api/deliveryApi';
 import { getOrderStatusLabel } from '../utils/status';
+
+const RECENT_TRACKING_STORAGE_KEY = 'giaotin.tracking.recent.v1';
+const TRACKING_REFRESH_INTERVAL_MS = 60_000;
+
+function getRecentTrackingNumbers(): string[] {
+  try {
+    const raw = window.localStorage.getItem(RECENT_TRACKING_STORAGE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string').slice(0, 5)
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function Tracking() {
   const [input, setInput] = useState('');
   const [result, setResult] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [activeTrackingNumber, setActiveTrackingNumber] = useState('');
+  const [recentTrackingNumbers, setRecentTrackingNumbers] = useState<string[]>(getRecentTrackingNumbers);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const requestIdRef = useRef(0);
 
-  const handleTrack = async () => {
-    if (!input.trim()) return;
+  const track = useCallback(async (trackingNumber: string, background = false) => {
+    const normalizedTrackingNumber = trackingNumber.trim();
+    if (!normalizedTrackingNumber) return;
+
+    const requestId = ++requestIdRef.current;
     try {
-      setLoading(true);
-      setNotFound(false);
-      const res = await trackOrderApi(input.trim());
+      if (background) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+        setRefreshing(false);
+        setNotFound(false);
+      }
+
+      const res = await trackOrderApi(normalizedTrackingNumber);
+      if (requestId !== requestIdRef.current) return;
+
       if (res && res.data) {
         setResult(res.data);
+        setInput(res.data.trackingNumber || normalizedTrackingNumber);
+        setActiveTrackingNumber(res.data.trackingNumber || normalizedTrackingNumber);
+        setNotFound(false);
+        setLastUpdated(new Date());
+        setRecentTrackingNumbers((current) => [
+          normalizedTrackingNumber,
+          ...current.filter((item) => item.toLowerCase() !== normalizedTrackingNumber.toLowerCase()),
+        ].slice(0, 5));
       } else {
-        setResult(null);
-        setNotFound(true);
+        if (!background) {
+          setResult(null);
+          setActiveTrackingNumber('');
+          setNotFound(true);
+        }
       }
     } catch (err) {
-      setResult(null);
-      setNotFound(true);
+      if (requestId === requestIdRef.current && !background) {
+        setResult(null);
+        setActiveTrackingNumber('');
+        setNotFound(true);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        if (background) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
+      }
     }
+  }, []);
+
+  const handleTrack = () => {
+    void track(input);
   };
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(RECENT_TRACKING_STORAGE_KEY, JSON.stringify(recentTrackingNumbers));
+    } catch {
+      // Không chặn tra cứu nếu trình duyệt không cho phép lưu danh sách gần đây.
+    }
+  }, [recentTrackingNumbers]);
+
+  useEffect(() => {
+    if (!activeTrackingNumber) return;
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void track(activeTrackingNumber, true);
+      }
+    };
+
+    const intervalId = window.setInterval(refreshWhenVisible, TRACKING_REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [activeTrackingNumber, track]);
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
@@ -56,13 +139,31 @@ export default function Tracking() {
           </div>
           <button
             onClick={handleTrack}
-            disabled={loading}
+            disabled={loading || !input.trim()}
             className="h-11 px-6 rounded-xl bg-blue-600 text-sm text-white font-600 hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
           >
             <Search size={14} />
             {loading ? 'Đang tra cứu...' : 'Tra cứu'}
           </button>
         </div>
+        {recentTrackingNumbers.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-slate-400">Tra cứu gần đây:</span>
+            {recentTrackingNumbers.map((trackingNumber) => (
+              <button
+                key={trackingNumber}
+                type="button"
+                onClick={() => {
+                  setInput(trackingNumber);
+                  void track(trackingNumber);
+                }}
+                className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+              >
+                {trackingNumber}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {notFound && (
@@ -77,7 +178,7 @@ export default function Tracking() {
         <div className="space-y-4">
           {/* Current status */}
           <div className="rounded-2xl border p-5 bg-blue-50 border-blue-200">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-100">
                   <Truck size={22} className="text-blue-600" />
@@ -91,6 +192,22 @@ export default function Tracking() {
                 <p className="text-xs text-slate-500">Mã đơn hàng</p>
                 <p className="text-sm font-700 text-slate-800">#{result.orderId}</p>
               </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-blue-200 pt-3">
+              <p className="text-[11px] text-slate-500" aria-live="polite">
+                {lastUpdated
+                  ? `Cập nhật lúc ${lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}. Tự cập nhật mỗi phút khi trang đang mở.`
+                  : 'Tự cập nhật mỗi phút khi trang đang mở.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => void track(activeTrackingNumber || result.trackingNumber, true)}
+                disabled={refreshing || loading}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 text-xs font-600 text-blue-700 hover:bg-blue-100 disabled:opacity-60"
+              >
+                <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+                {refreshing ? 'Đang cập nhật' : 'Cập nhật'}
+              </button>
             </div>
           </div>
 

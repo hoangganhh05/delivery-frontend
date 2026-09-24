@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Bell, ChevronDown, LogOut, Settings, Menu, X } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut, Settings, Menu, X, UserRound } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp, type Role } from '../context/AppContext';
 import { BRAND_SHORT_NAME } from '../config/brand';
@@ -30,7 +30,7 @@ const roleColors: Record<Role, string> = {
 export default function Header() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { role, user, logout, openConfirm, addToast, sidebarOpen, setSidebarOpen } = useApp();
+  const { role, user, logout, openConfirm, addToast, sidebarOpen, setSidebarOpen, unreadNotificationCount } = useApp();
 
   const [search, setSearch] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -105,9 +105,14 @@ export default function Header() {
       <button
         onClick={() => navigate('/notifications')}
         aria-label="Mở thông báo"
-        className="w-10 h-10 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white flex items-center justify-center text-slate-500 hover:text-slate-700"
+        className="relative w-10 h-10 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white flex items-center justify-center text-slate-500 hover:text-slate-700"
       >
         <Bell size={17} />
+        {unreadNotificationCount > 0 && (
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-700 leading-none text-white" aria-label={`${unreadNotificationCount} thông báo chưa đọc`}>
+            {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+          </span>
+        )}
       </button>
 
       {/* User menu */}
@@ -133,9 +138,13 @@ export default function Header() {
               <p className="text-xs font-600 text-slate-900">{displayName}</p>
               <p className="text-[10px] text-slate-400">{getRoleLabel(role)}</p>
             </div>
+            <button onClick={() => { setShowUserMenu(false); navigate('/account'); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
+              <UserRound size={14} className="text-slate-400" /> Tài khoản của tôi
+            </button>
             <button onClick={() => { setShowUserMenu(false); navigate('/settings'); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
-              <Settings size={14} className="text-slate-400" /> Cài đặt tài khoản
+              <Settings size={14} className="text-slate-400" /> Cài đặt
             </button>
             <div className="border-t border-slate-50 mt-1 pt-1">
               <button onClick={handleLogout}

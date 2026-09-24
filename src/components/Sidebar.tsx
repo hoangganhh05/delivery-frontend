@@ -45,7 +45,7 @@ const allNavGroups = [
     items: [
       { path: '/notifications', icon: Bell, label: 'Thông báo', roles: ['Admin', 'Staff'], permission: 'VIEW_NOTIFICATIONS' },
       { path: '/reports', icon: BarChart2, label: 'Báo cáo', roles: ['Admin', 'Staff'], permission: 'VIEW_REPORTS' },
-      { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin', 'Staff'], permission: 'SYSTEM_SETTINGS' },
+      { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin', 'Staff', 'Shipper', 'Customer'], permission: 'SYSTEM_SETTINGS' },
     ]
   },
 ];
@@ -122,7 +122,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="sidebar-nav flex-1 overflow-y-auto py-4 px-2" aria-label="Điều hướng chính">
         {allNavGroups.map((group) => {
-          const visibleItems = group.items.filter(item => item.roles.includes(role) && hasPermission(item.permission));
+          const visibleItems = group.items.filter(item => item.roles.includes(role) && (item.path === '/settings' || hasPermission(item.permission)));
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label} className="mb-5">
@@ -159,7 +159,7 @@ export default function Sidebar() {
       <div className="sidebar-user border-t p-3">
         {sidebarOpen ? (
           <div>
-            <NavLink to="/settings" className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 cursor-pointer mb-1">
+            <NavLink to="/account" className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 cursor-pointer mb-1">
               <div className={`w-8 h-8 ${info.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
                 <span className={`text-xs font-700 ${info.color}`}>{initials}</span>
               </div>

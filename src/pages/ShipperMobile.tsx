@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw, LogOut } from 'lucide-react';
+import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw, LogOut, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { searchOrdersApi, updateShipmentStatusApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
+import PreferencesSettings from '../components/PreferencesSettings';
 import BrandLogo from '../components/BrandLogo';
 import { BRAND_NAME } from '../config/brand';
 
 export default function ShipperMobile() {
   const navigate = useNavigate();
-  const { user, addToast, logout } = useApp();
+  const { user, addToast, logout, openConfirm } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [shipperOrders, setShipperOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -77,11 +78,30 @@ export default function ShipperMobile() {
     }
   };
 
+  const requestStatusUpdate = (orderId: number | string, newStatus: string, note: string) => {
+    if (newStatus !== 'DELIVERED' && newStatus !== 'FAILED') {
+      void handleUpdateStatus(orderId, newStatus, note);
+      return;
+    }
+
+    const isDeliveryComplete = newStatus === 'DELIVERED';
+    openConfirm({
+      title: isDeliveryComplete ? 'Xác nhận giao thành công' : 'Xác nhận giao chưa thành công',
+      message: isDeliveryComplete
+        ? 'Đơn sẽ được đánh dấu đã giao thành công. Hãy chắc chắn người nhận đã nhận hàng trước khi tiếp tục.'
+        : 'Đơn sẽ được ghi nhận là chưa giao được kèm lý do bạn đã nhập. Bạn có chắc chắn muốn tiếp tục?',
+      confirmLabel: isDeliveryComplete ? 'Xác nhận đã giao' : 'Xác nhận chưa giao được',
+      danger: !isDeliveryComplete,
+      onConfirm: () => { void handleUpdateStatus(orderId, newStatus, note); },
+    });
+  };
+
   const tabs = [
     { id: 'home', icon: Home, label: 'Trang chủ' },
     { id: 'orders', icon: Package, label: 'Đơn hàng' },
     { id: 'map', icon: Map, label: 'Bản đồ' },
     { id: 'profile', icon: User, label: 'Hồ sơ' },
+    { id: 'settings', icon: Settings, label: 'Cài đặt' },
   ];
 
   const handleLogout = () => {
@@ -99,7 +119,7 @@ export default function ShipperMobile() {
     return (
       <div className="min-h-dvh bg-slate-50 flex flex-col max-w-5xl mx-auto">
         <div className="sticky top-0 z-20 bg-white border-b border-slate-100 px-4 sm:px-6 py-3 flex items-center gap-3">
-          <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center">
+          <button type="button" onClick={() => setSelectedOrder(null)} aria-label="Quay lại danh sách đơn hàng" className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center">
             <ArrowLeft size={15} className="text-slate-500" />
           </button>
           <div className="flex-1">
@@ -107,7 +127,7 @@ export default function ShipperMobile() {
             <p className="text-xs text-slate-400">Mã đơn: #{selectedOrder.id}</p>
           </div>
           <StatusBadge status={mapBackendStatusToUI(rawStatus)} type="order" />
-          <button onClick={handleLogout} title="Đăng xuất" className="hidden sm:flex h-9 px-3 rounded-xl border border-red-200 text-red-600 text-xs font-600 items-center gap-1.5 hover:bg-red-50">
+          <button type="button" onClick={handleLogout} title="Đăng xuất" className="hidden sm:flex h-9 px-3 rounded-xl border border-red-200 text-red-600 text-xs font-600 items-center gap-1.5 hover:bg-red-50">
             <LogOut size={14} /> Đăng xuất
           </button>
         </div>
@@ -119,7 +139,7 @@ export default function ShipperMobile() {
               <p className="text-xs text-blue-200 uppercase font-600">Điểm giao hàng</p>
               <p className="text-base font-700">{selectedOrder.receiverName}</p>
             </div>
-            <button onClick={() => openDirections(selectedOrder.receiverAddress)} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-600 flex items-center gap-1">
+            <button type="button" onClick={() => openDirections(selectedOrder.receiverAddress)} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-600 flex items-center gap-1">
               <Navigation size={13} /> Dẫn đường
             </button>
           </div>
@@ -164,7 +184,7 @@ export default function ShipperMobile() {
             ) : rawStatus === 'ASSIGNED' ? (
                 <button
                   disabled={updating}
-                  onClick={() => handleUpdateStatus(selectedOrder.id, 'PICKED_UP', 'Đã nhận kiện hàng')}
+                  onClick={() => requestStatusUpdate(selectedOrder.id, 'PICKED_UP', 'Đã nhận kiện hàng')}
                   className="w-full h-11 rounded-xl bg-blue-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Package size={15} /> Xác nhận đã lấy hàng
@@ -172,16 +192,16 @@ export default function ShipperMobile() {
             ) : rawStatus === 'PICKED_UP' ? (
                 <button
                   disabled={updating}
-                  onClick={() => handleUpdateStatus(selectedOrder.id, 'IN_TRANSIT', 'Đang trên đường giao hàng')}
+                  onClick={() => requestStatusUpdate(selectedOrder.id, 'IN_TRANSIT', 'Đang trên đường giao hàng')}
                   className="w-full h-11 rounded-xl bg-blue-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Truck size={15} /> Bắt đầu giao hàng
                 </button>
             ) : rawStatus === 'IN_TRANSIT' || rawStatus === 'SHIPPING' ? (
                 <div className="space-y-2">
-                  <button disabled={updating} onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED', 'Đã giao thành công')} className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"><CheckCircle2 size={15} /> {updating ? 'Đang cập nhật...' : 'Xác nhận giao thành công'}</button>
-                  <textarea value={failureReason} onChange={e => setFailureReason(e.target.value)} placeholder="Lý do giao thất bại (bắt buộc)" className="w-full min-h-20 p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:border-red-300" />
-                  <button disabled={updating || !failureReason.trim()} onClick={() => handleUpdateStatus(selectedOrder.id, 'FAILED', failureReason.trim())} className="w-full h-10 rounded-xl border border-red-200 text-red-600 text-xs font-600 hover:bg-red-50 disabled:opacity-40">Xác nhận chưa giao được</button>
+                  <button type="button" disabled={updating} onClick={() => requestStatusUpdate(selectedOrder.id, 'DELIVERED', 'Đã giao thành công')} className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"><CheckCircle2 size={15} /> {updating ? 'Đang cập nhật...' : 'Xác nhận giao thành công'}</button>
+                  <textarea aria-label="Lý do giao chưa thành công" value={failureReason} onChange={e => setFailureReason(e.target.value)} placeholder="Lý do giao thất bại (bắt buộc)" className="w-full min-h-20 p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:border-red-300" />
+                  <button type="button" disabled={updating || !failureReason.trim()} onClick={() => requestStatusUpdate(selectedOrder.id, 'FAILED', failureReason.trim())} className="w-full h-10 rounded-xl border border-red-200 text-red-600 text-xs font-600 hover:bg-red-50 disabled:opacity-40">Xác nhận chưa giao được</button>
                 </div>
             ) : (
               <p className="py-3 text-center text-xs text-slate-400">Chưa có thao tác phù hợp với trạng thái hiện tại.</p>
@@ -206,16 +226,16 @@ export default function ShipperMobile() {
           </div>
           <nav className="hidden lg:flex items-center gap-1 rounded-xl bg-slate-100 p-1">
             {tabs.map(({ id, icon: Icon, label }) => (
-              <button key={id} onClick={() => setActiveTab(id)} className={`h-9 px-3 rounded-lg text-xs font-600 flex items-center gap-1.5 transition-colors ${activeTab === id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+              <button key={id} type="button" onClick={() => setActiveTab(id)} aria-current={activeTab === id ? 'page' : undefined} className={`h-9 px-3 rounded-lg text-xs font-600 flex items-center gap-1.5 transition-colors ${activeTab === id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
                 <Icon size={14} /> {label}
               </button>
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <button onClick={fetchShipperOrders} title="Làm mới đơn hàng" className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200">
+            <button type="button" onClick={fetchShipperOrders} disabled={loading} aria-label="Làm mới danh sách đơn hàng" title="Làm mới đơn hàng" className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 disabled:opacity-60">
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
-            <button onClick={handleLogout} className="h-9 px-3 rounded-xl border border-red-200 text-red-600 text-xs font-600 flex items-center gap-1.5 hover:bg-red-50">
+            <button type="button" onClick={handleLogout} className="h-9 px-3 rounded-xl border border-red-200 text-red-600 text-xs font-600 flex items-center gap-1.5 hover:bg-red-50">
               <LogOut size={14} /> <span className="hidden sm:inline">Đăng xuất</span>
             </button>
           </div>
@@ -351,13 +371,14 @@ export default function ShipperMobile() {
             <AccountSettings embedded />
           </div>
         )}
+        {activeTab === 'settings' && <div className="p-4 sm:p-6"><PreferencesSettings /></div>}
       </div>
 
       {/* Bottom Nav */}
       <div className="fixed lg:hidden bottom-0 left-0 right-0 w-full bg-white border-t border-slate-100 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-20">
         <div className="flex justify-around">
           {tabs.map(({ id, icon: Icon, label }) => (
-            <button key={id} onClick={() => setActiveTab(id)}
+            <button key={id} type="button" onClick={() => setActiveTab(id)} aria-current={activeTab === id ? 'page' : undefined}
               className={`min-w-16 min-h-11 flex flex-col items-center justify-center gap-0.5 ${activeTab === id ? 'text-blue-600' : 'text-slate-400'}`}>
               <Icon size={20} />
               <span className="text-[10px] font-500">{label}</span>

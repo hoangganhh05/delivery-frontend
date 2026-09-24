@@ -60,6 +60,18 @@ body {
   color: #172033;
 }
 
+/* Keep keyboard focus visible even on controls that use Tailwind's outline-none utility. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="menuitem"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--user-accent-color) 62%, white) !important;
+  outline-offset: 2px;
+}
+
 html .bg-blue-600,
 html .bg-blue-700,
 html .hover\:bg-blue-700:hover {

@@ -193,7 +193,10 @@ export default function Login() {
                 return (
                   <button
                     key={role}
+                    type="button"
                     onClick={() => handleRoleSelect(role)}
+                    aria-pressed={isSelected}
+                    aria-label={`Đăng nhập với vai trò ${label}`}
                     className={`p-3 rounded-2xl border text-left transition-all
                       ${isSelected ? `${border} ${bg} shadow-sm` : 'border-slate-200/70 bg-white/70 hover:border-slate-300 hover:-translate-y-0.5'}`}
                   >
@@ -211,28 +214,34 @@ export default function Login() {
           {/* Form */}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-600 text-slate-700 mb-1.5">Tên đăng nhập</label>
+              <label htmlFor="login-username" className="block text-xs font-600 text-slate-700 mb-1.5">Tên đăng nhập</label>
               <input
+                id="login-username"
                 type="text"
                 value={username}
                 onChange={e => { setUsername(e.target.value); setErrors(p => ({ ...p, username: undefined })); }}
+                aria-invalid={Boolean(errors.username)}
+                aria-describedby={errors.username ? 'login-username-error' : undefined}
                 className={`w-full h-11 px-4 text-sm border rounded-xl outline-none transition-colors
                   ${errors.username ? 'border-red-300 bg-red-50 focus:border-red-400' : 'border-slate-200 bg-slate-50 focus:border-blue-400 focus:bg-white'}
                   placeholder-slate-400 text-slate-800`}
                 placeholder="Nhập tên đăng nhập"
               />
-              {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}
+              {errors.username && <p id="login-username-error" className="text-xs text-red-500 mt-1">{errors.username}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-600 text-slate-700 mb-1.5">Mật khẩu</label>
+              <label htmlFor="login-password" className="block text-xs font-600 text-slate-700 mb-1.5">Mật khẩu</label>
               <div className="relative">
                 <input
+                  id="login-password"
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })); }}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   placeholder="Nhập mật khẩu..."
+                  aria-invalid={Boolean(errors.password)}
+                  aria-describedby={errors.password ? 'login-password-error' : undefined}
                   className={`w-full h-11 pl-4 pr-11 text-sm border rounded-xl outline-none transition-colors
                     ${errors.password ? 'border-red-300 bg-red-50 focus:border-red-400' : 'border-slate-200 bg-slate-50 focus:border-blue-400 focus:bg-white'}
                     placeholder-slate-400 text-slate-800`}
@@ -240,15 +249,18 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
+                  aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  aria-pressed={showPw}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+              {errors.password && <p id="login-password-error" className="text-xs text-red-500 mt-1">{errors.password}</p>}
             </div>
 
             <button
+              type="button"
               onClick={handleLogin}
               disabled={loading}
               className="w-full h-12 rounded-xl bg-blue-600 text-white text-sm font-700 hover:bg-blue-700 disabled:opacity-70
@@ -276,10 +288,10 @@ export default function Login() {
 
           {showRegister && (
             <div className="fixed inset-0 z-50 bg-slate-950/40 p-4 flex items-center justify-center">
-              <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+              <div role="dialog" aria-modal="true" aria-labelledby="register-dialog-title" className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
                 <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-                  <div><h3 className="text-lg font-800 text-slate-900">Tạo tài khoản khách hàng</h3><p className="text-xs text-slate-500 mt-1">Đăng ký để gửi và theo dõi đơn cùng {BRAND_NAME}</p></div>
-                  <button onClick={() => setShowRegister(false)} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400"><X size={17} /></button>
+                  <div><h3 id="register-dialog-title" className="text-lg font-800 text-slate-900">Tạo tài khoản khách hàng</h3><p className="text-xs text-slate-500 mt-1">Đăng ký để gửi và theo dõi đơn cùng {BRAND_NAME}</p></div>
+                  <button type="button" onClick={() => setShowRegister(false)} aria-label="Đóng biểu mẫu đăng ký" className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400"><X size={17} /></button>
                 </div>
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
@@ -290,8 +302,8 @@ export default function Login() {
                     { key: 'password', label: 'Mật khẩu', placeholder: PASSWORD_POLICY_HINT, type: 'password' },
                   ].map(field => (
                     <div key={field.key} className={field.key === 'password' ? 'sm:col-span-2' : ''}>
-                      <label className="block text-xs font-600 text-slate-700 mb-1.5">{field.label}</label>
-                      <input type={field.type} value={registerForm[field.key as keyof typeof registerForm]}
+                      <label htmlFor={`register-${field.key}`} className="block text-xs font-600 text-slate-700 mb-1.5">{field.label}</label>
+                      <input id={`register-${field.key}`} type={field.type} value={registerForm[field.key as keyof typeof registerForm]}
                         onChange={e => setRegisterForm(prev => ({ ...prev, [field.key]: e.target.value }))}
                         placeholder={field.placeholder}
                         className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
@@ -299,8 +311,8 @@ export default function Login() {
                   ))}
                 </div>
                 <div className="p-5 pt-0 flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                  <button onClick={() => setShowRegister(false)} className="h-10 px-5 rounded-xl border border-slate-200 text-sm text-slate-600">Hủy</button>
-                  <button onClick={handleRegister} disabled={registering} className="h-10 px-6 rounded-xl bg-blue-600 text-white text-sm font-600 disabled:opacity-60">
+                  <button type="button" onClick={() => setShowRegister(false)} className="h-10 px-5 rounded-xl border border-slate-200 text-sm text-slate-600">Hủy</button>
+                  <button type="button" onClick={handleRegister} disabled={registering} className="h-10 px-6 rounded-xl bg-blue-600 text-white text-sm font-600 disabled:opacity-60">
                 {registering ? 'Đang tạo tài khoản...' : 'Đăng ký ngay'}
                   </button>
                 </div>

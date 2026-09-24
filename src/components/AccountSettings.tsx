@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell,
   Check,
   Eye,
   EyeOff,
+  ImagePlus,
   KeyRound,
   Loader2,
   MapPin,
@@ -22,10 +22,11 @@ import {
   createUserAddressApi,
   deleteUserAddressApi,
   getCurrentUserApi,
+  removeCurrentUserAvatarApi,
   setDefaultUserAddressApi,
   updateCurrentUserProfileApi,
-  updateCurrentUserSettingsApi,
   updateUserAddressApi,
+  uploadCurrentUserAvatarApi,
 } from "../api/deliveryApi";
 import { useApp } from "../context/AppContext";
 import type {
@@ -34,14 +35,11 @@ import type {
   UpdateProfileRequest,
   UserAddress,
   UserAddressRequest,
-  UserSettings,
 } from "../types/account";
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from "../utils/passwordPolicy";
-import { applyUserPreferences } from "../utils/userPreferences";
 import { getRoleLabel } from "../utils/role";
-import { BRAND_SHORT_NAME } from "../config/brand";
 
-type AccountSection = "profile" | "addresses" | "security" | "preferences";
+type AccountSection = "profile" | "addresses" | "security";
 
 interface AccountSettingsProps {
   embedded?: boolean;
@@ -51,23 +49,7 @@ const sections = [
   { id: "profile" as const, label: "Thông tin cá nhân", icon: UserRound },
   { id: "addresses" as const, label: "Sổ địa chỉ", icon: MapPin },
   { id: "security" as const, label: "Mật khẩu", icon: KeyRound },
-  { id: "preferences" as const, label: "Tùy chọn", icon: Bell },
 ];
-
-const INITIAL_SETTINGS: UserSettings = {
-  emailNotifications: true,
-  smsNotifications: false,
-  pushNotifications: true,
-  newOrderNotifications: true,
-  statusChangeNotifications: true,
-  paymentSuccessNotifications: true,
-  deliveryCompleteNotifications: true,
-  shipperAssignmentNotifications: false,
-  serviceAlertNotifications: true,
-  language: "vi",
-  theme: "LIGHT",
-  accentColor: "#2563EB",
-};
 
 const EMPTY_ADDRESS: UserAddressRequest = {
   label: "",
@@ -81,6 +63,33 @@ const EMPTY_ADDRESS: UserAddressRequest = {
   defaultAddress: false,
 };
 
+const MAX_SOURCE_AVATAR_BYTES = 12 * 1024 * 1024;
+
+async function optimizeAvatar(file: File): Promise<File> {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("Không thể đọc ảnh đã chọn."));
+      element.src = objectUrl;
+    });
+    const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
+    const scale = largestSide > 640 ? 640 / largestSide : 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Trình duyệt không thể xử lý ảnh này.");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.84));
+    if (!blob) throw new Error("Không thể tối ưu ảnh đã chọn.");
+    return new File([blob], "avatar.jpg", { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 const EMPTY_PASSWORD: ChangePasswordRequest = {
   currentPassword: "",
   newPassword: "",
@@ -89,35 +98,6 @@ const EMPTY_PASSWORD: ChangePasswordRequest = {
 
 const inputClass =
   "w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white disabled:opacity-60";
-
-function Toggle({
-  checked,
-  disabled,
-  onChange,
-}: {
-  checked: boolean;
-  disabled?: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${
-        checked ? "bg-blue-600" : "bg-slate-200"
-      }`}
-    >
-      <span
-        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-          checked ? "translate-x-5" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
-}
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="mb-1.5 block text-xs font-600 text-slate-700">{children}</label>;
@@ -167,7 +147,6 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     addToast,
     openConfirm,
     updateCurrentUser,
-    updateCurrentUserSettings,
     logout,
     role: currentRole,
   } = useApp();
@@ -185,7 +164,6 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
-  const [settings, setSettings] = useState<UserSettings>(INITIAL_SETTINGS);
   const [password, setPassword] = useState<ChangePasswordRequest>(EMPTY_PASSWORD);
   const [showPassword, setShowPassword] = useState(false);
   const [addressDraft, setAddressDraft] = useState<UserAddressRequest>(EMPTY_ADDRESS);
@@ -194,38 +172,12 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [savingAppearance, setSavingAppearance] = useState(false);
-  const appearanceRequestId = useRef(0);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [addressActionId, setAddressActionId] = useState<number | null>(null);
   const visibleSections = currentRole === "Customer"
     ? sections
     : sections.filter(({ id }) => id !== "addresses");
-  const notificationEvents = currentRole === "Shipper"
-    ? [
-        { key: "newOrderNotifications" as const, label: "Khi có đơn mới giao cho tôi" },
-        { key: "statusChangeNotifications" as const, label: "Khi trạng thái đơn thay đổi" },
-        { key: "deliveryCompleteNotifications" as const, label: "Khi đã giao xong" },
-        { key: "shipperAssignmentNotifications" as const, label: "Khi được giao thêm đơn" },
-      ]
-    : currentRole === "Customer"
-      ? [
-          { key: "newOrderNotifications" as const, label: "Khi tạo đơn thành công" },
-          { key: "statusChangeNotifications" as const, label: "Khi trạng thái đơn thay đổi" },
-          { key: "paymentSuccessNotifications" as const, label: "Khi thanh toán thành công" },
-          { key: "deliveryCompleteNotifications" as const, label: "Khi đơn đã giao" },
-          { key: "shipperAssignmentNotifications" as const, label: "Khi có nhân viên giao hàng" },
-          { key: "serviceAlertNotifications" as const, label: `Thông báo quan trọng từ ${BRAND_SHORT_NAME}` },
-        ]
-      : [
-          { key: "newOrderNotifications" as const, label: "Khi có đơn hàng mới" },
-          { key: "statusChangeNotifications" as const, label: "Khi trạng thái đơn thay đổi" },
-          { key: "paymentSuccessNotifications" as const, label: "Khi thanh toán thành công" },
-          { key: "deliveryCompleteNotifications" as const, label: "Khi đơn đã giao" },
-          { key: "shipperAssignmentNotifications" as const, label: "Khi đã phân công người giao" },
-          { key: "serviceAlertNotifications" as const, label: "Thông báo quan trọng" },
-        ];
-
   const loadAccount = useCallback(async () => {
     setLoading(true);
     setLoadError("");
@@ -236,10 +188,6 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
       }
 
       const account = response.data;
-      if (!account.settings) {
-        throw new Error("Không thể tải tùy chọn tài khoản. Vui lòng thử lại.");
-      }
-      const accountSettings = account.settings;
       setUsername(account.username);
       setRole(account.role);
       setProfile({
@@ -251,9 +199,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
         avatarUrl: account.avatarUrl ?? null,
       });
       setAddresses(account.addresses ?? []);
-      setSettings(accountSettings);
       updateCurrentUser(account);
-      applyUserPreferences(accountSettings);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Không thể tải thông tin tài khoản");
     } finally {
@@ -288,7 +234,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
         phoneNumber: profile.phoneNumber.trim(),
         dateOfBirth: profile.dateOfBirth || null,
         gender: profile.gender || null,
-        avatarUrl: profile.avatarUrl?.trim() || null,
+        avatarUrl: profile.avatarUrl?.startsWith("data:") ? null : profile.avatarUrl?.trim() || null,
       };
       const response = await updateCurrentUserProfileApi(payload);
       if (response.httpStatus === 200 && response.data) {
@@ -500,55 +446,59 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     }
   };
 
-  const saveSettings = async () => {
-    setSavingSettings(true);
+  const applyAvatarAccount = (account: Awaited<ReturnType<typeof getCurrentUserApi>>["data"]) => {
+    if (!account) return;
+    setProfile((current) => ({ ...current, avatarUrl: account.avatarUrl ?? null }));
+    updateCurrentUser(account);
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const source = event.target.files?.[0];
+    event.target.value = "";
+    if (!source) return;
+    if (!source.type.startsWith("image/")) {
+      addToast({ type: "warning", title: "Tệp không hợp lệ", message: "Vui lòng chọn ảnh JPG, PNG hoặc WebP." });
+      return;
+    }
+    if (source.size > MAX_SOURCE_AVATAR_BYTES) {
+      addToast({ type: "warning", title: "Ảnh quá lớn", message: "Vui lòng chọn ảnh có dung lượng dưới 12 MB." });
+      return;
+    }
+
+    setUploadingAvatar(true);
     try {
-      const response = await updateCurrentUserSettingsApi(settings);
-      if (response.httpStatus === 200 && response.data) {
-        setSettings(response.data);
-        updateCurrentUserSettings(response.data);
-        addToast({
-          type: "success",
-          title: "Đã lưu tùy chọn",
-          message: "Tùy chọn của bạn đã được lưu.",
-        });
-      }
+      const optimized = await optimizeAvatar(source);
+      const response = await uploadCurrentUserAvatarApi(optimized);
+      if (response.httpStatus !== 200 || !response.data) throw new Error(response.message || "Không thể tải ảnh lên.");
+      applyAvatarAccount(response.data);
+      addToast({ type: "success", title: "Đã cập nhật ảnh đại diện", message: "Ảnh được tối ưu và lưu an toàn vào tài khoản." });
     } catch (error) {
-      addToast({
-        type: "error",
-        title: "Không thể lưu tùy chọn",
-        message: error instanceof Error ? error.message : "Vui lòng thử lại.",
-      });
+      addToast({ type: "error", title: "Không thể tải ảnh lên", message: error instanceof Error ? error.message : "Vui lòng thử lại." });
     } finally {
-      setSavingSettings(false);
+      setUploadingAvatar(false);
     }
   };
 
-  const saveAppearance = (changes: Partial<Pick<UserSettings, "theme" | "accentColor">>) => {
-    const previous = settings;
-    const next = { ...settings, ...changes };
-    const requestId = ++appearanceRequestId.current;
-    setSettings(next);
-    updateCurrentUserSettings(next);
-    setSavingAppearance(true);
-
-    void (async () => {
-      try {
-        const response = await updateCurrentUserSettingsApi(next);
-        if (requestId === appearanceRequestId.current && response.httpStatus === 200 && response.data) {
-          setSettings(response.data);
-          updateCurrentUserSettings(response.data);
+  const removeAvatar = () => {
+    openConfirm({
+      title: "Xóa ảnh đại diện",
+      message: "Bạn có muốn xóa ảnh đại diện hiện tại không?",
+      confirmLabel: "Xóa ảnh",
+      danger: true,
+      onConfirm: async () => {
+        setUploadingAvatar(true);
+        try {
+          const response = await removeCurrentUserAvatarApi();
+          if (response.httpStatus !== 200 || !response.data) throw new Error(response.message || "Không thể xóa ảnh.");
+          applyAvatarAccount(response.data);
+          addToast({ type: "success", title: "Đã xóa ảnh đại diện" });
+        } catch (error) {
+          addToast({ type: "error", title: "Không thể xóa ảnh", message: error instanceof Error ? error.message : "Vui lòng thử lại." });
+        } finally {
+          setUploadingAvatar(false);
         }
-      } catch (error) {
-        if (requestId === appearanceRequestId.current) {
-          setSettings(previous);
-          updateCurrentUserSettings(previous);
-          addToast({ type: "error", title: "Không thể lưu giao diện", message: error instanceof Error ? error.message : "Đã khôi phục tùy chọn trước đó." });
-        }
-      } finally {
-        if (requestId === appearanceRequestId.current) setSavingAppearance(false);
-      }
-    })();
+      },
+    });
   };
 
   if (loading) {
@@ -581,10 +531,8 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     <section data-account-settings className={embedded ? "w-full" : "w-full max-w-6xl"}>
       {!embedded && (
         <div className="mb-5">
-          <h2 className="text-lg font-700 text-slate-900">Cài đặt tài khoản</h2>
-          <p className="mt-1 text-xs text-slate-500">
-            Cập nhật thông tin cá nhân, mật khẩu và tùy chọn của tài khoản.
-          </p>
+          <h2 className="text-lg font-700 text-slate-900">Tài khoản của tôi</h2>
+          <p className="mt-1 text-xs text-slate-500">Quản lý hồ sơ, địa chỉ và mật khẩu đăng nhập.</p>
         </div>
       )}
 
@@ -626,6 +574,19 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
                 {getRoleLabel(role || currentRole)}
               </span>
             </div>
+            <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => void handleAvatarUpload(event)} />
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <button type="button" disabled={uploadingAvatar} onClick={() => avatarInputRef.current?.click()} className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 text-[11px] font-600 text-slate-600 hover:bg-slate-50 disabled:opacity-60">
+                {uploadingAvatar ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
+                {uploadingAvatar ? "Đang tải" : "Tải ảnh"}
+              </button>
+              {profile.avatarUrl && (
+                <button type="button" disabled={uploadingAvatar} onClick={removeAvatar} className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-600 text-red-600 hover:bg-red-50 disabled:opacity-60">
+                  <Trash2 size={13} /> Xóa
+                </button>
+              )}
+            </div>
+            <p className="mt-2 text-center text-[10px] leading-relaxed text-slate-400">JPG, PNG hoặc WebP. Ảnh sẽ được tối ưu trước khi lưu.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
@@ -689,19 +650,17 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
                   <option value="OTHER">Khác</option>
                 </select>
               </div>
-              {(currentRole === "Admin" || currentRole === "Staff") && (
-                <div>
-                  <FieldLabel>Ảnh đại diện (đường dẫn)</FieldLabel>
-                  <input
-                    type="url"
-                    value={profile.avatarUrl ?? ""}
-                    maxLength={1024}
-                    placeholder="https://..."
-                    onChange={(event) => setProfile((current) => ({ ...current, avatarUrl: event.target.value || null }))}
-                    className={inputClass}
-                  />
-                </div>
-              )}
+              <div>
+                <FieldLabel>Ảnh đại diện qua đường dẫn (tùy chọn)</FieldLabel>
+                <input
+                  type="url"
+                  value={profile.avatarUrl?.startsWith("data:") ? "" : profile.avatarUrl ?? ""}
+                  maxLength={1024}
+                  placeholder="https://..."
+                  onChange={(event) => setProfile((current) => ({ ...current, avatarUrl: event.target.value || null }))}
+                  className={inputClass}
+                />
+              </div>
             </div>
             <div className="mt-5 flex justify-end">
               <button
@@ -868,88 +827,6 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
         </div>
       )}
 
-      {section === "preferences" && (
-        <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <h3 className="text-sm font-700 text-slate-900">Kênh nhận thông báo</h3>
-              <div className="mt-3 divide-y divide-slate-50">
-                {[
-                  { key: "emailNotifications" as const, label: "Email", description: "Nhận thông báo qua email tài khoản" },
-                  { key: "smsNotifications" as const, label: "SMS", description: "Nhận tin nhắn qua số điện thoại" },
-                  { key: "pushNotifications" as const, label: "Thông báo trên thiết bị", description: "Hiện thông báo trên trình duyệt" },
-                ].map(({ key, label, description }) => (
-                  <div key={key} className="flex items-center justify-between gap-4 py-3">
-                    <div><p className="text-xs font-600 text-slate-800">{label}</p><p className="mt-0.5 text-[11px] text-slate-400">{description}</p></div>
-                    <Toggle disabled={savingSettings} checked={settings[key]} onChange={(value) => setSettings((current) => ({ ...current, [key]: value }))} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <h3 className="text-sm font-700 text-slate-900">Nội dung muốn nhận</h3>
-              <div className="mt-3 divide-y divide-slate-50">
-                {notificationEvents.map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between gap-4 py-2.5">
-                    <p className="text-xs font-600 text-slate-700">{label}</p>
-                    <Toggle disabled={savingSettings} checked={settings[key]} onChange={(value) => setSettings((current) => ({ ...current, [key]: value }))} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <div className="grid gap-5 md:grid-cols-2">
-              <div>
-                <FieldLabel>Ngôn ngữ</FieldLabel>
-                <select disabled={savingSettings} value={settings.language} onChange={(event) => setSettings((current) => ({ ...current, language: event.target.value as UserSettings["language"] }))} className={inputClass}>
-                  <option value="vi">Tiếng Việt</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-              <div>
-                <FieldLabel>Màu chủ đạo</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {["#2563EB", "#0F766E", "#7C3AED", "#059669", "#E11D48", "#D97706", "#0891B2"].map((color) => (
-                    <button key={color} type="button" disabled={savingAppearance} aria-label={`Chọn màu ${color}`} onClick={() => saveAppearance({ accentColor: color })} className={`h-9 w-9 rounded-full border-2 disabled:opacity-50 ${settings.accentColor === color ? "scale-110 border-slate-500" : "border-transparent"}`} style={{ backgroundColor: color }} />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <FieldLabel>Giao diện</FieldLabel>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {[
-                  { id: "LIGHT" as const, label: "Sáng", preview: "theme-preview-light" },
-                  { id: "DARK" as const, label: "Tối", preview: "theme-preview-dark" },
-                  { id: "SYSTEM" as const, label: "Theo thiết bị", preview: "theme-preview-system" },
-                ].map(({ id, label, preview }) => (
-                  <button key={id} type="button" disabled={savingAppearance} onClick={() => saveAppearance({ theme: id })} className={`theme-option rounded-xl border-2 p-3 text-left disabled:opacity-50 ${settings.theme === id ? "border-blue-500 bg-blue-50" : "border-slate-100 bg-slate-50"}`}>
-                    <span className={`theme-preview mb-2 flex h-12 items-center gap-2 rounded-lg border p-2 ${preview}`}>
-                      <span className="theme-preview-sidebar h-full w-3 rounded" />
-                      <span className="flex flex-1 flex-col gap-1.5">
-                        <span className="theme-preview-line h-1.5 w-2/3 rounded-full" />
-                        <span className="theme-preview-card h-5 rounded" />
-                      </span>
-                    </span>
-                    <span className="text-xs font-600 text-slate-700">{label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-5 flex items-center justify-between gap-3">
-              <p className="text-xs text-slate-500">{savingAppearance ? "Đang lưu giao diện..." : "Giao diện và màu chủ đạo được lưu tự động."}</p>
-              <button type="button" disabled={savingSettings} onClick={() => void saveSettings()} style={{ backgroundColor: settings.accentColor }} className="flex h-10 items-center gap-2 rounded-xl px-5 text-xs font-600 text-white disabled:opacity-60">
-                {savingSettings ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Lưu thông báo & ngôn ngữ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

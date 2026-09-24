@@ -20,6 +20,7 @@ const Notifications = lazy(() => import('./pages/Notifications'));
 const Tracking = lazy(() => import('./pages/Tracking'));
 const Reports = lazy(() => import('./pages/Reports'));
 const Settings = lazy(() => import('./pages/Settings'));
+const AccountSettings = lazy(() => import('./components/AccountSettings'));
 const CustomerView = lazy(() => import('./pages/CustomerView'));
 const ShipperMobile = lazy(() => import('./pages/ShipperMobile'));
 
@@ -67,7 +68,8 @@ function AppRoutes() {
           <Route path="/notifications" element={permit('VIEW_NOTIFICATIONS', <Notifications />)} />
           <Route path="/tracking" element={allow(['Admin', 'Staff'], <Tracking />)} />
           <Route path="/reports" element={permit('VIEW_REPORTS', <Reports />)} />
-          <Route path="/settings" element={permit('SYSTEM_SETTINGS', <Settings />)} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/account" element={<AccountSettings />} />
         </Route>
       ) : (
         <Route path="*" element={<Navigate to="/login" replace />} />

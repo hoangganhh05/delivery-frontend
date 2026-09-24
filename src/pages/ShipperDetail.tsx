@@ -35,7 +35,7 @@ export default function ShipperDetail() {
 
   if (loading) return <div className="p-12 text-center text-sm text-slate-400">Đang tải thông tin nhân viên...</div>;
   if (!shipper) {
-    return <div className="p-12 text-center space-y-4"><p className="text-sm text-slate-600">Không tìm thấy nhân viên giao hàng.</p><button onClick={() => navigate("/shippers")} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">Quay lại</button></div>;
+    return <div className="p-12 text-center space-y-4"><p className="text-sm text-slate-600">Không tìm thấy nhân viên giao hàng.</p><button type="button" onClick={() => navigate("/shippers")} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">Quay lại</button></div>;
   }
 
   const name = shipper.fullName || shipper.username;
@@ -45,7 +45,7 @@ export default function ShipperDetail() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/shippers")} className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500"><ArrowLeft size={15} /></button>
+        <button type="button" onClick={() => navigate("/shippers")} aria-label="Quay lại danh sách nhân viên giao hàng" className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500"><ArrowLeft size={15} /></button>
         <h2 className="text-base font-700 text-slate-900">Thông tin nhân viên giao hàng</h2>
       </div>
 
@@ -75,7 +75,7 @@ export default function ShipperDetail() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[620px]">
-                <thead><tr className="border-b border-slate-100">{["Mã vận đơn", "Người nhận", "Cước phí", "Trạng thái"].map(label => <th key={label} className="text-left text-xs text-slate-500 pb-3">{label}</th>)}</tr></thead>
+                <thead><tr className="border-b border-slate-100">{["Mã vận đơn", "Người nhận", "Cước phí", "Trạng thái"].map(label => <th key={label} scope="col" className="text-left text-xs text-slate-500 pb-3">{label}</th>)}</tr></thead>
                 <tbody>{orders.map(order => (
                   <tr key={order.id} onClick={() => navigate(`/orders/${order.trackingNumber}`)} className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer">
                     <td className="py-3 text-xs font-600 text-blue-600">{order.trackingNumber}</td><td className="py-3 text-xs text-slate-700">{order.receiverName}</td><td className="py-3 text-xs text-slate-700">{Number(order.totalFee || 0).toLocaleString()}đ</td><td className="py-3"><StatusBadge status={mapBackendStatusToUI(order.status)} type="order" /></td>

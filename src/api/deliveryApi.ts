@@ -152,6 +152,18 @@ export const updateCurrentUserProfileApi = (
   return axiosClient.put("/users/profile", data);
 };
 
+export const uploadCurrentUserAvatarApi = (file: File): Promise<ApiResponse<UserMe>> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return axiosClient.post("/users/avatar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const removeCurrentUserAvatarApi = (): Promise<ApiResponse<UserMe>> => {
+  return axiosClient.delete("/users/avatar");
+};
+
 export const changePasswordApi = (
   data: ChangePasswordRequest,
 ): Promise<ApiResponse<PasswordChangeResponse>> => {

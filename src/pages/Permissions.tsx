@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Shield, X } from "lucide-react";
 import { getPermissionMatrixApi, updatePermissionMatrixApi, type ApiRole, type PermissionMatrix } from "../api/deliveryApi";
 import { useApp } from "../context/AppContext";
@@ -10,13 +10,17 @@ const colors: Record<ApiRole, string> = {
 };
 
 export default function Permissions() {
-  const { addToast } = useApp();
+  const { addToast, openConfirm } = useApp();
   const [matrix, setMatrix] = useState<PermissionMatrix | null>(null);
+  const [savedMatrix, setSavedMatrix] = useState<PermissionMatrix | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getPermissionMatrixApi().then(res => setMatrix(res.data))
+    getPermissionMatrixApi().then(res => {
+      setMatrix(res.data);
+      setSavedMatrix(res.data);
+    })
       .catch((error: Error) => addToast({ type: "error", title: "Không thể tải phân quyền", message: error.message }))
       .finally(() => setLoading(false));
   }, [addToast]);
@@ -36,10 +40,33 @@ export default function Permissions() {
       })));
       const response = await updatePermissionMatrixApi(values);
       setMatrix(response.data);
+      setSavedMatrix(response.data);
       addToast({ type: "success", title: "Đã lưu phân quyền", message: "Quyền truy cập đã được cập nhật." });
     } catch (error: any) {
       addToast({ type: "error", title: "Lưu phân quyền thất bại", message: error.message });
     } finally { setSaving(false); }
+  };
+
+  const requestSave = () => {
+    if (!matrix || saving) return;
+    openConfirm({
+      title: "Lưu thay đổi phân quyền",
+      message: "Các thay đổi sẽ áp dụng ngay và có thể khiến một số tài khoản mất hoặc có thêm quyền truy cập. Bạn có chắc chắn muốn tiếp tục?",
+      confirmLabel: "Lưu phân quyền",
+      danger: true,
+      onConfirm: () => { void save(); },
+    });
+  };
+
+  const hasUnsavedChanges = useMemo(
+    () => Boolean(matrix && savedMatrix && JSON.stringify(matrix.permissions) !== JSON.stringify(savedMatrix.permissions)),
+    [matrix, savedMatrix],
+  );
+
+  const discardPendingChanges = () => {
+    if (!savedMatrix) return;
+    setMatrix(savedMatrix);
+    addToast({ type: "info", title: "Đã hoàn tác các thay đổi chưa lưu" });
   };
 
   if (loading) return <div className="p-10 flex justify-center text-slate-400"><Loader2 className="animate-spin" /></div>;
@@ -50,10 +77,18 @@ export default function Permissions() {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div><h2 className="text-lg font-700 text-slate-900">Quyền truy cập</h2>
         <p className="text-xs text-slate-500 mt-0.5">Chọn chức năng từng loại tài khoản được phép sử dụng</p></div>
-      <button onClick={save} disabled={saving} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 disabled:opacity-60">
-        {saving && <Loader2 size={14} className="animate-spin" />} Lưu thay đổi
-      </button>
+      <div className="flex items-center gap-2">
+        {hasUnsavedChanges && (
+          <button type="button" onClick={discardPendingChanges} disabled={saving} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm font-500 text-slate-600 hover:bg-slate-50 disabled:opacity-60">
+            Hoàn tác chưa lưu
+          </button>
+        )}
+        <button type="button" onClick={requestSave} disabled={saving || !hasUnsavedChanges} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 disabled:opacity-60">
+          {saving && <Loader2 size={14} className="animate-spin" />} Lưu thay đổi
+        </button>
+      </div>
     </div>
+    {hasUnsavedChanges && <p role="status" className="text-xs text-amber-700">Bạn có thay đổi chưa được lưu.</p>}
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
       {matrix.roles.map(role => <div key={role} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${colors[role]}`}><Shield size={18} /></div>
@@ -70,7 +105,13 @@ export default function Permissions() {
         {matrix.permissions.filter(permission => permission.group === group).map(permission => <div key={permission.code} className="grid grid-cols-[1fr_repeat(4,_120px)] border-b border-slate-50">
           <div className="py-3 px-4 text-sm text-slate-700">{permission.label}</div>
           {matrix.roles.map(role => { const allowed = permission.roles[role]; return <div key={role} className="py-3 flex justify-center">
-            <button onClick={() => toggle(permission.code, role)} disabled={role === "ADMIN"}
+            <button
+              type="button"
+              onClick={() => toggle(permission.code, role)}
+              disabled={role === "ADMIN"}
+              aria-pressed={allowed}
+              aria-label={`${allowed ? "Tắt" : "Bật"} quyền ${permission.label} cho ${labels[role]}`}
+              title={role === "ADMIN" ? "Quản trị viên luôn có toàn quyền" : `${allowed ? "Tắt" : "Bật"} quyền ${permission.label} cho ${labels[role]}`}
               className={`w-7 h-7 rounded-lg flex items-center justify-center ${allowed ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-300"}`}>
               {allowed ? <Check size={13} /> : <X size={13} />}
             </button></div>; })}

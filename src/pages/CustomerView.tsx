@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, RefreshCw, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
+import PreferencesSettings from '../components/PreferencesSettings';
 import BrandLogo from '../components/BrandLogo';
 import { BRAND_NAME } from '../config/brand';
 
@@ -15,7 +16,7 @@ type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export default function CustomerView() {
   const navigate = useNavigate();
   const { user, addToast, logout } = useApp();
-  const [tab, setTab] = useState<'home' | 'orders' | 'create' | 'tracking' | 'profile'>('home');
+  const [tab, setTab] = useState<'home' | 'orders' | 'create' | 'tracking' | 'profile' | 'settings'>('home');
   const [createStep, setCreateStep] = useState<Step>(0);
   const [trackInput, setTrackInput] = useState('');
   const [trackedOrder, setTrackedOrder] = useState<any>(null);
@@ -211,6 +212,7 @@ export default function CustomerView() {
     { id: 'orders', icon: Clock, label: 'Đơn hàng' },
     { id: 'tracking', icon: MapPin, label: 'Tra cứu' },
     { id: 'profile', icon: User, label: 'Tài khoản' },
+    { id: 'settings', icon: Settings, label: 'Cài đặt' },
   ] as const;
 
   if (tab === 'create') {
@@ -685,6 +687,7 @@ export default function CustomerView() {
             <AccountSettings embedded />
           </div>
         )}
+        {tab === 'settings' && <PreferencesSettings />}
       </div>
 
       {/* Bottom nav */}

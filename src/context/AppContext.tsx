@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { getCurrentUserApi, getMyPermissionsApi } from '../api/deliveryApi';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { getCurrentUserApi, getMyPermissionsApi, getUnreadNotificationCountApi } from '../api/deliveryApi';
 import type { UserMe, UserSettings } from '../types/account';
 import { applyUserPreferences } from '../utils/userPreferences';
 
@@ -47,6 +47,8 @@ interface AppContextValue {
   permissions: Set<string>;
   hasPermission: (code: string) => boolean;
   refreshPermissions: () => Promise<void>;
+  unreadNotificationCount: number;
+  refreshUnreadNotificationCount: () => Promise<void>;
   logout: () => void;
   toasts: Toast[];
   addToast: (t: Omit<Toast, 'id'>) => void;
@@ -59,6 +61,20 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+
+function getTokenExpiry(token: string | null): number | null {
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=');
+    const decoded = JSON.parse(window.atob(padded));
+    return typeof decoded.exp === 'number' ? decoded.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
 
 function normalizeRole(rawRole: string): Role {
   const upper = (rawRole || '').toUpperCase();
@@ -93,6 +109,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [confirm, setConfirm] = useState<ConfirmDialog | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const sessionWarningTimer = useRef<number | null>(null);
 
   const setRole = useCallback((r: Role) => {
     setRoleState(r);
@@ -157,6 +175,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     catch { setPermissions(new Set()); }
   }, []);
 
+  const refreshUnreadNotificationCount = useCallback(async () => {
+    if (!localStorage.getItem('token')) {
+      setUnreadNotificationCount(0);
+      return;
+    }
+    try {
+      const response = await getUnreadNotificationCountApi();
+      if (response.httpStatus === 200) {
+        setUnreadNotificationCount(Math.max(0, Number(response.data) || 0));
+      }
+    } catch {
+      // The notification badge is non-critical; preserve its last known value on a transient failure.
+    }
+  }, []);
+
   const hasPermission = useCallback((code: string) => role === 'Admin' || permissions.has(code), [role, permissions]);
 
   const login = useCallback((r: Role) => {
@@ -172,12 +205,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false);
     setUser(null);
     setPermissions(new Set());
+    setUnreadNotificationCount(0);
     applyUserPreferences(null);
   }, []);
 
   useEffect(() => {
-    if (isLoggedIn) { void refreshCurrentUser(); void refreshPermissions(); }
-  }, [isLoggedIn, refreshCurrentUser, refreshPermissions]);
+    if (isLoggedIn) { void refreshCurrentUser(); void refreshPermissions(); void refreshUnreadNotificationCount(); }
+  }, [isLoggedIn, refreshCurrentUser, refreshPermissions, refreshUnreadNotificationCount]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void refreshUnreadNotificationCount();
+    };
+    const intervalId = window.setInterval(refreshWhenVisible, 45_000);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [isLoggedIn, refreshUnreadNotificationCount]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -193,6 +240,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setToasts(prev => prev.filter(x => x.id !== id)), 4000);
   }, []);
 
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const expiry = getTokenExpiry(localStorage.getItem('token'));
+    if (!expiry) return;
+    const warningDelay = expiry - Date.now() - 15 * 60 * 1000;
+    const warn = () => addToast({
+      type: 'warning',
+      title: 'Phiên đăng nhập sắp hết hạn',
+      message: 'Vui lòng lưu công việc đang làm và đăng nhập lại khi cần.',
+    });
+    if (warningDelay <= 0) warn();
+    else sessionWarningTimer.current = window.setTimeout(warn, warningDelay);
+    return () => {
+      if (sessionWarningTimer.current !== null) window.clearTimeout(sessionWarningTimer.current);
+    };
+  }, [isLoggedIn, addToast]);
+
   const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(x => x.id !== id));
   }, []);
@@ -204,7 +268,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider value={{
       role, setRole, isLoggedIn, user, login, loginWithAuthData,
       updateCurrentUser, updateCurrentUserSettings, refreshCurrentUser, logout,
-      permissions, hasPermission, refreshPermissions,
+      permissions, hasPermission, refreshPermissions, unreadNotificationCount, refreshUnreadNotificationCount,
       toasts, addToast, removeToast,
       confirm, openConfirm, closeConfirm,
       sidebarOpen, setSidebarOpen,
