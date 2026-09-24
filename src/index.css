@@ -139,14 +139,31 @@ html .border-blue-600 {
 .app-sidebar .sidebar-group { color: #7c8aa0 !important; }
 .app-sidebar .sidebar-toggle { color: #64748b !important; }
 .app-sidebar .sidebar-toggle:hover { background: #eff6ff !important; color: var(--user-accent-color) !important; }
-.app-sidebar .sidebar-expand { color: var(--user-accent-color); }
-.app-sidebar .sidebar-expand:hover { background: #eff6ff; }
-.app-sidebar .sidebar-expand-indicator {
-  color: white;
-  background: var(--user-accent-color);
-  border: 2px solid white;
-  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.28);
+.app-sidebar .sidebar-expand { color: #334155; }
+.app-sidebar .sidebar-expand:hover,
+.app-sidebar .sidebar-expand:focus-visible { background: #eff6ff; }
+.app-sidebar .sidebar-expand:focus-visible {
+  outline: 2px solid var(--user-accent-color);
+  outline-offset: 2px;
 }
+.app-sidebar .sidebar-expand-logo,
+.app-sidebar .sidebar-expand-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.app-sidebar .sidebar-expand-logo { opacity: 1; transform: scale(1); }
+.app-sidebar .sidebar-expand-icon { opacity: 0; transform: scale(0.85); }
+@media (hover: hover) {
+  .app-sidebar .sidebar-expand:hover .sidebar-expand-logo { opacity: 0; transform: scale(0.85); }
+  .app-sidebar .sidebar-expand:hover .sidebar-expand-icon { opacity: 1; transform: scale(1); }
+}
+.app-sidebar .sidebar-expand:focus-visible .sidebar-expand-logo { opacity: 0; transform: scale(0.85); }
+.app-sidebar .sidebar-expand:focus-visible .sidebar-expand-icon { opacity: 1; transform: scale(1); }
 .app-sidebar .sidebar-link { color: #526078 !important; }
 .app-sidebar .sidebar-link svg { color: #7c8aa0 !important; }
 .app-sidebar .sidebar-link:hover {
@@ -436,8 +453,12 @@ html[data-user-theme='dark'] .app-sidebar .sidebar-expand:hover {
   background: rgba(148, 163, 184, 0.1);
 }
 
-html[data-user-theme='dark'] .app-sidebar .sidebar-expand-indicator {
-  border-color: #0f1b2e;
+html[data-user-theme='dark'] .app-sidebar .sidebar-expand {
+  color: #e2e8f0;
+}
+
+html[data-user-theme='dark'] .app-sidebar .sidebar-expand:focus-visible {
+  background: rgba(148, 163, 184, 0.1);
 }
 
 html[data-user-theme='dark'] .app-sidebar .sidebar-link-active {

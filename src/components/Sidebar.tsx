@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Truck, Users, Navigation, MapPin,
   CreditCard, Tag, Bell, BarChart2, Settings, LogOut, ChevronLeft,
-  ChevronRight
+  PanelLeftOpen
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { Role } from '../context/AppContext';
@@ -98,6 +98,8 @@ export default function Sidebar() {
             <button
               onClick={() => setSidebarOpen(false)}
               aria-label="Thu gọn menu"
+              aria-expanded={true}
+              aria-controls="main-sidebar-navigation"
               title="Thu gọn menu"
               className="sidebar-toggle w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
             >
@@ -108,19 +110,23 @@ export default function Sidebar() {
           <button
             onClick={() => setSidebarOpen(true)}
             aria-label="Mở rộng menu"
+            aria-expanded={false}
+            aria-controls="main-sidebar-navigation"
             title="Mở rộng menu"
             className="sidebar-expand relative h-12 w-12 rounded-xl flex items-center justify-center"
           >
-            <BrandLogo size={36} />
-            <span className="sidebar-expand-indicator absolute -right-0.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full">
-              <ChevronRight size={12} strokeWidth={2.5} />
+            <span className="sidebar-expand-logo" aria-hidden="true">
+              <BrandLogo size={36} />
+            </span>
+            <span className="sidebar-expand-icon" aria-hidden="true">
+              <PanelLeftOpen size={23} strokeWidth={1.9} />
             </span>
           </button>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="sidebar-nav flex-1 overflow-y-auto py-4 px-2" aria-label="Điều hướng chính">
+      <nav id="main-sidebar-navigation" className="sidebar-nav flex-1 overflow-y-auto py-4 px-2" aria-label="Điều hướng chính">
         {allNavGroups.map((group) => {
           const visibleItems = group.items.filter(item => item.roles.includes(role) && (item.path === '/settings' || hasPermission(item.permission)));
           if (visibleItems.length === 0) return null;
