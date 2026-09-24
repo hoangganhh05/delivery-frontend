@@ -632,4 +632,10 @@ html[data-user-theme='dark'] .sidebar-nav::-webkit-scrollbar-thumb {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+
+  /* Keep essential loading feedback visible, but rotate more gently. */
+  .animate-spin {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
 }

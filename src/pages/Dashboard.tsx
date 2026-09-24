@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { ArrowRight } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
+import { LoadingState } from '../components/Skeleton';
 import { mapBackendStatusToUI } from '../utils/status';
 import { getDashboardStatsApi, searchOrdersApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
@@ -157,7 +158,7 @@ export default function Dashboard() {
           </div>
           {loading || !hasOrderData ? (
             <div className="h-[200px] rounded-xl border border-dashed border-slate-200 bg-slate-50/60 flex items-center justify-center text-sm text-slate-500">
-              {loading ? 'Đang tải dữ liệu...' : 'Chưa có dữ liệu đơn hàng'}
+              {loading ? <LoadingState label="Đang tải dữ liệu..." compact /> : 'Chưa có dữ liệu đơn hàng'}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
@@ -234,7 +235,7 @@ export default function Dashboard() {
           <p className="text-xs text-slate-400 mb-4">VNĐ</p>
           {loading || stats.totalRevenue <= 0 ? (
             <div className="h-[180px] rounded-xl border border-dashed border-slate-200 bg-slate-50/60 flex items-center justify-center text-sm text-slate-500">
-              {loading ? 'Đang tải dữ liệu...' : 'Chưa có dữ liệu doanh thu'}
+              {loading ? <LoadingState label="Đang tải dữ liệu..." compact /> : 'Chưa có dữ liệu doanh thu'}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
@@ -261,9 +262,7 @@ export default function Dashboard() {
             </button>
           </div>
           {recentOrders.length === 0 ? (
-            <div className="py-8 text-center text-xs text-slate-400">
-              {loading ? 'Đang tải đơn hàng...' : 'Chưa có đơn hàng nào'}
-            </div>
+            loading ? <LoadingState label="Đang tải đơn hàng..." /> : <div className="py-8 text-center text-xs text-slate-400">Chưa có đơn hàng nào</div>
           ) : (
             <div className="overflow-x-auto"><table className="w-full min-w-[640px]">
               <thead>

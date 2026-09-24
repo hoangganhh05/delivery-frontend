@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, RefreshCw, Settings } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import PreferencesSettings from '../components/PreferencesSettings';
 import BrandLogo from '../components/BrandLogo';
+import { LoadingState } from '../components/Skeleton';
 import { BRAND_NAME } from '../config/brand';
 
 const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Gói giao hàng', 'Mã giảm giá', 'Thanh toán', 'Xác nhận'];
@@ -559,9 +560,7 @@ export default function CustomerView() {
               </div>
               <div className="space-y-3">
                 {ordersLoading ? (
-                  <div className="bg-white rounded-xl border border-slate-100 py-10 text-center text-xs text-slate-400">
-                    <RefreshCw size={18} className="animate-spin mx-auto mb-2" /> Đang tải đơn hàng...
-                  </div>
+                  <LoadingState label="Đang tải đơn hàng..." className="rounded-xl border border-slate-100 bg-white" />
                 ) : ordersError ? (
                   <div className="bg-white rounded-xl border border-red-100 py-10 text-center">
                     <p className="text-sm text-red-600">{ordersError}</p>
@@ -606,7 +605,7 @@ export default function CustomerView() {
             </div>
             <div className="space-y-3">
               {ordersLoading ? (
-                <div className="py-12 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>
+                <LoadingState label="Đang tải danh sách đơn hàng..." />
               ) : ordersError ? (
                 <div className="bg-white rounded-xl border border-red-100 py-12 text-center text-sm text-red-600">{ordersError}</div>
               ) : customerOrders.length === 0 ? (
@@ -646,7 +645,8 @@ export default function CustomerView() {
                     placeholder="Nhập mã vận đơn (VD: VT...)"
                     className="w-full h-10 pl-9 pr-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 placeholder-slate-400" />
                 </div>
-                <button onClick={() => handleTrackSearch()} disabled={trackingLoading} className="h-10 px-4 rounded-xl bg-blue-600 text-sm text-white font-600">
+                <button onClick={() => handleTrackSearch()} disabled={trackingLoading} className="flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-600 text-white disabled:opacity-60">
+                  {trackingLoading && <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />}
                   {trackingLoading ? 'Đang tìm...' : 'Tra cứu'}
                 </button>
               </div>

@@ -12,6 +12,7 @@ interface EmptyStateProps {
 interface LoadingStateProps {
   label?: string;
   className?: string;
+  compact?: boolean;
 }
 
 export function EmptyState({
@@ -36,9 +37,9 @@ export function EmptyState({
   );
 }
 
-export function LoadingState({ label = "Đang tải dữ liệu...", className = "" }: LoadingStateProps) {
+export function LoadingState({ label = "Đang tải dữ liệu...", className = "", compact = false }: LoadingStateProps) {
   return (
-    <div className={`flex min-h-40 items-center justify-center gap-2 px-4 py-8 text-xs text-slate-500 ${className}`} role="status">
+    <div className={`flex items-center justify-center gap-2 px-4 text-xs text-slate-500 ${compact ? "py-4" : "min-h-40 py-8"} ${className}`} role="status">
       <LoaderCircle size={17} className="animate-spin text-blue-600" aria-hidden="true" />
       <span>{label}</span>
     </div>

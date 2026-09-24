@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Mail, Package, Phone, Truck } from "lucide-react";
 import { getShipperApi, getShipperOrdersApi } from "../api/deliveryApi";
 import StatusBadge from "../components/StatusBadge";
+import { LoadingState } from "../components/Skeleton";
 import { mapBackendStatusToUI } from "../utils/status";
 
 export default function ShipperDetail() {
@@ -33,7 +34,7 @@ export default function ShipperDetail() {
     load();
   }, [id]);
 
-  if (loading) return <div className="p-12 text-center text-sm text-slate-400">Đang tải thông tin nhân viên...</div>;
+  if (loading) return <LoadingState label="Đang tải thông tin nhân viên..." />;
   if (!shipper) {
     return <div className="p-12 text-center space-y-4"><p className="text-sm text-slate-600">Không tìm thấy nhân viên giao hàng.</p><button type="button" onClick={() => navigate("/shippers")} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">Quay lại</button></div>;
   }

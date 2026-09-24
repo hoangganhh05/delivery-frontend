@@ -152,6 +152,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
   } = useApp();
   const [section, setSection] = useState<AccountSection>("profile");
   const [loading, setLoading] = useState(true);
+  const [loadingSlow, setLoadingSlow] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [profile, setProfile] = useState<UpdateProfileRequest>({
     fullName: "",
@@ -180,7 +181,9 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     : sections.filter(({ id }) => id !== "addresses");
   const loadAccount = useCallback(async () => {
     setLoading(true);
+    setLoadingSlow(false);
     setLoadError("");
+    const slowNoticeTimer = window.setTimeout(() => setLoadingSlow(true), 8000);
     try {
       const response = await getCurrentUserApi();
       if (response.httpStatus !== 200 || !response.data) {
@@ -203,6 +206,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Không thể tải thông tin tài khoản");
     } finally {
+      window.clearTimeout(slowNoticeTimer);
       setLoading(false);
     }
   }, [updateCurrentUser]);
@@ -504,9 +508,10 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
   if (loading) {
     return (
       <div className="flex min-h-56 items-center justify-center rounded-2xl border border-slate-100 bg-white">
-        <div className="text-center">
-          <Loader2 className="mx-auto animate-spin text-blue-600" size={24} />
+        <div className="text-center" role="status" aria-live="polite">
+          <Loader2 className="mx-auto animate-spin text-blue-600" size={24} aria-hidden="true" />
           <p className="mt-2 text-xs text-slate-500">Đang tải thông tin tài khoản...</p>
+          {loadingSlow && <p className="mt-1 text-xs text-slate-400">Đang kết nối máy chủ, vui lòng chờ thêm một chút.</p>}
         </div>
       </div>
     );

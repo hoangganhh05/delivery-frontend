@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import DocumentTitle from './components/DocumentTitle';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
+import { LoadingState } from './components/Skeleton';
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Orders = lazy(() => import('./pages/Orders'));
@@ -34,7 +35,7 @@ function AppRoutes() {
     hasPermission(code) ? element : <Navigate to={homeRoute} replace />;
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-sm text-slate-400">Đang tải...</div>}>
+    <Suspense fallback={<LoadingState label="Đang mở trang..." className="min-h-screen" />}>
     <Routes>
       {/* Auth */}
       <Route

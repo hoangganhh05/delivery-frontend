@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Phone, Package, Truck, CheckCircle2, Clock, AlertCircle, UserCheck, Printer } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
+import { LoadingState } from '../components/Skeleton';
 import type { OrderStatus } from '../types/domain';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { getOrderByTrackingApi, trackOrderApi } from '../api/deliveryApi';
@@ -54,9 +55,7 @@ export default function OrderDetail() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-xs text-slate-400">
-        Đang tải thông tin chi tiết đơn hàng...
-      </div>
+      <LoadingState label="Đang tải chi tiết đơn hàng..." />
     );
   }
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Shield, X } from "lucide-react";
 import { getPermissionMatrixApi, updatePermissionMatrixApi, type ApiRole, type PermissionMatrix } from "../api/deliveryApi";
 import { useApp } from "../context/AppContext";
+import { LoadingState } from "../components/Skeleton";
 
 const labels: Record<ApiRole, string> = { ADMIN: "Quản trị viên", STAFF: "Nhân viên quản lý", SHIPPER: "Nhân viên giao hàng", CUSTOMER: "Khách hàng" };
 const colors: Record<ApiRole, string> = {
@@ -69,7 +70,7 @@ export default function Permissions() {
     addToast({ type: "info", title: "Đã hoàn tác các thay đổi chưa lưu" });
   };
 
-  if (loading) return <div className="p-10 flex justify-center text-slate-400"><Loader2 className="animate-spin" /></div>;
+  if (loading) return <LoadingState label="Đang tải quyền truy cập..." />;
   if (!matrix) return <div className="p-6 text-sm text-red-600">Không tải được danh sách quyền.</div>;
   const groups = Array.from(new Set(matrix.permissions.map(permission => permission.group)));
 

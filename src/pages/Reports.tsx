@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Download, DollarSign, Package, TrendingUp, Truck } from "lucide-react";
+import { Download, DollarSign, LoaderCircle, Package, TrendingUp, Truck } from "lucide-react";
 import { exportOrdersReportApi, getOperationsReportApi, type OperationsReport } from "../api/deliveryApi";
 import { useApp } from "../context/AppContext";
 
@@ -36,8 +36,8 @@ export default function Reports() {
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-3"><div><h2 className="text-lg font-700 text-slate-900">Báo cáo giao hàng</h2><p className="text-xs text-slate-500">Xem đơn hàng và doanh thu theo thời gian đã chọn</p></div>
       <div className="flex flex-wrap gap-2 items-end"><label className="text-xs text-slate-500">Từ ngày<input type="date" value={from} onChange={e => setFrom(e.target.value)} className="block h-9 border rounded-lg px-2 mt-1" /></label>
         <label className="text-xs text-slate-500">Đến ngày<input type="date" value={to} onChange={e => setTo(e.target.value)} className="block h-9 border rounded-lg px-2 mt-1" /></label>
-        <button onClick={() => void load()} disabled={loading} className="h-9 px-4 rounded-lg bg-blue-600 text-white text-xs disabled:opacity-60">{loading ? "Đang tải..." : "Áp dụng"}</button>
-        <button onClick={() => void download()} disabled={exporting} className="h-9 px-3 rounded-lg border bg-white text-xs flex items-center gap-1 disabled:opacity-60"><Download size={14} /> {exporting ? "Đang xuất..." : "Excel (CSV)"}</button>
+        <button onClick={() => void load()} disabled={loading} className="flex h-9 items-center gap-1 rounded-lg bg-blue-600 px-4 text-xs text-white disabled:opacity-60">{loading && <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />}{loading ? "Đang tải..." : "Áp dụng"}</button>
+        <button onClick={() => void download()} disabled={exporting} className="h-9 px-3 rounded-lg border bg-white text-xs flex items-center gap-1 disabled:opacity-60">{exporting ? <LoaderCircle size={14} className="animate-spin" aria-hidden="true" /> : <Download size={14} aria-hidden="true" />} {exporting ? "Đang xuất..." : "Excel (CSV)"}</button>
         <button onClick={printReport} className="h-9 px-3 rounded-lg border bg-white text-xs">In / PDF</button></div></div>
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">{[
       { label: "Tổng đơn hàng", value: stats.totalOrders.toLocaleString(), icon: Package },

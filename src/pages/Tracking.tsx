@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, Package, Truck, MapPin, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Package, Truck, MapPin, Clock, AlertCircle, RefreshCw, LoaderCircle } from 'lucide-react';
 import { trackOrderApi } from '../api/deliveryApi';
 import { getOrderStatusLabel } from '../utils/status';
 
@@ -142,7 +142,7 @@ export default function Tracking() {
             disabled={loading || !input.trim()}
             className="h-11 px-6 rounded-xl bg-blue-600 text-sm text-white font-600 hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
           >
-            <Search size={14} />
+            {loading ? <LoaderCircle size={14} className="animate-spin" aria-hidden="true" /> : <Search size={14} aria-hidden="true" />}
             {loading ? 'Đang tra cứu...' : 'Tra cứu'}
           </button>
         </div>

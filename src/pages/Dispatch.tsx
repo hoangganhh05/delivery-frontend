@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigation, Package, MapPin, RefreshCw, Search } from 'lucide-react';
 import { searchOrdersApi, getShippersApi, assignShipperApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
+import { LoadingState } from '../components/Skeleton';
 
 const DISPATCH_REFRESH_INTERVAL_MS = 60_000;
 
@@ -182,7 +183,7 @@ export default function Dispatch() {
             </div>
             <div className="overflow-y-auto flex-1 p-3 space-y-2">
               {loading ? (
-                <div className="p-8 text-center text-xs text-slate-400">Đang tải đơn hàng...</div>
+                <LoadingState label="Đang tải đơn hàng..." compact />
               ) : filteredUnassignedOrders.length === 0 ? (
                 <div className="p-8 text-center text-xs text-slate-400">
                   {unassignedOrders.length === 0 ? 'Không có đơn hàng nào chờ phân công' : 'Không tìm thấy đơn hàng phù hợp'}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search, ChevronLeft, ChevronRight, Eye, X, XCircle, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
+import { LoadingState } from '../components/Skeleton';
 import { mapBackendStatusToUI } from '../utils/status';
 import { useApp } from '../context/AppContext';
 import { cancelOrderApi, searchOrdersApi } from '../api/deliveryApi';
@@ -279,9 +280,7 @@ export default function Orders() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-xs text-slate-400">
-                  Đang tải đơn hàng...
-                </td>
+                <td colSpan={8}><LoadingState label="Đang tải đơn hàng..." /></td>
               </tr>
             ) : ordersList.length === 0 ? (
               <tr>

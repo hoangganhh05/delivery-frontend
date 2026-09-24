@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import PreferencesSettings from '../components/PreferencesSettings';
 import BrandLogo from '../components/BrandLogo';
+import { LoadingState } from '../components/Skeleton';
 import { BRAND_NAME } from '../config/brand';
 
 export default function ShipperMobile() {
@@ -276,7 +277,7 @@ export default function ShipperMobile() {
               <p className="text-sm font-700 text-slate-900 mb-2">Đơn hàng của bạn</p>
               <div className="grid gap-3 md:grid-cols-2">
                 {loading ? (
-                  <div className="md:col-span-2 py-10 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>
+                  <LoadingState label="Đang tải danh sách đơn hàng..." className="md:col-span-2" />
                 ) : loadError ? (
                   <div className="md:col-span-2 py-10 text-center bg-white rounded-xl border border-red-100">
                     <p className="text-sm text-red-600">{loadError}</p>
@@ -311,7 +312,7 @@ export default function ShipperMobile() {
             <p className="text-base font-700 text-slate-900">Tất cả đơn của bạn</p>
             <div className="grid gap-3 md:grid-cols-2">
             {loading ? (
-              <div className="md:col-span-2 py-12 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>
+              <LoadingState label="Đang tải danh sách đơn hàng..." className="md:col-span-2" />
             ) : loadError ? (
               <div className="md:col-span-2 py-12 text-center text-sm text-red-600">{loadError}</div>
             ) : shipperOrders.length === 0 ? (
@@ -338,7 +339,7 @@ export default function ShipperMobile() {
             </div>
             <div className="grid gap-3 md:grid-cols-2">
             {loading ? (
-              <div className="md:col-span-2 py-10 text-center text-xs text-slate-400">Đang tải điểm giao hàng...</div>
+              <LoadingState label="Đang tải điểm giao hàng..." className="md:col-span-2" />
             ) : loadError ? (
               <div className="md:col-span-2 py-10 text-center text-sm text-red-600">{loadError}</div>
             ) : shipperOrders.length === 0 ? (
