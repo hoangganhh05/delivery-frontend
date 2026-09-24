@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
+import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import PreferencesSettings from '../components/PreferencesSettings';
@@ -11,7 +11,10 @@ import BrandLogo from '../components/BrandLogo';
 import { LoadingState } from '../components/Skeleton';
 import { BRAND_NAME } from '../config/brand';
 
-const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Gói giao hàng', 'Mã giảm giá', 'Thanh toán', 'Xác nhận'];
+const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Gói giao hàng', 'Mã giảm giá', 'Thanh toán', 'Kết quả'];
+
+const isConfirmedOrder = (order: any) => order.paymentMethod === 'COD' || order.paymentStatus === 'PAID';
+const isPendingOnlinePayment = (order: any) => order.paymentMethod !== 'COD' && order.paymentStatus === 'PENDING';
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function CustomerView() {
@@ -48,7 +51,8 @@ export default function CustomerView() {
 
   const [createdOrderRes, setCreatedOrderRes] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [qrPayment, setQrPayment] = useState<{ amount: number; content: string; imageUrl: string } | null>(null);
+  const [qrPayment, setQrPayment] = useState<{ amount: number; content: string; imageUrl: string; accountNumber: string; accountName: string } | null>(null);
+  const [loadingQr, setLoadingQr] = useState(false);
 
   const fetchCustomerOrders = async () => {
     try {
@@ -115,6 +119,32 @@ export default function CustomerView() {
     }
   };
 
+  const loadQrPayment = async (orderId: number) => {
+    setLoadingQr(true);
+    try {
+      const qrResponse = await getOrderQrPaymentApi(orderId);
+      const qr = qrResponse.data;
+      const amount = Number(qr.amount);
+      const content = qr.transferContent;
+      const query = new URLSearchParams({
+        amount: String(Math.round(amount)),
+        addInfo: content,
+        accountName: qr.accountName,
+      });
+      setQrPayment({
+        amount,
+        content,
+        accountNumber: qr.accountNumber,
+        accountName: qr.accountName,
+        imageUrl: `https://img.vietqr.io/image/${qr.bankId}-${qr.accountNumber}-compact2.png?${query.toString()}`,
+      });
+    } catch (error: any) {
+      addToast({ type: 'error', title: 'Không tải được mã thanh toán', message: error.message || 'Vui lòng thử lại.' });
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
   const handleCreateOrder = async () => {
     try {
       setSubmitting(true);
@@ -144,27 +174,15 @@ export default function CustomerView() {
       const res = await createOrderApi(payload);
       if (res && res.data) {
         setCreatedOrderRes(res.data);
+        setQrPayment(null);
         setCreateStep(6);
-        addToast({ type: 'success', title: 'Tạo đơn thành công!', message: `Mã vận đơn: ${res.data.trackingNumber}` });
+        addToast(paymentMethod === 'COD'
+          ? { type: 'success', title: 'Đã tạo đơn hàng', message: `Mã vận đơn: ${res.data.trackingNumber}` }
+          : { type: 'info', title: 'Đang chờ thanh toán', message: 'Đơn chỉ được ghi nhận sau khi giao dịch được xác nhận.' });
         fetchCustomerOrders();
 
         if (paymentMethod === 'VCB_QR') {
-          const qrResponse = await getOrderQrPaymentApi(Number(res.data.id));
-          const qr = qrResponse.data;
-          const amount = Number(qr.amount);
-          const content = qr.transferContent;
-          const query = new URLSearchParams({
-            amount: String(Math.round(amount)),
-            addInfo: content,
-            accountName: qr.accountName,
-          });
-          setQrPayment({
-            amount,
-            content,
-            imageUrl: `https://img.vietqr.io/image/${qr.bankId}-${qr.accountNumber}-compact2.png?${query.toString()}`,
-          });
-        } else {
-          setQrPayment(null);
+          await loadQrPayment(Number(res.data.id));
         }
       }
     } catch (err: any) {
@@ -173,6 +191,43 @@ export default function CustomerView() {
       setSubmitting(false);
     }
   };
+
+  const resumePendingPayment = async (order: any) => {
+    setCreatedOrderRes(order);
+    setQrPayment(null);
+    setCreateStep(6);
+    setTab('create');
+    try {
+      const payment = await getOrderPaymentApi(Number(order.id));
+      if (payment.data.status === 'PAID') {
+        setCreatedOrderRes({ ...order, status: 'PAID', paymentStatus: 'PAID' });
+        void fetchCustomerOrders();
+        return;
+      }
+    } catch {
+      // The pending request remains visible so the customer can retry.
+    }
+    if (order.paymentMethod === 'VCB_QR') await loadQrPayment(Number(order.id));
+  };
+
+  useEffect(() => {
+    if (createStep !== 6 || !createdOrderRes || !isPendingOnlinePayment(createdOrderRes)) return;
+    let active = true;
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await getOrderPaymentApi(Number(createdOrderRes.id));
+        if (!active) return;
+        if (response.data.status === 'PAID') {
+          setCreatedOrderRes((current: any) => current ? { ...current, status: 'PAID', paymentStatus: 'PAID' } : current);
+          void fetchCustomerOrders();
+          addToast({ type: 'success', title: 'Đã xác nhận thanh toán', message: 'Đơn hàng đã được ghi nhận.' });
+        }
+      } catch {
+        // Keep showing the pending state; a later check may succeed.
+      }
+    }, 8000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [createStep, createdOrderRes?.id, createdOrderRes?.paymentStatus]);
 
   const handleTrackSearch = async (trackingNumber = trackInput) => {
     if (!trackingNumber.trim()) return;
@@ -203,8 +258,10 @@ export default function CustomerView() {
     handleTrackSearch(trackingNumber);
   };
 
-  const deliveredOrders = customerOrders.filter(order => ['DELIVERED', 'DONE', 'COMPLETED'].includes((order.status || '').toUpperCase())).length;
-  const activeOrders = customerOrders.filter(order =>
+  const confirmedOrders = customerOrders.filter(isConfirmedOrder);
+  const pendingPayments = customerOrders.filter(isPendingOnlinePayment);
+  const deliveredOrders = confirmedOrders.filter(order => ['DELIVERED', 'DONE', 'COMPLETED'].includes((order.status || '').toUpperCase())).length;
+  const activeOrders = confirmedOrders.filter(order =>
     ['CREATED', 'PENDING', 'PAID', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'SHIPPING'].includes((order.status || '').toUpperCase())
   ).length;
   const customerTabs = [
@@ -257,7 +314,7 @@ export default function CustomerView() {
               {createStep === 3 && 'Bước 4: Chọn gói giao hàng'}
               {createStep === 4 && 'Bước 5: Chọn mã giảm giá'}
               {createStep === 5 && 'Bước 6: Phương thức thanh toán'}
-              {createStep === 6 && 'Bước 7: Kết quả tạo đơn'}
+              {createStep === 6 && 'Bước 7: Thanh toán và xác nhận'}
             </h3>
 
             {createStep === 0 && (
@@ -395,8 +452,8 @@ export default function CustomerView() {
                   <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'VCB_QR' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
                     <input type="radio" name="pay" checked={paymentMethod === 'VCB_QR'} onChange={() => setPaymentMethod('VCB_QR')} className="accent-blue-600" />
                     <div>
-                      <p className="text-sm font-600 text-slate-900">Chuyển khoản QR Vietcombank</p>
-                      <p className="text-xs text-slate-400">Quét QR để tự điền số tiền và nội dung đơn hàng</p>
+                      <p className="text-sm font-600 text-slate-900">Chuyển khoản ngân hàng bằng QR</p>
+                      <p className="text-xs text-slate-400">Đơn chỉ được ghi nhận sau khi tiền được xác nhận</p>
                     </div>
                   </label>
                   <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
@@ -412,26 +469,36 @@ export default function CustomerView() {
 
             {createStep === 6 && createdOrderRes && (
               <div className="text-center py-4 space-y-4">
-                <div className="w-16 h-16 bg-green-100 rounded-2xl mx-auto flex items-center justify-center">
-                  <CheckCircle2 size={32} className="text-green-500" />
+                <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center ${isPendingOnlinePayment(createdOrderRes) ? 'bg-amber-100' : 'bg-green-100'}`}>
+                  {isPendingOnlinePayment(createdOrderRes) ? <Clock size={32} className="text-amber-600" /> : <CheckCircle2 size={32} className="text-green-500" />}
                 </div>
-                <h3 className="text-lg font-700 text-slate-900">Tạo đơn hàng thành công!</h3>
-                <p className="text-sm text-slate-500">Mã vận đơn: <span className="font-700 text-blue-600">{createdOrderRes.trackingNumber}</span></p>
+                <h3 className="text-lg font-700 text-slate-900">
+                  {isPendingOnlinePayment(createdOrderRes) ? 'Đang chờ xác nhận thanh toán' : 'Đơn hàng đã được ghi nhận!'}
+                </h3>
+                <p className="text-sm text-slate-500">Mã tham chiếu: <span className="font-700 text-blue-600">{createdOrderRes.trackingNumber}</span></p>
+                {isPendingOnlinePayment(createdOrderRes) && <p className="text-xs text-amber-700">Đơn này chưa vào danh sách giao hàng hoặc thống kê cho đến khi giao dịch được xác nhận.</p>}
 
-                {qrPayment && (
+                {qrPayment && isPendingOnlinePayment(createdOrderRes) && (
                   <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 space-y-3">
-                    <p className="text-sm text-emerald-900 font-700">Quét QR Vietcombank để thanh toán</p>
-                    <img src={qrPayment.imageUrl} alt="Mã QR thanh toán Vietcombank" className="w-52 max-w-full mx-auto rounded-lg bg-white p-2" />
+                    <p className="text-sm text-emerald-900 font-700">Quét QR ngân hàng để thanh toán</p>
+                    <img src={qrPayment.imageUrl} alt="Mã QR chuyển khoản ngân hàng" className="w-52 max-w-full mx-auto rounded-lg bg-white p-2" />
                     <div className="text-xs text-emerald-900 space-y-1">
                       <p>Số tiền: <span className="font-700">{qrPayment.amount.toLocaleString('vi-VN')}đ</span></p>
+                      <p>Tài khoản nhận: <span className="font-700">{qrPayment.accountNumber} — {qrPayment.accountName}</span></p>
                       <p>Nội dung: <span className="font-700">{qrPayment.content}</span></p>
                     </div>
                     <button onClick={() => navigator.clipboard.writeText(qrPayment.content).then(() => addToast({ type: 'success', title: 'Đã sao chép', message: 'Đã sao chép nội dung chuyển khoản' }))}
                       className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300 text-emerald-800 text-xs font-600 hover:bg-emerald-100">
                       <Copy size={14} /> Sao chép nội dung
                     </button>
-                    <p className="text-xs text-emerald-700">Chúng tôi sẽ xác nhận đơn sau khi nhận được thanh toán.</p>
+                    <p className="text-xs text-emerald-700">Vui lòng chuyển đúng số tiền và nội dung. Giao dịch hiện cần được đối soát trước khi đơn có hiệu lực.</p>
                   </div>
+                )}
+                {isPendingOnlinePayment(createdOrderRes) && !qrPayment && createdOrderRes.paymentMethod === 'VCB_QR' && (
+                  <button type="button" onClick={() => void loadQrPayment(Number(createdOrderRes.id))} disabled={loadingQr}
+                    className="rounded-xl border border-blue-200 px-4 py-2 text-xs font-600 text-blue-700 disabled:opacity-60">
+                    {loadingQr ? 'Đang tải mã QR...' : 'Tải lại mã QR'}
+                  </button>
                 )}
 
                 <div className="flex gap-3 justify-center mt-4">
@@ -440,7 +507,8 @@ export default function CustomerView() {
                     Danh sách đơn hàng
                   </button>
                   <button onClick={() => { setTab('tracking'); setTrackInput(createdOrderRes.trackingNumber); setCreateStep(0); }}
-                    className="h-10 px-5 rounded-xl bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
+                    disabled={isPendingOnlinePayment(createdOrderRes)}
+                    className="h-10 px-5 rounded-xl bg-blue-600 text-sm text-white font-500 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
                     Theo dõi lộ trình
                   </button>
                 </div>
@@ -510,7 +578,7 @@ export default function CustomerView() {
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
-                { label: 'Tổng đơn', value: customerOrders.length, tone: 'text-blue-700 bg-blue-50' },
+                { label: 'Tổng đơn', value: confirmedOrders.length, tone: 'text-blue-700 bg-blue-50' },
                 { label: 'Đang xử lý', value: activeOrders, tone: 'text-amber-700 bg-amber-50' },
                 { label: 'Đã giao', value: deliveredOrders, tone: 'text-emerald-700 bg-emerald-50' },
               ].map(item => (
@@ -566,13 +634,13 @@ export default function CustomerView() {
                     <p className="text-sm text-red-600">{ordersError}</p>
                     <button onClick={fetchCustomerOrders} className="text-xs text-blue-600 font-600 mt-2">Thử lại</button>
                   </div>
-                ) : customerOrders.length === 0 ? (
+                ) : confirmedOrders.length === 0 ? (
                   <div className="bg-white rounded-xl border border-dashed border-slate-200 py-10 text-center">
                     <Package size={24} className="mx-auto text-slate-300 mb-2" />
                     <p className="text-sm font-600 text-slate-600">Bạn chưa có đơn hàng</p>
                     <button onClick={() => setTab('create')} className="text-xs text-blue-600 font-600 mt-2">Tạo đơn đầu tiên</button>
                   </div>
-                ) : customerOrders.slice(0, 3).map((order) => (
+                ) : confirmedOrders.slice(0, 3).map((order) => (
                   <div key={order.id || order.trackingNumber} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -603,14 +671,30 @@ export default function CustomerView() {
                 <Plus size={14} /> Tạo đơn mới
               </button>
             </div>
+            {!ordersLoading && pendingPayments.length > 0 && (
+              <section className="space-y-2" aria-label="Các khoản chuyển khoản đang chờ">
+                <h3 className="text-sm font-700 text-amber-900">Chờ thanh toán ({pendingPayments.length})</h3>
+                <p className="text-xs text-slate-500">Đây là yêu cầu thanh toán, chưa được tính là đơn giao hàng.</p>
+                {pendingPayments.map(order => (
+                  <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div>
+                      <p className="text-sm font-700 text-slate-900">{order.trackingNumber}</p>
+                      <p className="text-xs text-slate-600">Cần thanh toán {(order.totalFee || 0).toLocaleString('vi-VN')}đ</p>
+                    </div>
+                    <button type="button" onClick={() => void resumePendingPayment(order)}
+                      className="h-9 rounded-lg bg-blue-600 px-3 text-xs font-600 text-white">Tiếp tục thanh toán</button>
+                  </div>
+                ))}
+              </section>
+            )}
             <div className="space-y-3">
               {ordersLoading ? (
                 <LoadingState label="Đang tải danh sách đơn hàng..." />
               ) : ordersError ? (
                 <div className="bg-white rounded-xl border border-red-100 py-12 text-center text-sm text-red-600">{ordersError}</div>
-              ) : customerOrders.length === 0 ? (
+              ) : confirmedOrders.length === 0 ? (
                 <div className="bg-white rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">Chưa có đơn hàng nào.</div>
-              ) : customerOrders.map(order => (
+              ) : confirmedOrders.map(order => (
                 <div key={order.id || order.trackingNumber} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div>

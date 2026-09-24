@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Clock, DollarSign, ReceiptText, RefreshCw, Search, TrendingUp } from "lucide-react";
-import { getPaymentsApi, type PaymentRecord } from "../api/deliveryApi";
+import { confirmOrderPaymentApi, getPaymentsApi, type PaymentRecord } from "../api/deliveryApi";
 import StatusBadge from "../components/StatusBadge";
 import { EmptyState, SkeletonList, SkeletonTableRows } from "../components/Skeleton";
 import { useApp } from "../context/AppContext";
@@ -14,18 +14,38 @@ const paymentStatus = (status: PaymentRecord["status"]): "Paid" | "Pending" | "F
 
 const methodLabel = (method: PaymentRecord["method"]) => ({
   COD: "COD",
-  VCB_QR: "QR Vietcombank",
+  VCB_QR: "Chuyển khoản ngân hàng",
   VNPAY: "VNPay",
 })[method];
 
 const formatCurrency = (amount: number) => `${Number(amount || 0).toLocaleString("vi-VN")}đ`;
 
 export default function Payments() {
-  const { addToast } = useApp();
+  const { addToast, hasPermission } = useApp();
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
+  const [paymentReference, setPaymentReference] = useState("");
+  const [confirming, setConfirming] = useState(false);
+
+  const confirmTransfer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedPayment || !paymentReference.trim()) return;
+    try {
+      setConfirming(true);
+      const response = await confirmOrderPaymentApi(selectedPayment.orderId, paymentReference.trim());
+      setPayments(current => current.map(payment => payment.orderId === selectedPayment.orderId ? response.data : payment));
+      setSelectedPayment(null);
+      setPaymentReference("");
+      addToast({ type: "success", title: "Đã xác nhận giao dịch", message: "Đơn hàng đã được ghi nhận sau khi đối soát." });
+    } catch (error: any) {
+      addToast({ type: "error", title: "Không thể xác nhận thanh toán", message: error.message });
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   const load = async () => {
     try {
@@ -48,7 +68,7 @@ export default function Payments() {
   const stats = useMemo(() => ({
     revenue: payments.filter(payment => payment.status === "PAID").reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
     paid: payments.filter(payment => payment.status === "PAID").length,
-    pending: payments.filter(payment => payment.status === "PENDING").length,
+    pending: payments.filter(payment => payment.status === "PENDING" && payment.method !== "COD").length,
   }), [payments]);
 
   return (
@@ -67,6 +87,25 @@ export default function Payments() {
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} aria-hidden="true" /> Tải lại
         </button>
       </div>
+
+      {selectedPayment && (
+        <form onSubmit={confirmTransfer} className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="Xác nhận chuyển khoản đã đối soát">
+          <h3 className="text-sm font-700 text-amber-950">Đối soát chuyển khoản {selectedPayment.trackingNumber}</h3>
+          <p className="text-xs leading-5 text-amber-900">Chỉ xác nhận sau khi kiểm tra sao kê và thấy đúng số tiền {formatCurrency(selectedPayment.amount)}, đúng nội dung chuyển khoản. Không dùng ảnh chụp hoặc lời báo của khách làm bằng chứng duy nhất.</p>
+          <label className="block text-xs font-600 text-slate-700">
+            Mã giao dịch từ sao kê
+            <input value={paymentReference} onChange={event => setPaymentReference(event.target.value)} required maxLength={100}
+              className="mt-1 block h-10 w-full max-w-md rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-blue-500" placeholder="Nhập mã giao dịch thực tế" />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button type="submit" disabled={confirming || !paymentReference.trim()} className="h-9 rounded-lg bg-blue-600 px-4 text-xs font-600 text-white disabled:opacity-50">
+              {confirming ? "Đang xác nhận..." : "Đã đối soát, xác nhận thanh toán"}
+            </button>
+            <button type="button" onClick={() => { setSelectedPayment(null); setPaymentReference(""); }} disabled={confirming}
+              className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs text-slate-700">Hủy</button>
+          </div>
+        </form>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
@@ -103,12 +142,12 @@ export default function Payments() {
               <table className="w-full min-w-[760px]">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50">
-                    {["Mã vận đơn", "Khách hàng", "Số tiền", "Phương thức", "Tham chiếu", "Ngày thanh toán", "Trạng thái"].map(label => (
+                    {["Mã vận đơn", "Khách hàng", "Số tiền", "Phương thức", "Tham chiếu", "Ngày thanh toán", "Trạng thái", ...(hasPermission("MANAGE_PAYMENTS") ? ["Đối soát"] : [])].map(label => (
                       <th key={label} className="px-4 py-3 text-left text-xs font-600 text-slate-500">{label}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody><SkeletonTableRows columns={7} rows={5} /></tbody>
+                <tbody><SkeletonTableRows columns={hasPermission("MANAGE_PAYMENTS") ? 8 : 7} rows={5} /></tbody>
               </table>
             </div>
             <SkeletonList items={4} className="p-3 md:hidden" />
@@ -131,7 +170,7 @@ export default function Payments() {
               <table className="w-full min-w-[760px]">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50">
-                    {["Mã vận đơn", "Khách hàng", "Số tiền", "Phương thức", "Tham chiếu", "Ngày thanh toán", "Trạng thái"].map(label => (
+                    {["Mã vận đơn", "Khách hàng", "Số tiền", "Phương thức", "Tham chiếu", "Ngày thanh toán", "Trạng thái", ...(hasPermission("MANAGE_PAYMENTS") ? ["Đối soát"] : [])].map(label => (
                       <th key={label} className="px-4 py-3 text-left text-xs font-600 text-slate-500">{label}</th>
                     ))}
                   </tr>
@@ -146,6 +185,12 @@ export default function Payments() {
                       <td className="px-4 py-3 text-xs text-slate-500">{payment.reference || "—"}</td>
                       <td className="px-4 py-3 text-xs text-slate-500">{payment.paidAt ? new Date(payment.paidAt).toLocaleString("vi-VN") : "—"}</td>
                       <td className="px-4 py-3"><StatusBadge status={paymentStatus(payment.status)} type="payment" /></td>
+                      {hasPermission("MANAGE_PAYMENTS") && <td className="px-4 py-3">
+                        {payment.method === "VCB_QR" && payment.status === "PENDING" && (
+                          <button type="button" onClick={() => { setSelectedPayment(payment); setPaymentReference(""); }}
+                            className="whitespace-nowrap rounded-lg border border-blue-200 px-2 py-1 text-xs font-600 text-blue-700 hover:bg-blue-50">Xác nhận</button>
+                        )}
+                      </td>}
                     </tr>
                   ))}
                 </tbody>
@@ -168,6 +213,10 @@ export default function Payments() {
                     <div><dt className="text-slate-400">Ngày thanh toán</dt><dd className="mt-0.5 font-500 text-slate-700">{payment.paidAt ? new Date(payment.paidAt).toLocaleString("vi-VN") : "Chưa thanh toán"}</dd></div>
                     <div><dt className="text-slate-400">Tham chiếu</dt><dd className="mt-0.5 break-all font-500 text-slate-700">{payment.reference || "—"}</dd></div>
                   </dl>
+                  {hasPermission("MANAGE_PAYMENTS") && payment.method === "VCB_QR" && payment.status === "PENDING" && (
+                    <button type="button" onClick={() => { setSelectedPayment(payment); setPaymentReference(""); }}
+                      className="mt-3 rounded-lg border border-blue-200 px-3 py-2 text-xs font-600 text-blue-700">Đối soát chuyển khoản</button>
+                  )}
                 </article>
               ))}
             </div>
