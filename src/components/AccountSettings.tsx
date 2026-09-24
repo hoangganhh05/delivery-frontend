@@ -36,6 +36,7 @@ import type {
   UserAddressRequest,
   UserSettings,
 } from "../types/account";
+import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from "../utils/passwordPolicy";
 import { applyUserPreferences } from "../utils/userPreferences";
 
 type AccountSection = "profile" | "addresses" | "security" | "preferences";
@@ -426,8 +427,9 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
       addToast({ type: "warning", title: "Vui lòng nhập đủ ba trường mật khẩu" });
       return;
     }
-    if (password.newPassword.length < 8) {
-      addToast({ type: "warning", title: "Mật khẩu mới phải có ít nhất 8 ký tự" });
+    const passwordError = getPasswordPolicyError(password.newPassword);
+    if (passwordError) {
+      addToast({ type: "warning", title: "Mật khẩu mới chưa đủ mạnh", message: passwordError });
       return;
     }
     if (
@@ -785,7 +787,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
           <div className="mt-5 space-y-4">
             {[
               { key: "currentPassword" as const, label: "Mật khẩu hiện tại", placeholder: "Nhập mật khẩu đang sử dụng" },
-              { key: "newPassword" as const, label: "Mật khẩu mới", placeholder: "Từ 8 đến 72 ký tự" },
+              { key: "newPassword" as const, label: "Mật khẩu mới", placeholder: PASSWORD_POLICY_HINT },
               { key: "confirmPassword" as const, label: "Xác nhận mật khẩu mới", placeholder: "Nhập lại mật khẩu mới" },
             ].map(({ key, label, placeholder }) => (
               <div key={key}>

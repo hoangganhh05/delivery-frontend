@@ -3,6 +3,7 @@ import { Truck, Eye, EyeOff, Shield, User, Package, X } from 'lucide-react';
 import { useApp, type Role } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { loginApi, registerApi } from '../api/deliveryApi';
+import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../utils/passwordPolicy';
 
 const roleCards = [
   {
@@ -104,8 +105,13 @@ export default function Login() {
   };
 
   const handleRegister = async () => {
-    if (!registerForm.username.trim() || !registerForm.password || registerForm.password.length < 6) {
-      addToast({ type: 'warning', title: 'Thông tin chưa hợp lệ', message: 'Tên đăng nhập là bắt buộc và mật khẩu cần ít nhất 6 ký tự.' });
+    if (!registerForm.username.trim()) {
+      addToast({ type: 'warning', title: 'Thông tin chưa hợp lệ', message: 'Tên đăng nhập là bắt buộc.' });
+      return;
+    }
+    const passwordError = getPasswordPolicyError(registerForm.password);
+    if (passwordError) {
+      addToast({ type: 'warning', title: 'Mật khẩu chưa đủ mạnh', message: passwordError });
       return;
     }
     try {
@@ -291,7 +297,7 @@ export default function Login() {
                     { key: 'username', label: 'Tên đăng nhập', placeholder: 'nguyenvana', type: 'text' },
                     { key: 'email', label: 'Email', placeholder: 'email@example.com', type: 'email' },
                     { key: 'phoneNumber', label: 'Số điện thoại', placeholder: '0912345678', type: 'tel' },
-                    { key: 'password', label: 'Mật khẩu', placeholder: 'Tối thiểu 6 ký tự', type: 'password' },
+                    { key: 'password', label: 'Mật khẩu', placeholder: PASSWORD_POLICY_HINT, type: 'password' },
                   ].map(field => (
                     <div key={field.key} className={field.key === 'password' ? 'sm:col-span-2' : ''}>
                       <label className="block text-xs font-600 text-slate-700 mb-1.5">{field.label}</label>
