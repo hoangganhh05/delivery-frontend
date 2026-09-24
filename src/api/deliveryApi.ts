@@ -210,6 +210,10 @@ export const getVouchersApi = (): Promise<ApiResponse> => {
   return axiosClient.get("/vouchers");
 };
 
+export const getActiveVouchersApi = (): Promise<ApiResponse> => {
+  return axiosClient.get("/vouchers/active");
+};
+
 // Tracking
 export const trackOrderApi = (trackingNumber: string): Promise<ApiResponse> => {
   return axiosClient.get(`/tracking/${trackingNumber}`);
@@ -270,6 +274,7 @@ export default {
   calculateVoucherApi,
   createVoucherApi,
   getVouchersApi,
+  getActiveVouchersApi,
   trackOrderApi,
   getNotificationsApi,
   getUnreadNotificationCountApi,

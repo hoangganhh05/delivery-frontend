@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi } from '../api/deliveryApi';
+import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import BrandLogo from '../components/BrandLogo';
@@ -23,6 +23,7 @@ export default function CustomerView() {
   const [customerOrders, setCustomerOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState('');
+  const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
 
   // Form State
   const [senderName, setSenderName] = useState(user?.fullName || '');
@@ -38,7 +39,7 @@ export default function CustomerView() {
   const [declaredValue, setDeclaredValue] = useState(250000);
   const [codAmount, setCodAmount] = useState(0);
 
-  const [selectedService, setSelectedService] = useState({ name: 'Tiêu chuẩn', fee: 30000 });
+  const [selectedService, setSelectedService] = useState({ id: 'STANDARD', name: 'Tiêu chuẩn', fee: 30000, desc: 'Giao trong 1-2 ngày' });
   const [voucherCode, setVoucherCode] = useState('');
   const [discountFee, setDiscountFee] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('VCB_QR');
@@ -65,6 +66,9 @@ export default function CustomerView() {
 
   useEffect(() => {
     fetchCustomerOrders();
+    getActiveVouchersApi()
+      .then((response) => setAvailableVouchers(Array.isArray(response.data) ? response.data : []))
+      .catch(() => setAvailableVouchers([]));
   }, []);
 
   const handleApplyVoucher = async (codeToApply?: string) => {
@@ -121,6 +125,7 @@ export default function CustomerView() {
         receiverAddress,
         weightGram: Number(weightGram),
         shippingFee: selectedService.fee,
+        serviceType: selectedService.id,
         voucherCode: voucherCode || null,
         codAmount: Number(codAmount),
         paymentMethod,
@@ -320,8 +325,8 @@ export default function CustomerView() {
             {createStep === 3 && (
               <div className="space-y-3">
                 {[
-                  { id: 'std', name: 'Tiêu chuẩn', fee: 30000, desc: 'Giao trong 1-2 ngày' },
-                  { id: 'exp', name: 'Hỏa tốc', fee: 50000, desc: 'Giao nhanh trong 24h' },
+                  { id: 'STANDARD', name: 'Tiêu chuẩn', fee: 30000, desc: 'Giao trong 1-2 ngày' },
+                  { id: 'EXPRESS', name: 'Hỏa tốc', fee: 50000, desc: 'Giao nhanh trong 24h' },
                 ].map(srv => (
                   <label key={srv.id} onClick={() => { setSelectedService(srv); setDiscountFee(0); }} className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer ${selectedService.name === srv.name ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
                     <div>
@@ -346,15 +351,18 @@ export default function CustomerView() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  {[
-                    { code: 'VIETTEL50', desc: 'Giảm 50% · Đơn tối thiểu 100.000đ' },
-                    { code: 'FREESHIP', desc: 'Miễn phí giao hàng · Đơn tối thiểu 50.000đ' },
-                    { code: 'VIETTEL20', desc: 'Giảm 20% · Đơn tối thiểu 50.000đ' }
-                  ].map(v => (
+                  {availableVouchers.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500">
+                      Hiện chưa có mã giảm giá đang áp dụng
+                    </div>
+                  )}
+                  {availableVouchers.map(v => (
                     <div key={v.code} className="flex items-center justify-between p-3 rounded-xl border border-dashed border-blue-200 bg-blue-50">
                       <div>
                         <p className="text-sm font-700 text-blue-700 font-mono">{v.code}</p>
-                        <p className="text-xs text-blue-600">{v.desc}</p>
+                        <p className="text-xs text-blue-600">
+                          Giảm {Number(v.discountPercent || 0)}% · Đơn tối thiểu {Number(v.minOrderAmount || 0).toLocaleString()}đ
+                        </p>
                       </div>
                       <button onClick={() => handleApplyVoucher(v.code)} className="text-xs text-blue-600 font-600 hover:underline">Áp dụng</button>
                     </div>
