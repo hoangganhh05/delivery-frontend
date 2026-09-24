@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -195,6 +195,8 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
   const [savingAddress, setSavingAddress] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [savingAppearance, setSavingAppearance] = useState(false);
+  const appearanceRequestId = useRef(0);
   const [addressActionId, setAddressActionId] = useState<number | null>(null);
   const visibleSections = currentRole === "Customer"
     ? sections
@@ -520,6 +522,33 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     } finally {
       setSavingSettings(false);
     }
+  };
+
+  const saveAppearance = (changes: Partial<Pick<UserSettings, "theme" | "accentColor">>) => {
+    const previous = settings;
+    const next = { ...settings, ...changes };
+    const requestId = ++appearanceRequestId.current;
+    setSettings(next);
+    updateCurrentUserSettings(next);
+    setSavingAppearance(true);
+
+    void (async () => {
+      try {
+        const response = await updateCurrentUserSettingsApi(next);
+        if (requestId === appearanceRequestId.current && response.httpStatus === 200 && response.data) {
+          setSettings(response.data);
+          updateCurrentUserSettings(response.data);
+        }
+      } catch (error) {
+        if (requestId === appearanceRequestId.current) {
+          setSettings(previous);
+          updateCurrentUserSettings(previous);
+          addToast({ type: "error", title: "Không thể lưu giao diện", message: error instanceof Error ? error.message : "Đã khôi phục tùy chọn trước đó." });
+        }
+      } finally {
+        if (requestId === appearanceRequestId.current) setSavingAppearance(false);
+      }
+    })();
   };
 
   if (loading) {
@@ -884,7 +913,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
                 <FieldLabel>Màu chủ đạo</FieldLabel>
                 <div className="flex flex-wrap gap-2">
                   {["#2563EB", "#0F766E", "#7C3AED", "#059669", "#E11D48", "#D97706", "#0891B2"].map((color) => (
-                    <button key={color} type="button" disabled={savingSettings} aria-label={`Chọn màu ${color}`} onClick={() => setSettings((current) => ({ ...current, accentColor: color }))} className={`h-9 w-9 rounded-full border-2 disabled:opacity-50 ${settings.accentColor === color ? "scale-110 border-slate-500" : "border-transparent"}`} style={{ backgroundColor: color }} />
+                    <button key={color} type="button" disabled={savingAppearance} aria-label={`Chọn màu ${color}`} onClick={() => saveAppearance({ accentColor: color })} className={`h-9 w-9 rounded-full border-2 disabled:opacity-50 ${settings.accentColor === color ? "scale-110 border-slate-500" : "border-transparent"}`} style={{ backgroundColor: color }} />
                   ))}
                 </div>
               </div>
@@ -898,7 +927,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
                   { id: "DARK" as const, label: "Tối", preview: "theme-preview-dark" },
                   { id: "SYSTEM" as const, label: "Theo thiết bị", preview: "theme-preview-system" },
                 ].map(({ id, label, preview }) => (
-                  <button key={id} type="button" disabled={savingSettings} onClick={() => setSettings((current) => ({ ...current, theme: id }))} className={`theme-option rounded-xl border-2 p-3 text-left disabled:opacity-50 ${settings.theme === id ? "border-blue-500 bg-blue-50" : "border-slate-100 bg-slate-50"}`}>
+                  <button key={id} type="button" disabled={savingAppearance} onClick={() => saveAppearance({ theme: id })} className={`theme-option rounded-xl border-2 p-3 text-left disabled:opacity-50 ${settings.theme === id ? "border-blue-500 bg-blue-50" : "border-slate-100 bg-slate-50"}`}>
                     <span className={`theme-preview mb-2 flex h-12 items-center gap-2 rounded-lg border p-2 ${preview}`}>
                       <span className="theme-preview-sidebar h-full w-3 rounded" />
                       <span className="flex flex-1 flex-col gap-1.5">
@@ -912,9 +941,10 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
               </div>
             </div>
 
-            <div className="mt-5 flex justify-end">
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">{savingAppearance ? "Đang lưu giao diện..." : "Giao diện và màu chủ đạo được lưu tự động."}</p>
               <button type="button" disabled={savingSettings} onClick={() => void saveSettings()} style={{ backgroundColor: settings.accentColor }} className="flex h-10 items-center gap-2 rounded-xl px-5 text-xs font-600 text-white disabled:opacity-60">
-                {savingSettings ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Lưu tùy chọn
+                {savingSettings ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Lưu thông báo & ngôn ngữ
               </button>
             </div>
           </div>
