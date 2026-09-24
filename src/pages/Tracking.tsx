@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Package, Truck, MapPin, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { trackOrderApi } from '../api/deliveryApi';
-import { mapBackendStatusToUI } from '../utils/status';
+import { getOrderStatusLabel } from '../utils/status';
 
 export default function Tracking() {
   const [input, setInput] = useState('');
@@ -35,13 +35,13 @@ export default function Tracking() {
         <div className="w-12 h-12 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-3">
           <MapPin size={20} className="text-white" />
         </div>
-        <h2 className="text-xl font-700 text-slate-900">Tra cứu hành trình vận đơn</h2>
-        <p className="text-sm text-slate-500 mt-1">Nhập mã vận đơn (Tracking Number) để theo dõi thời gian thực</p>
+        <h2 className="text-xl font-700 text-slate-900">Tra cứu vận đơn</h2>
+        <p className="text-sm text-slate-500 mt-1">Nhập mã vận đơn để xem trạng thái và hành trình giao hàng</p>
       </div>
 
       {/* Search bar */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-        <label className="block text-xs font-600 text-slate-700 mb-2">Mã vận đơn (Tracking Number)</label>
+        <label className="block text-xs font-600 text-slate-700 mb-2">Mã vận đơn</label>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -84,7 +84,7 @@ export default function Tracking() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 font-500">Mã vận đơn: {result.trackingNumber}</p>
-                  <p className="text-base font-700 text-blue-700">{mapBackendStatusToUI(result.currentStatus)}</p>
+                  <p className="text-base font-700 text-blue-700">{getOrderStatusLabel(result.currentStatus)}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -97,14 +97,14 @@ export default function Tracking() {
           {/* Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
-              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-2">📦 Tuyến đường</p>
+              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-2">Thông tin giao hàng</p>
               <div className="space-y-1.5 text-xs text-slate-700">
                 <p>• Từ: <span className="font-600">{result.senderName}</span></p>
                 <p>• Đến: <span className="font-600">{result.receiverName}</span></p>
               </div>
             </div>
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
-              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-2">🚚 Shipper phụ trách</p>
+              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-2">Người giao hàng</p>
               <div className="space-y-1 text-xs text-slate-700">
                 <p className="font-600">{result.shipperName || 'Chưa phân công'}</p>
                 <p className="text-slate-500">{result.shipperPhone || ''}</p>
@@ -119,7 +119,7 @@ export default function Tracking() {
               <div className="space-y-4 border-l-2 border-blue-500 pl-4">
                 {result.history.map((item: any, idx: number) => (
                   <div key={idx} className="space-y-0.5">
-                    <p className="text-xs font-700 text-slate-900">{item.status}</p>
+                    <p className="text-xs font-700 text-slate-900">{getOrderStatusLabel(item.status)}</p>
                     <p className="text-xs text-slate-600">{item.note || 'Cập nhật lộ trình'}</p>
                     <p className="text-[10px] text-slate-400 flex items-center gap-1">
                       <Clock size={10} /> {item.createdAt || item.timestamp}

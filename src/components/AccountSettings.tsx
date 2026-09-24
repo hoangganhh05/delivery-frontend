@@ -38,6 +38,7 @@ import type {
 } from "../types/account";
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from "../utils/passwordPolicy";
 import { applyUserPreferences } from "../utils/userPreferences";
+import { getRoleLabel } from "../utils/role";
 
 type AccountSection = "profile" | "addresses" | "security" | "preferences";
 
@@ -167,6 +168,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     updateCurrentUser,
     updateCurrentUserSettings,
     logout,
+    role: currentRole,
   } = useApp();
   const [section, setSection] = useState<AccountSection>("profile");
   const [loading, setLoading] = useState(true);
@@ -193,6 +195,33 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [addressActionId, setAddressActionId] = useState<number | null>(null);
+  const visibleSections = currentRole === "Customer"
+    ? sections
+    : sections.filter(({ id }) => id !== "addresses");
+  const notificationEvents = currentRole === "Shipper"
+    ? [
+        { key: "newOrderNotifications" as const, label: "Khi có đơn mới giao cho tôi" },
+        { key: "statusChangeNotifications" as const, label: "Khi trạng thái đơn thay đổi" },
+        { key: "deliveryCompleteNotifications" as const, label: "Khi đã giao xong" },
+        { key: "shipperAssignmentNotifications" as const, label: "Khi được giao thêm đơn" },
+      ]
+    : currentRole === "Customer"
+      ? [
+          { key: "newOrderNotifications" as const, label: "Khi tạo đơn thành công" },
+          { key: "statusChangeNotifications" as const, label: "Khi trạng thái đơn thay đổi" },
+          { key: "paymentSuccessNotifications" as const, label: "Khi thanh toán thành công" },
+          { key: "deliveryCompleteNotifications" as const, label: "Khi đơn đã giao" },
+          { key: "shipperAssignmentNotifications" as const, label: "Khi có nhân viên giao hàng" },
+          { key: "serviceAlertNotifications" as const, label: "Thông báo quan trọng từ NexaShip" },
+        ]
+      : [
+          { key: "newOrderNotifications" as const, label: "Khi có đơn hàng mới" },
+          { key: "statusChangeNotifications" as const, label: "Khi trạng thái đơn thay đổi" },
+          { key: "paymentSuccessNotifications" as const, label: "Khi thanh toán thành công" },
+          { key: "deliveryCompleteNotifications" as const, label: "Khi đơn đã giao" },
+          { key: "shipperAssignmentNotifications" as const, label: "Khi đã phân công người giao" },
+          { key: "serviceAlertNotifications" as const, label: "Thông báo quan trọng" },
+        ];
 
   const loadAccount = useCallback(async () => {
     setLoading(true);
@@ -205,7 +234,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
 
       const account = response.data;
       if (!account.settings) {
-        throw new Error("Backend chưa trả về cấu hình user_settings");
+        throw new Error("Không thể tải tùy chọn tài khoản. Vui lòng thử lại.");
       }
       const accountSettings = account.settings;
       setUsername(account.username);
@@ -345,7 +374,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
         addToast({
           type: "success",
           title: editingAddressId ? "Đã cập nhật địa chỉ" : "Đã thêm địa chỉ",
-          message: "Sổ địa chỉ đã được đồng bộ với tài khoản.",
+          message: "Địa chỉ đã được lưu vào tài khoản.",
         });
       }
     } catch (error) {
@@ -405,7 +434,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
               addToast({
                 type: "success",
                 title: "Đã xóa địa chỉ",
-                message: "Danh sách mới đã được cập nhật từ hệ thống.",
+                message: "Danh sách địa chỉ đã được cập nhật.",
               });
             }
           } catch (error) {
@@ -478,7 +507,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
         addToast({
           type: "success",
           title: "Đã lưu tùy chọn",
-          message: "Cấu hình đã được đồng bộ với tài khoản của bạn.",
+          message: "Tùy chọn của bạn đã được lưu.",
         });
       }
     } catch (error) {
@@ -497,7 +526,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
       <div className="flex min-h-56 items-center justify-center rounded-2xl border border-slate-100 bg-white">
         <div className="text-center">
           <Loader2 className="mx-auto animate-spin text-blue-600" size={24} />
-          <p className="mt-2 text-xs text-slate-500">Đang tải cài đặt từ hệ thống...</p>
+          <p className="mt-2 text-xs text-slate-500">Đang tải thông tin tài khoản...</p>
         </div>
       </div>
     );
@@ -524,14 +553,14 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
         <div className="mb-5">
           <h2 className="text-lg font-700 text-slate-900">Cài đặt tài khoản</h2>
           <p className="mt-1 text-xs text-slate-500">
-            Hồ sơ, địa chỉ và tùy chọn dưới đây được lưu trực tiếp theo tài khoản đăng nhập.
+            Cập nhật thông tin cá nhân, mật khẩu và tùy chọn của tài khoản.
           </p>
         </div>
       )}
 
       <div className="mb-5 overflow-x-auto">
         <nav className="flex min-w-max gap-1 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-sm">
-          {sections.map(({ id, label, icon: Icon }) => (
+          {visibleSections.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               type="button"
@@ -564,7 +593,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
             <p className="mt-0.5 text-center text-xs text-slate-400">@{username}</p>
             <div className="mt-3 flex justify-center">
               <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-700 text-blue-700">
-                {role}
+                {getRoleLabel(role || currentRole)}
               </span>
             </div>
           </div>
@@ -630,17 +659,19 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
                   <option value="OTHER">Khác</option>
                 </select>
               </div>
-              <div>
-                <FieldLabel>Đường dẫn ảnh đại diện</FieldLabel>
-                <input
-                  type="url"
-                  value={profile.avatarUrl ?? ""}
-                  maxLength={1024}
-                  placeholder="https://..."
-                  onChange={(event) => setProfile((current) => ({ ...current, avatarUrl: event.target.value || null }))}
-                  className={inputClass}
-                />
-              </div>
+              {(currentRole === "Admin" || currentRole === "Staff") && (
+                <div>
+                  <FieldLabel>Ảnh đại diện (đường dẫn)</FieldLabel>
+                  <input
+                    type="url"
+                    value={profile.avatarUrl ?? ""}
+                    maxLength={1024}
+                    placeholder="https://..."
+                    onChange={(event) => setProfile((current) => ({ ...current, avatarUrl: event.target.value || null }))}
+                    className={inputClass}
+                  />
+                </div>
+              )}
             </div>
             <div className="mt-5 flex justify-end">
               <button
@@ -662,7 +693,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-sm font-700 text-slate-900">Sổ địa chỉ của bạn</h3>
-              <p className="mt-0.5 text-xs text-slate-500">{addresses.length} địa chỉ đang được lưu trong hệ thống</p>
+              <p className="mt-0.5 text-xs text-slate-500">Bạn đã lưu {addresses.length} địa chỉ</p>
             </div>
             <button
               type="button"
@@ -816,7 +847,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
                 {[
                   { key: "emailNotifications" as const, label: "Email", description: "Nhận thông báo qua email tài khoản" },
                   { key: "smsNotifications" as const, label: "SMS", description: "Nhận tin nhắn qua số điện thoại" },
-                  { key: "pushNotifications" as const, label: "Push notification", description: "Thông báo trên trình duyệt" },
+                  { key: "pushNotifications" as const, label: "Thông báo trên thiết bị", description: "Hiện thông báo trên trình duyệt" },
                 ].map(({ key, label, description }) => (
                   <div key={key} className="flex items-center justify-between gap-4 py-3">
                     <div><p className="text-xs font-600 text-slate-800">{label}</p><p className="mt-0.5 text-[11px] text-slate-400">{description}</p></div>
@@ -827,16 +858,9 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <h3 className="text-sm font-700 text-slate-900">Loại sự kiện</h3>
+              <h3 className="text-sm font-700 text-slate-900">Nội dung muốn nhận</h3>
               <div className="mt-3 divide-y divide-slate-50">
-                {[
-                  { key: "newOrderNotifications" as const, label: "Đơn hàng mới" },
-                  { key: "statusChangeNotifications" as const, label: "Thay đổi trạng thái" },
-                  { key: "paymentSuccessNotifications" as const, label: "Thanh toán thành công" },
-                  { key: "deliveryCompleteNotifications" as const, label: "Giao hàng hoàn tất" },
-                  { key: "shipperAssignmentNotifications" as const, label: "Phân công shipper" },
-                  { key: "serviceAlertNotifications" as const, label: "Cảnh báo dịch vụ" },
-                ].map(({ key, label }) => (
+                {notificationEvents.map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between gap-4 py-2.5">
                     <p className="text-xs font-600 text-slate-700">{label}</p>
                     <Toggle disabled={savingSettings} checked={settings[key]} onChange={(value) => setSettings((current) => ({ ...current, [key]: value }))} />

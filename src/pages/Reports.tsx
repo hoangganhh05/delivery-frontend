@@ -19,7 +19,7 @@ export default function Reports() {
   const stats = report || { from, to, totalOrders: 0, deliveredOrders: 0, failedOrders: 0, revenue: 0, statusDistribution: {}, timeline: [] };
   const statusData = Object.entries(stats.statusDistribution).map(([status, orders]) => ({ status, orders }));
   return <div className="p-4 sm:p-6 space-y-6">
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-3"><div><h2 className="text-lg font-700 text-slate-900">Báo cáo & Thống kê vận hành</h2><p className="text-xs text-slate-500">Dữ liệu thực theo khoảng ngày</p></div>
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-3"><div><h2 className="text-lg font-700 text-slate-900">Báo cáo giao hàng</h2><p className="text-xs text-slate-500">Xem đơn hàng và doanh thu theo thời gian đã chọn</p></div>
       <div className="flex flex-wrap gap-2 items-end"><label className="text-xs text-slate-500">Từ ngày<input type="date" value={from} onChange={e => setFrom(e.target.value)} className="block h-9 border rounded-lg px-2 mt-1" /></label>
         <label className="text-xs text-slate-500">Đến ngày<input type="date" value={to} onChange={e => setTo(e.target.value)} className="block h-9 border rounded-lg px-2 mt-1" /></label>
         <button onClick={load} disabled={loading} className="h-9 px-4 rounded-lg bg-blue-600 text-white text-xs">{loading ? "Đang tải..." : "Áp dụng"}</button>

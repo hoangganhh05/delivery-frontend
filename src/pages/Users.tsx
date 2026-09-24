@@ -4,6 +4,13 @@ import StatusBadge from '../components/StatusBadge';
 import { getUsersApi, updateUserRoleApi, type ApiRole } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 
+const roleOptions = [
+  { value: 'Admin', label: 'Quản trị viên' },
+  { value: 'Staff', label: 'Nhân viên quản lý' },
+  { value: 'Shipper', label: 'Nhân viên giao hàng' },
+  { value: 'Customer', label: 'Khách hàng' },
+];
+
 export default function Users() {
   const { addToast } = useApp();
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -17,7 +24,7 @@ export default function Users() {
       if (res && res.data && Array.isArray(res.data)) {
         setUsersList(res.data.map((user: any) => ({
           ...user,
-          phone: user.phoneNumber || 'N/A',
+          phone: user.phoneNumber || 'Chưa cập nhật',
           role: user.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase() : 'Customer',
           status: user.status === 'ACTIVE' ? 'Active' : user.status === 'BLOCKED' ? 'Suspended' : 'Inactive',
         })));
@@ -67,7 +74,7 @@ export default function Users() {
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
         <div className="relative flex-1 max-w-xs">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input type="text" placeholder="Tìm tên, username..."
+          <input type="text" placeholder="Tìm tên hoặc tên đăng nhập..."
             value={search} onChange={e => setSearch(e.target.value)}
             className="w-full h-9 pl-9 pr-4 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:bg-white placeholder-slate-400" />
         </div>
@@ -78,7 +85,7 @@ export default function Users() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
-              {['ID / Username', 'Họ và tên', 'Số điện thoại', 'Email', 'Vai trò', 'Trạng thái'].map(h => (
+              {['Mã / Tên đăng nhập', 'Họ và tên', 'Số điện thoại', 'Email', 'Vai trò', 'Trạng thái'].map(h => (
                 <th key={h} className="text-left text-xs font-600 text-slate-500 py-3 px-4">{h}</th>
               ))}
             </tr>
@@ -95,7 +102,7 @@ export default function Users() {
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-1 text-blue-700"><Shield size={11} />
                     <select value={user.role} onChange={event => changeRole(user.id, event.target.value)} className="h-8 px-2 rounded-lg bg-blue-50 text-xs font-600 border-0">
-                      {['Admin', 'Staff', 'Shipper', 'Customer'].map(role => <option key={role}>{role}</option>)}
+                      {roleOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                   </div>
                 </td>

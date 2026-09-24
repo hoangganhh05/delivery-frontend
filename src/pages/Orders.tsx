@@ -9,12 +9,13 @@ import { cancelOrderApi, searchOrdersApi } from '../api/deliveryApi';
 
 const statusOptions = [
   { label: 'Tất cả', value: '' },
-  { label: 'Pending', value: 'CREATED' },
-  { label: 'Confirmed', value: 'ASSIGNED' },
-  { label: 'Picked up', value: 'PICKED_UP' },
-  { label: 'Shipping', value: 'IN_TRANSIT' },
-  { label: 'Delivered', value: 'DELIVERED' },
-  { label: 'Cancelled', value: 'CANCELLED' },
+  { label: 'Chờ xử lý', value: 'CREATED' },
+  { label: 'Đã xác nhận', value: 'ASSIGNED' },
+  { label: 'Đang lấy hàng', value: 'PICKED_UP' },
+  { label: 'Đang giao', value: 'IN_TRANSIT' },
+  { label: 'Đã giao', value: 'DELIVERED' },
+  { label: 'Chưa giao được', value: 'FAILED' },
+  { label: 'Đã hủy', value: 'CANCELLED' },
 ];
 
 export default function Orders() {
@@ -142,7 +143,7 @@ export default function Orders() {
       {selected.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-3">
           <span className="text-sm text-blue-700 font-500">Đã chọn {selected.length} đơn</span>
-          <button onClick={() => navigate('/dispatch')} className="h-8 px-3 rounded-lg bg-blue-600 text-white text-xs font-500 hover:bg-blue-700">Điều phối shipper</button>
+          <button onClick={() => navigate('/dispatch')} className="h-8 px-3 rounded-lg bg-blue-600 text-white text-xs font-500 hover:bg-blue-700">Phân công người giao</button>
           <button onClick={() => setSelected([])} className="ml-auto text-blue-500 hover:text-blue-700">
             <X size={16} />
           </button>
@@ -191,14 +192,14 @@ export default function Orders() {
                   </td>
                   <td className="py-3 pr-4" onClick={() => navigate(`/orders/${tracking}`)}>
                     <p className="text-xs font-700 text-blue-600">{tracking}</p>
-                    <p className="text-[10px] text-slate-400">ID: #{order.id}</p>
+                    <p className="text-[10px] text-slate-400">Mã đơn: #{order.id}</p>
                   </td>
                   <td className="py-3 pr-4" onClick={() => navigate(`/orders/${tracking}`)}>
-                    <p className="text-xs font-500 text-slate-800">{order.senderName || 'N/A'}</p>
+                    <p className="text-xs font-500 text-slate-800">{order.senderName || 'Chưa cập nhật'}</p>
                     <p className="text-xs text-slate-400">{order.senderPhone}</p>
                   </td>
                   <td className="py-3 pr-4" onClick={() => navigate(`/orders/${tracking}`)}>
-                    <p className="text-xs font-500 text-slate-800">{order.receiverName || 'N/A'}</p>
+                    <p className="text-xs font-500 text-slate-800">{order.receiverName || 'Chưa cập nhật'}</p>
                     <p className="text-xs text-slate-400">{order.receiverPhone}</p>
                   </td>
                   <td className="py-3 pr-4 text-xs font-600 text-slate-800" onClick={() => navigate(`/orders/${tracking}`)}>

@@ -3,7 +3,7 @@ import { Check, Loader2, Shield, X } from "lucide-react";
 import { getPermissionMatrixApi, updatePermissionMatrixApi, type ApiRole, type PermissionMatrix } from "../api/deliveryApi";
 import { useApp } from "../context/AppContext";
 
-const labels: Record<ApiRole, string> = { ADMIN: "Admin", STAFF: "Staff", SHIPPER: "Shipper", CUSTOMER: "Customer" };
+const labels: Record<ApiRole, string> = { ADMIN: "Quản trị viên", STAFF: "Nhân viên quản lý", SHIPPER: "Nhân viên giao hàng", CUSTOMER: "Khách hàng" };
 const colors: Record<ApiRole, string> = {
   ADMIN: "text-red-600 bg-red-50", STAFF: "text-blue-600 bg-blue-50",
   SHIPPER: "text-violet-600 bg-violet-50", CUSTOMER: "text-green-600 bg-green-50",
@@ -36,20 +36,20 @@ export default function Permissions() {
       })));
       const response = await updatePermissionMatrixApi(values);
       setMatrix(response.data);
-      addToast({ type: "success", title: "Đã lưu phân quyền", message: "Ma trận quyền đã đồng bộ với backend." });
+      addToast({ type: "success", title: "Đã lưu phân quyền", message: "Quyền truy cập đã được cập nhật." });
     } catch (error: any) {
       addToast({ type: "error", title: "Lưu phân quyền thất bại", message: error.message });
     } finally { setSaving(false); }
   };
 
   if (loading) return <div className="p-10 flex justify-center text-slate-400"><Loader2 className="animate-spin" /></div>;
-  if (!matrix) return <div className="p-6 text-sm text-red-600">Không tải được ma trận quyền.</div>;
+  if (!matrix) return <div className="p-6 text-sm text-red-600">Không tải được danh sách quyền.</div>;
   const groups = Array.from(new Set(matrix.permissions.map(permission => permission.group)));
 
   return <div className="p-4 sm:p-6 space-y-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div><h2 className="text-lg font-700 text-slate-900">Phân quyền hệ thống</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Quyền được lưu trên backend và áp dụng cho mọi thiết bị</p></div>
+      <div><h2 className="text-lg font-700 text-slate-900">Quyền truy cập</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Chọn chức năng từng loại tài khoản được phép sử dụng</p></div>
       <button onClick={save} disabled={saving} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 disabled:opacity-60">
         {saving && <Loader2 size={14} className="animate-spin" />} Lưu thay đổi
       </button>

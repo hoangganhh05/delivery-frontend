@@ -4,37 +4,36 @@ import { useApp, type Role } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { loginApi, registerApi } from '../api/deliveryApi';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../utils/passwordPolicy';
+import BrandLogo from '../components/BrandLogo';
+import { BRAND_NAME, BRAND_TAGLINE } from '../config/brand';
 
 const roleCards = [
   {
     role: 'Admin' as Role,
     icon: Shield,
     label: 'Quản trị viên',
-    desc: 'Toàn quyền quản lý',
+    desc: 'Quản lý đơn và tài khoản',
     color: 'text-red-600',
     bg: 'bg-red-50',
     border: 'border-red-200',
-    badge: 'bg-red-100 text-red-700',
   },
   {
     role: 'Shipper' as Role,
     icon: Truck,
-    label: 'Shipper',
-    desc: 'Giao hàng & cập nhật',
+    label: 'Nhân viên giao hàng',
+    desc: 'Nhận và giao đơn',
     color: 'text-violet-600',
     bg: 'bg-violet-50',
     border: 'border-violet-200',
-    badge: 'bg-violet-100 text-violet-700',
   },
   {
     role: 'Customer' as Role,
     icon: User,
     label: 'Khách hàng',
-    desc: 'Tạo & theo dõi đơn hàng',
+    desc: 'Tạo và theo dõi đơn',
     color: 'text-green-600',
     bg: 'bg-green-50',
     border: 'border-green-200',
-    badge: 'bg-green-100 text-green-700',
   },
 ];
 
@@ -84,7 +83,7 @@ export default function Login() {
         addToast({
           type: 'success',
           title: 'Đăng nhập thành công!',
-          message: `Chào mừng ${fullName || resUser || username} (${rawRole || selectedRole})`
+          message: `Chào mừng ${fullName || resUser || username}`
         });
         const targetRoute = (rawRole && rawRole.toUpperCase() === 'SHIPPER') ? '/shipper-mobile'
           : (rawRole && rawRole.toUpperCase() === 'CUSTOMER') ? '/customer'
@@ -119,7 +118,7 @@ export default function Login() {
       const res = await registerApi({ ...registerForm, username: registerForm.username.trim() });
       if (!res?.data?.token) throw new Error('Không nhận được thông tin đăng nhập');
       loginWithAuthData(res.data.token, res.data.username || registerForm.username, res.data.role || registerForm.role, res.data.fullName || registerForm.fullName);
-      addToast({ type: 'success', title: 'Tạo tài khoản thành công', message: 'Chào mừng bạn đến với DeliveryMS!' });
+      addToast({ type: 'success', title: 'Tạo tài khoản thành công', message: `Chào mừng bạn đến với ${BRAND_NAME}!` });
       navigate(res.data.role === 'SHIPPER' ? '/shipper-mobile' : '/customer');
     } catch (err: any) {
       addToast({ type: 'error', title: 'Không thể tạo tài khoản', message: err.message || 'Vui lòng kiểm tra lại thông tin.' });
@@ -127,8 +126,6 @@ export default function Login() {
       setRegistering(false);
     }
   };
-
-  const selected = roleCards.find(c => c.role === selectedRole) || roleCards[0];
 
   return (
     <div className="login-shell min-h-screen flex">
@@ -143,37 +140,30 @@ export default function Login() {
 
         <div className="relative">
           <div className="flex items-center gap-3 mb-16">
-            <div className="w-11 h-11 bg-white/15 border border-white/20 rounded-2xl flex items-center justify-center shadow-xl">
-              <Truck size={20} className="text-white" />
-            </div>
+            <BrandLogo size={44} />
             <div>
-              <p className="text-white font-700 text-lg leading-tight">DeliveryMS</p>
-              <p className="text-blue-300 text-xs">Giao hàng nhanh chóng</p>
+              <p className="text-white font-700 text-lg leading-tight">{BRAND_NAME}</p>
+              <p className="text-blue-300 text-xs">{BRAND_TAGLINE}</p>
             </div>
           </div>
 
           <h1 className="text-[2.65rem] font-800 tracking-tight text-white leading-[1.12] mb-5">
-            Quản lý giao<br />hàng thông minh
+            Giao hàng dễ dàng,<br />theo dõi rõ ràng
           </h1>
           <p className="text-blue-200 text-base leading-relaxed">
-            Trải nghiệm giao hàng liền mạch — từ tạo đơn, phân công tài xế đến thanh toán và theo dõi hành trình.
+            Mỗi loại tài khoản có đúng công cụ cần thiết cho công việc của mình.
           </p>
         </div>
 
         <div className="relative space-y-4">
           {[
-            { label: 'Cập nhật nhanh', desc: 'Thông tin đơn hàng luôn mới nhất' },
-            { label: 'Đăng nhập an toàn', desc: 'Bảo vệ thông tin tài khoản' },
-            { label: 'Thanh toán tiện lợi', desc: 'Thanh toán trực tuyến nhanh chóng' },
+            { label: 'Khách hàng', desc: 'Tạo đơn, thanh toán và theo dõi giao hàng' },
+            { label: 'Quản trị viên', desc: 'Quản lý đơn, tài khoản và báo cáo' },
+            { label: 'Nhân viên giao hàng', desc: 'Nhận đơn và cập nhật kết quả giao hàng' },
           ].map(({ label, desc }) => (
-            <div key={label} className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Package size={18} className="text-white/80" />
-              </div>
-              <div>
-                <p className="text-white font-700 text-lg leading-tight">{label}</p>
-                <p className="text-blue-300 text-xs">{desc}</p>
-              </div>
+            <div key={label} className="border-l border-white/25 pl-4">
+              <p className="text-white font-700 text-sm leading-tight">{label}</p>
+              <p className="text-blue-300 text-xs mt-1">{desc}</p>
             </div>
           ))}
         </div>
@@ -184,15 +174,13 @@ export default function Login() {
         <div className="login-panel w-full max-w-lg rounded-[2rem] p-6 sm:p-9">
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-10 lg:hidden">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Truck size={15} className="text-white" />
-            </div>
-            <span className="font-700 text-slate-900">DeliveryMS</span>
+            <BrandLogo size={32} />
+            <span className="font-700 text-slate-900">{BRAND_NAME}</span>
           </div>
 
           <div className="mb-8">
             <p className="text-[11px] font-700 uppercase tracking-[0.18em] text-blue-600 mb-2">Chào mừng trở lại</p>
-            <h2 className="text-2xl sm:text-3xl font-800 tracking-tight text-slate-900">Đăng nhập DeliveryMS</h2>
+            <h2 className="text-2xl sm:text-3xl font-800 tracking-tight text-slate-900">Đăng nhập {BRAND_NAME}</h2>
             <p className="text-slate-500 text-sm mt-1">Chọn vai trò hoặc nhập thông tin tài khoản</p>
           </div>
 
@@ -200,7 +188,7 @@ export default function Login() {
           <div className="mb-6">
             <p className="text-xs font-600 text-slate-600 uppercase tracking-wide mb-3">Chọn loại tài khoản</p>
             <div className="grid grid-cols-3 gap-2">
-              {roleCards.map(({ role, icon: Icon, label, desc, color, bg, border, badge }) => {
+              {roleCards.map(({ role, icon: Icon, label, desc, color, bg, border }) => {
                 const isSelected = selectedRole === role;
                 return (
                   <button
@@ -223,7 +211,7 @@ export default function Login() {
           {/* Form */}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-600 text-slate-700 mb-1.5">Tên đăng nhập (Username)</label>
+              <label className="block text-xs font-600 text-slate-700 mb-1.5">Tên đăng nhập</label>
               <input
                 type="text"
                 value={username}
@@ -275,20 +263,22 @@ export default function Login() {
                   Đang đăng nhập...
                 </>
               ) : (
-                username ? `Đăng nhập (${username})` : 'Đăng nhập'
+                'Đăng nhập'
               )}
             </button>
-            <button type="button" onClick={() => setShowRegister(true)}
-              className="w-full h-10 rounded-xl border border-blue-200 text-blue-700 text-sm font-600 hover:bg-blue-50">
-              Tạo tài khoản mới
-            </button>
+            {selectedRole === 'Customer' && (
+              <button type="button" onClick={() => setShowRegister(true)}
+                className="w-full h-10 rounded-xl border border-blue-200 text-blue-700 text-sm font-600 hover:bg-blue-50">
+                Tạo tài khoản khách hàng
+              </button>
+            )}
           </div>
 
           {showRegister && (
             <div className="fixed inset-0 z-50 bg-slate-950/40 p-4 flex items-center justify-center">
               <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
                 <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-                  <div><h3 className="text-lg font-800 text-slate-900">Tạo tài khoản</h3><p className="text-xs text-slate-500 mt-1">Bắt đầu trải nghiệm cùng DeliveryMS</p></div>
+                  <div><h3 className="text-lg font-800 text-slate-900">Tạo tài khoản khách hàng</h3><p className="text-xs text-slate-500 mt-1">Đăng ký để gửi và theo dõi đơn cùng {BRAND_NAME}</p></div>
                   <button onClick={() => setShowRegister(false)} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400"><X size={17} /></button>
                 </div>
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -311,7 +301,7 @@ export default function Login() {
                 <div className="p-5 pt-0 flex flex-col-reverse sm:flex-row gap-3 justify-end">
                   <button onClick={() => setShowRegister(false)} className="h-10 px-5 rounded-xl border border-slate-200 text-sm text-slate-600">Hủy</button>
                   <button onClick={handleRegister} disabled={registering} className="h-10 px-6 rounded-xl bg-blue-600 text-white text-sm font-600 disabled:opacity-60">
-                {registering ? 'Đang kết nối, vui lòng chờ...' : 'Đăng ký ngay'}
+                {registering ? 'Đang tạo tài khoản...' : 'Đăng ký ngay'}
                   </button>
                 </div>
               </div>

@@ -1,5 +1,7 @@
 {
-  "description": "Streamline delivery management for businesses with user management, order tracking, payment processing, and real-time analytics in a professional SaaS platform.",
+  "title": "NexaShip | Giao hàng dễ dàng, theo dõi rõ ràng",
+  "description": "NexaShip giúp khách hàng tạo và theo dõi đơn, quản trị viên quản lý và nhân viên giao hàng cập nhật hành trình.",
+  "language": "vi",
   "robots": {
     "index": false
   },

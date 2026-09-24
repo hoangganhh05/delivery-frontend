@@ -2,19 +2,21 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, Bell, ChevronDown, LogOut, Settings, Menu, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp, type Role } from '../context/AppContext';
+import { BRAND_NAME } from '../config/brand';
+import { getRoleLabel } from '../utils/role';
 
 const pageTitles: Record<string, string> = {
-  '/': 'Dashboard',
+  '/': 'Tổng quan',
   '/orders': 'Quản lý đơn hàng',
-  '/dispatch': 'Trung tâm điều phối',
-  '/tracking': 'Tracking đơn hàng',
-  '/shippers': 'Quản lý Shipper',
+  '/dispatch': 'Phân công giao hàng',
+  '/tracking': 'Tra cứu vận đơn',
+  '/shippers': 'Nhân viên giao hàng',
   '/users': 'Quản lý người dùng',
   '/permissions': 'Phân quyền',
   '/payments': 'Quản lý thanh toán',
-  '/vouchers': 'Quản lý Voucher',
+  '/vouchers': 'Quản lý mã giảm giá',
   '/notifications': 'Thông báo',
-  '/reports': 'Báo cáo & Thống kê',
+  '/reports': 'Báo cáo giao hàng',
   '/settings': 'Cài đặt',
 };
 
@@ -36,7 +38,7 @@ export default function Header() {
 
   const title = Object.entries(pageTitles).find(([p]) =>
     p === '/' ? pathname === '/' : pathname.startsWith(p)
-  )?.[1] ?? 'Dashboard';
+  )?.[1] ?? 'Tổng quan';
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -76,7 +78,7 @@ export default function Header() {
 
       {/* Page title */}
       <div className="flex-1">
-        <p className="text-[10px] font-700 uppercase tracking-[0.16em] text-slate-400">DeliveryMS</p>
+        <p className="text-[10px] font-700 uppercase tracking-[0.16em] text-slate-400">{BRAND_NAME}</p>
         <h1 className="text-sm font-700 text-slate-900 truncate">{title}</h1>
       </div>
 
@@ -102,10 +104,10 @@ export default function Header() {
       {/* Notifications */}
       <button
         onClick={() => navigate('/notifications')}
-        className="w-10 h-10 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white flex items-center justify-center text-slate-400 hover:text-slate-700 relative"
+        aria-label="Mở thông báo"
+        className="w-10 h-10 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white flex items-center justify-center text-slate-500 hover:text-slate-700"
       >
         <Bell size={17} />
-        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
       </button>
 
       {/* User menu */}
@@ -119,7 +121,7 @@ export default function Header() {
           </div>
           <div className="hidden sm:block text-left">
             <p className="text-xs font-600 text-slate-900 leading-tight">{displayName}</p>
-            <span className={`text-[10px] font-600 px-1.5 py-0.5 rounded ${roleColors[role]}`}>{role}</span>
+            <span className={`text-[10px] font-600 px-1.5 py-0.5 rounded ${roleColors[role]}`}>{getRoleLabel(role)}</span>
           </div>
           <ChevronDown size={13} className={`text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
         </button>
@@ -129,7 +131,7 @@ export default function Header() {
             animate-in slide-in-from-top-2 fade-in duration-150">
             <div className="px-3 py-2 border-b border-slate-50 mb-1">
               <p className="text-xs font-600 text-slate-900">{displayName}</p>
-              <p className="text-[10px] text-slate-400">{role} · Đang hoạt động</p>
+              <p className="text-[10px] text-slate-400">{getRoleLabel(role)}</p>
             </div>
             <button onClick={() => { setShowUserMenu(false); navigate('/settings'); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, RefreshCw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import { mapBackendStatusToUI } from '../utils/status';
+import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
+import BrandLogo from '../components/BrandLogo';
+import { BRAND_NAME } from '../config/brand';
 
-const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Dịch vụ', 'Voucher', 'Thanh toán', 'Xác nhận'];
+const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Gói giao hàng', 'Mã giảm giá', 'Thanh toán', 'Xác nhận'];
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function CustomerView() {
@@ -77,10 +79,10 @@ export default function CustomerView() {
       if (res && res.data != null) {
         setDiscountFee(Number(res.data.discountAmount));
         setVoucherCode(code.trim().toUpperCase());
-        addToast({ type: 'success', title: 'Áp dụng Voucher', message: `Giảm ${Number(res.data.discountAmount).toLocaleString()}đ cước phí` });
+        addToast({ type: 'success', title: 'Đã áp dụng mã giảm giá', message: `Bạn được giảm ${Number(res.data.discountAmount).toLocaleString()}đ phí giao hàng` });
       }
     } catch (err: any) {
-      addToast({ type: 'error', title: 'Lỗi Voucher', message: err.message || 'Voucher không hợp lệ' });
+      addToast({ type: 'error', title: 'Không áp dụng được mã giảm giá', message: err.message || 'Mã giảm giá không hợp lệ' });
     }
   };
 
@@ -194,8 +196,10 @@ export default function CustomerView() {
     handleTrackSearch(trackingNumber);
   };
 
-  const deliveredOrders = customerOrders.filter(order => (order.status || '').toUpperCase() === 'DELIVERED').length;
-  const activeOrders = customerOrders.length - deliveredOrders;
+  const deliveredOrders = customerOrders.filter(order => ['DELIVERED', 'DONE', 'COMPLETED'].includes((order.status || '').toUpperCase())).length;
+  const activeOrders = customerOrders.filter(order =>
+    ['CREATED', 'PENDING', 'PAID', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'SHIPPING'].includes((order.status || '').toUpperCase())
+  ).length;
   const customerTabs = [
     { id: 'home', icon: Home, label: 'Trang chủ' },
     { id: 'create', icon: Plus, label: 'Tạo đơn' },
@@ -242,8 +246,8 @@ export default function CustomerView() {
               {createStep === 0 && 'Bước 1: Thông tin người gửi'}
               {createStep === 1 && 'Bước 2: Thông tin người nhận'}
               {createStep === 2 && 'Bước 3: Thông tin hàng hóa'}
-              {createStep === 3 && 'Bước 4: Chọn dịch vụ giao hàng'}
-              {createStep === 4 && 'Bước 5: Mã giảm giá / Voucher'}
+              {createStep === 3 && 'Bước 4: Chọn gói giao hàng'}
+              {createStep === 4 && 'Bước 5: Chọn mã giảm giá'}
               {createStep === 5 && 'Bước 6: Phương thức thanh toán'}
               {createStep === 6 && 'Bước 7: Kết quả tạo đơn'}
             </h3>
@@ -306,7 +310,7 @@ export default function CustomerView() {
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <div>
-                  <label className="block text-xs font-600 text-slate-700 mb-1">Tiền thu hộ COD (VNĐ)</label>
+                  <label className="block text-xs font-600 text-slate-700 mb-1">Số tiền cần thu khi giao hàng (VNĐ)</label>
                   <input type="number" min="0" value={codAmount} onChange={e => setCodAmount(Number(e.target.value))}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
@@ -363,11 +367,11 @@ export default function CustomerView() {
               <div className="space-y-4">
                 <div className="bg-slate-50 p-4 rounded-xl space-y-2 border border-slate-100">
                   <div className="flex justify-between text-xs text-slate-600">
-                    <span>Cước phí vận chuyển:</span>
+                    <span>Phí giao hàng:</span>
                     <span>{selectedService.fee.toLocaleString()}đ</span>
                   </div>
                   <div className="flex justify-between text-xs text-green-600 font-500">
-                    <span>Voucher giảm giá:</span>
+                    <span>Mã giảm giá:</span>
                     <span>-{discountFee.toLocaleString()}đ</span>
                   </div>
                   <div className="flex justify-between text-sm font-700 text-slate-900 pt-2 border-t">
@@ -387,7 +391,7 @@ export default function CustomerView() {
                   <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
                     <input type="radio" name="pay" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} className="accent-blue-600" />
                     <div>
-                      <p className="text-sm font-600 text-slate-900">Thanh toán COD</p>
+                      <p className="text-sm font-600 text-slate-900">Thanh toán khi nhận hàng</p>
                       <p className="text-xs text-slate-400">Thanh toán khi nhận hàng</p>
                     </div>
                   </label>
@@ -401,8 +405,7 @@ export default function CustomerView() {
                   <CheckCircle2 size={32} className="text-green-500" />
                 </div>
                 <h3 className="text-lg font-700 text-slate-900">Tạo đơn hàng thành công!</h3>
-                <p className="text-sm text-slate-500">Mã vận đơn (Tracking): <span className="font-700 text-blue-600">{createdOrderRes.trackingNumber}</span></p>
-                <p className="text-xs text-slate-400">ID Đơn hàng: #{createdOrderRes.id}</p>
+                <p className="text-sm text-slate-500">Mã vận đơn: <span className="font-700 text-blue-600">{createdOrderRes.trackingNumber}</span></p>
 
                 {qrPayment && (
                   <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 space-y-3">
@@ -416,7 +419,7 @@ export default function CustomerView() {
                       className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300 text-emerald-800 text-xs font-600 hover:bg-emerald-100">
                       <Copy size={14} /> Sao chép nội dung
                     </button>
-                    <p className="text-xs text-emerald-700">Đơn sẽ được xác nhận sau khi hệ thống kiểm tra giao dịch.</p>
+                    <p className="text-xs text-emerald-700">Chúng tôi sẽ xác nhận đơn sau khi nhận được thanh toán.</p>
                   </div>
                 )}
 
@@ -466,12 +469,10 @@ export default function CustomerView() {
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100 px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm shadow-blue-200">
-              <Truck size={14} className="text-white" />
-            </div>
+            <BrandLogo size={36} />
             <div>
-              <span className="font-700 text-sm text-slate-900 block leading-tight">DeliveryMS</span>
-              <span className="text-[10px] text-slate-400">Cổng khách hàng</span>
+              <span className="font-700 text-sm text-slate-900 block leading-tight">{BRAND_NAME}</span>
+              <span className="text-[10px] text-slate-400">Dành cho khách hàng</span>
             </div>
           </div>
           <nav className="hidden lg:flex items-center gap-1 rounded-xl bg-slate-100 p-1">
@@ -493,7 +494,7 @@ export default function CustomerView() {
           <>
             <div>
               <p className="text-xs text-slate-500">Xin chào,</p>
-              <h2 className="text-xl font-700 text-slate-900">{user?.fullName || 'Khách hàng Hoàng Anh'} 👋</h2>
+              <h2 className="text-xl font-700 text-slate-900">{user?.fullName || 'Khách hàng'}</h2>
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -511,7 +512,7 @@ export default function CustomerView() {
 
             {/* Track bar */}
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 text-white">
-              <p className="text-sm font-500 mb-3 opacity-90">Tra cứu nhanh lộ trình đơn hàng</p>
+              <p className="text-sm font-500 mb-3 opacity-90">Theo dõi nhanh đơn hàng</p>
               <div className="flex gap-2">
                 <input type="text" value={trackInput} onChange={e => setTrackInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { setTab('tracking'); handleTrackSearch(); } }}
                   placeholder="Nhập mã vận đơn (VD: VT...)"
@@ -605,7 +606,6 @@ export default function CustomerView() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="text-sm font-700 text-blue-600">{order.trackingNumber}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">ID: #{order.id}</p>
                     </div>
                     <StatusBadge status={mapBackendStatusToUI(order.status)} type="order" />
                   </div>
@@ -614,7 +614,7 @@ export default function CustomerView() {
                     <div className="flex items-center gap-1.5"><MapPin size={11} className="text-slate-400" /> Nhận: {order.receiverName} ({order.receiverAddress})</div>
                   </div>
                   <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <p className="text-xs font-700 text-slate-900">Cước phí: {(order.totalFee || 0).toLocaleString()}đ</p>
+                    <p className="text-xs font-700 text-slate-900">Phí giao hàng: {(order.totalFee || 0).toLocaleString()}đ</p>
                     <button onClick={() => openOrderTracking(order.trackingNumber)} className="h-7 px-3 rounded-lg border border-blue-200 text-xs text-blue-600 font-500 hover:bg-blue-50">
                       Xem hành trình
                     </button>
@@ -627,7 +627,7 @@ export default function CustomerView() {
 
         {tab === 'tracking' && (
           <div className="space-y-4">
-            <h2 className="text-base font-700 text-slate-900">Tra cứu hành trình vận đơn</h2>
+            <h2 className="text-base font-700 text-slate-900">Theo dõi đơn hàng</h2>
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -647,21 +647,20 @@ export default function CustomerView() {
                 <div className="flex items-center justify-between border-b pb-3">
                   <div>
                     <h3 className="text-base font-700 text-blue-600">{trackedOrder.trackingNumber}</h3>
-                    <p className="text-xs text-slate-500">Mã đơn: #{trackedOrder.orderId}</p>
                   </div>
                   <StatusBadge status={mapBackendStatusToUI(trackedOrder.currentStatus)} type="order" />
                 </div>
                 <div className="text-xs space-y-1 text-slate-600">
                   <p>• Người gửi: <span className="font-600">{trackedOrder.senderName}</span></p>
                   <p>• Người nhận: <span className="font-600">{trackedOrder.receiverName}</span></p>
-                  {trackedOrder.shipperName && <p>• Shipper: <span className="font-600">{trackedOrder.shipperName}</span></p>}
+                  {trackedOrder.shipperName && <p>• Người giao hàng: <span className="font-600">{trackedOrder.shipperName}</span></p>}
                 </div>
                 {trackedOrder.history && trackedOrder.history.length > 0 && (
                   <div className="space-y-3 pt-2">
-                    <p className="text-xs font-700 text-slate-700">Lịch sử trạng thái:</p>
+                    <p className="text-xs font-700 text-slate-700">Cập nhật đơn hàng:</p>
                     {trackedOrder.history.map((h: any, i: number) => (
                       <div key={i} className="text-xs border-l-2 border-blue-500 pl-3 py-1">
-                        <p className="font-600 text-slate-800">{h.status}</p>
+                        <p className="font-600 text-slate-800">{getOrderStatusLabel(h.status)}</p>
                         <p className="text-slate-500">{h.note}</p>
                         <p className="text-[10px] text-slate-400">{h.createdAt || h.timestamp}</p>
                       </div>

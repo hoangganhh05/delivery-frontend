@@ -49,14 +49,14 @@ export default function Dispatch() {
       const res = await assignShipperApi({
         orderId: selectedOrder.id,
         shipperId: selectedShipper.id,
-        note: 'Điều phối từ trung tâm điều phối admin UI',
+        note: 'Phân công bởi quản trị viên',
       });
 
       if (res) {
         addToast({
           type: 'success',
           title: 'Phân công thành công!',
-          message: `Đã gán đơn ${selectedOrder.trackingNumber || selectedOrder.id} cho shipper ${selectedShipper.fullName || selectedShipper.username}`
+          message: `Đã phân công đơn ${selectedOrder.trackingNumber || selectedOrder.id} cho ${selectedShipper.fullName || selectedShipper.username}`
         });
         setSelectedOrder(null);
         setSelectedShipper(null);
@@ -81,8 +81,8 @@ export default function Dispatch() {
     <div className="p-4 sm:p-6 min-h-full space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-700 text-slate-900">Trung tâm điều phối giao hàng</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{unassignedOrders.length} đơn hàng chưa phân công · {shippersList.length} nhân viên shipper</p>
+          <h2 className="text-lg font-700 text-slate-900">Phân công giao hàng</h2>
+          <p className="text-xs text-slate-500 mt-0.5">{unassignedOrders.length} đơn chưa có người giao · {shippersList.length} nhân viên giao hàng</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={fetchData} className="flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-600 hover:bg-slate-50">
@@ -97,7 +97,7 @@ export default function Dispatch() {
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex-1 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100">
               <h3 className="text-sm font-600 text-slate-900">Đơn hàng chờ phân công</h3>
-              <p className="text-xs text-slate-400 mt-0.5">{unassignedOrders.length} đơn đang chờ gán shipper</p>
+              <p className="text-xs text-slate-400 mt-0.5">{unassignedOrders.length} đơn đang chờ phân công</p>
             </div>
             <div className="overflow-y-auto flex-1 p-3 space-y-2">
               {loading ? (
@@ -116,7 +116,7 @@ export default function Dispatch() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="text-xs font-700 text-blue-600">{order.trackingNumber || `DH${order.id}`}</p>
-                        <p className="text-[10px] text-slate-400">ID: #{order.id}</p>
+                        <p className="text-[10px] text-slate-400">Mã đơn: #{order.id}</p>
                       </div>
                       <span className="text-[10px] font-600 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
                         Cần phân công
@@ -125,7 +125,7 @@ export default function Dispatch() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-1.5 text-xs text-slate-700">
                         <Package size={11} className="text-slate-400" />
-                        Gửi: {order.senderName || 'N/A'}
+                        Gửi: {order.senderName || 'Chưa cập nhật'}
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-slate-600">
                         <MapPin size={11} className="text-slate-400" />
@@ -142,7 +142,7 @@ export default function Dispatch() {
           {selectedOrder && (
             <div className="bg-white rounded-xl border border-blue-300 shadow-md">
               <div className="p-4 border-b border-slate-100 bg-blue-50/50">
-                <h3 className="text-sm font-600 text-blue-900">Chọn Shipper nhận đơn</h3>
+                <h3 className="text-sm font-600 text-blue-900">Chọn người giao đơn</h3>
                 <p className="text-xs text-blue-700 font-mono mt-0.5">Vận đơn: {selectedOrder.trackingNumber}</p>
               </div>
               <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
@@ -161,7 +161,7 @@ export default function Dispatch() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-600 text-slate-800 truncate">{shipper.fullName || shipper.username}</p>
-                          <p className="text-[10px] text-slate-400">SĐT: {shipper.phoneNumber || 'N/A'}</p>
+                          <p className="text-[10px] text-slate-400">SĐT: {shipper.phoneNumber || 'Chưa cập nhật'}</p>
                         </div>
                       </div>
                     </div>
@@ -187,7 +187,7 @@ export default function Dispatch() {
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <div>
               <h3 className="text-sm font-700 text-slate-900">Danh sách nhân viên giao hàng</h3>
-              <p className="text-xs text-slate-500">Thông tin đội ngũ vận chuyển</p>
+              <p className="text-xs text-slate-500">Chọn người phù hợp để giao đơn</p>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
@@ -200,13 +200,13 @@ export default function Dispatch() {
                     </div>
                     <div>
                       <p className="text-sm font-700 text-slate-900">{shipper.fullName || shipper.username}</p>
-                      <p className="text-xs text-slate-500">ID Shipper: #{shipper.id} · @{shipper.username}</p>
+                      <p className="text-xs text-slate-500">Mã nhân viên: #{shipper.id} · @{shipper.username}</p>
                     </div>
                   </div>
                   <div className="text-xs text-slate-600 space-y-1 pt-1 border-t border-slate-50">
-                    <p>• SĐT: <span className="font-600 text-slate-800">{shipper.phoneNumber || 'N/A'}</span></p>
-                    <p>• Email: <span className="text-slate-500">{shipper.email || 'N/A'}</span></p>
-                    <p>• Trạng thái: <span className="font-600 text-green-600">{shipper.status || 'ACTIVE'}</span></p>
+                    <p>• SĐT: <span className="font-600 text-slate-800">{shipper.phoneNumber || 'Chưa cập nhật'}</span></p>
+                    <p>• Email: <span className="text-slate-500">{shipper.email || 'Chưa cập nhật'}</span></p>
+                    <p>• Trạng thái: <span className="font-600 text-green-600">{(shipper.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'Đang hoạt động' : 'Đang nghỉ'}</span></p>
                   </div>
                 </div>
               ))}

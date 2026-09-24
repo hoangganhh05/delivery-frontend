@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Phone, Package, Truck, CheckCircle2, Clock, AlertCircle, UserCheck, Printer } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import type { OrderStatus } from '../types/domain';
-import { mapBackendStatusToUI } from '../utils/status';
+import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { getOrderByTrackingApi, trackOrderApi } from '../api/deliveryApi';
 
 const statusSteps = [
@@ -87,7 +87,7 @@ export default function OrderDetail() {
               <h2 className="text-base font-700 text-slate-900">Mã vận đơn: {order.trackingNumber || id}</h2>
               <StatusBadge status={mapBackendStatusToUI(rawStatus)} type="order" />
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">ID Đơn: #{order.id}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Mã đơn: #{order.id}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -96,7 +96,7 @@ export default function OrderDetail() {
           </button>
           {rawStatus === 'CREATED' && (
             <button onClick={() => navigate('/dispatch')} className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-sm text-white font-500 hover:bg-blue-700">
-              <UserCheck size={14} /> Phân công shipper
+              <UserCheck size={14} /> Phân công người giao
             </button>
           )}
         </div>
@@ -108,7 +108,7 @@ export default function OrderDetail() {
           {/* Status Timeline */}
           {rawStatus !== 'CANCELLED' && (
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-              <h3 className="text-sm font-600 text-slate-900 mb-5">Tiến trình vận đơn</h3>
+              <h3 className="text-sm font-600 text-slate-900 mb-5">Tiến trình giao hàng</h3>
               <div className="flex items-start">
                 {statusSteps.map((step, idx) => {
                   const done = idx <= currentStep;
@@ -145,11 +145,11 @@ export default function OrderDetail() {
           {/* Sender & Receiver */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">📦 Người gửi</p>
-              <p className="text-sm font-600 text-slate-900">{order.senderName || 'N/A'}</p>
+              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">Người gửi</p>
+              <p className="text-sm font-600 text-slate-900">{order.senderName || 'Chưa cập nhật'}</p>
               <div className="flex items-center gap-1.5 mt-1.5">
                 <Phone size={12} className="text-slate-400" />
-                <p className="text-xs text-slate-600">{order.senderPhone || 'N/A'}</p>
+                <p className="text-xs text-slate-600">{order.senderPhone || 'Chưa cập nhật'}</p>
               </div>
               <div className="flex items-start gap-1.5 mt-1">
                 <MapPin size={12} className="text-slate-400 mt-0.5 flex-shrink-0" />
@@ -158,11 +158,11 @@ export default function OrderDetail() {
             </div>
 
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">📍 Người nhận</p>
-              <p className="text-sm font-600 text-slate-900">{order.receiverName || 'N/A'}</p>
+              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">Người nhận</p>
+              <p className="text-sm font-600 text-slate-900">{order.receiverName || 'Chưa cập nhật'}</p>
               <div className="flex items-center gap-1.5 mt-1.5">
                 <Phone size={12} className="text-slate-400" />
-                <p className="text-xs text-slate-600">{order.receiverPhone || 'N/A'}</p>
+                <p className="text-xs text-slate-600">{order.receiverPhone || 'Chưa cập nhật'}</p>
               </div>
               <div className="flex items-start gap-1.5 mt-1">
                 <MapPin size={12} className="text-slate-400 mt-0.5 flex-shrink-0" />
@@ -173,7 +173,7 @@ export default function OrderDetail() {
 
           {/* Package & Items info */}
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-            <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">📦 Danh sách hàng hóa & Thông số</p>
+            <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">Hàng hóa và thông tin kiện hàng</p>
             {order.items && order.items.length > 0 ? (
               <div className="space-y-2 mb-4">
                 {order.items.map((item: any, i: number) => (
@@ -203,7 +203,7 @@ export default function OrderDetail() {
           {/* Tracking History Timeline */}
           {trackingInfo && trackingInfo.history && trackingInfo.history.length > 0 && (
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-4">🕐 Nhật ký hành trình vận đơn</p>
+              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-4">Cập nhật hành trình giao hàng</p>
               <div className="space-y-4">
                 {trackingInfo.history.map((h: any, idx: number) => (
                   <div key={idx} className="flex gap-3">
@@ -211,7 +211,7 @@ export default function OrderDetail() {
                       <Clock size={14} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs font-600 text-slate-800">{h.status}</p>
+                      <p className="text-xs font-600 text-slate-800">{getOrderStatusLabel(h.status)}</p>
                       <p className="text-xs text-slate-600 mt-0.5">{h.note || 'Cập nhật lộ trình giao hàng'}</p>
                       <p className="text-[10px] text-slate-400 mt-1">{h.createdAt || h.timestamp}</p>
                     </div>
@@ -227,7 +227,7 @@ export default function OrderDetail() {
           {/* Payment */}
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide">💳 Chi phí & Tạm tính</p>
+              <p className="text-xs font-600 text-slate-500 uppercase tracking-wide">Chi phí và thanh toán</p>
             </div>
             <div className="space-y-2.5">
               <div className="flex justify-between text-xs">
@@ -235,7 +235,7 @@ export default function OrderDetail() {
                 <span className="font-500 text-slate-800">{(order.shippingFee || 0).toLocaleString()}đ</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Chiết khấu Voucher</span>
+                <span className="text-slate-500">Giảm giá</span>
                 <span className="font-500 text-green-600">-{(order.discountFee || 0).toLocaleString()}đ</span>
               </div>
               {order.codAmount > 0 && (
@@ -253,18 +253,18 @@ export default function OrderDetail() {
 
           {/* Shipper Info */}
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-            <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">🚚 Shipper phụ trách</p>
+            <p className="text-xs font-600 text-slate-500 uppercase tracking-wide mb-3">Người giao hàng</p>
             {trackingInfo && trackingInfo.shipperName ? (
               <div className="space-y-2">
                 <p className="text-sm font-600 text-slate-900">{trackingInfo.shipperName}</p>
-                <p className="text-xs text-slate-600">SĐT: {trackingInfo.shipperPhone || 'N/A'}</p>
+                <p className="text-xs text-slate-600">SĐT: {trackingInfo.shipperPhone || 'Chưa cập nhật'}</p>
               </div>
             ) : (
               <div className="text-center py-4">
                 <Truck size={28} className="text-slate-200 mx-auto mb-2" />
-                <p className="text-xs text-slate-500">Chưa có thông tin shipper phụ trách</p>
+                <p className="text-xs text-slate-500">Chưa phân công người giao hàng</p>
                 <button onClick={() => navigate('/dispatch')} className="mt-3 h-8 px-4 rounded-lg bg-blue-600 text-white text-xs font-500 hover:bg-blue-700">
-                  Điều phối shipper
+                  Phân công người giao
                 </button>
               </div>
             )}

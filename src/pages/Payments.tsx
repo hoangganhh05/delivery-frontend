@@ -24,8 +24,8 @@ export default function Payments() {
   const methodLabel = (method: PaymentRecord["method"]) => ({ COD: "COD", VCB_QR: "QR Vietcombank", VNPAY: "VNPay" })[method];
 
   return <div className="p-4 sm:p-6 space-y-5">
-    <div className="flex justify-between gap-3"><div><h2 className="text-lg font-700 text-slate-900">Quản lý Thanh toán & Doanh thu</h2>
-      <p className="text-xs text-slate-500 mt-0.5">Dữ liệu giao dịch được đồng bộ từ backend</p></div>
+    <div className="flex justify-between gap-3"><div><h2 className="text-lg font-700 text-slate-900">Thanh toán và doanh thu</h2>
+      <p className="text-xs text-slate-500 mt-0.5">Theo dõi các khoản thanh toán của đơn hàng</p></div>
       <button onClick={load} className="flex items-center gap-2 h-9 px-3 rounded-lg border bg-white text-xs"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Tải lại</button>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -1,4 +1,5 @@
 import type { OrderStatus, PaymentStatus, ShipperStatus, UserStatus } from '../types/domain';
+import { getOrderStatusLabel } from '../utils/status';
 
 const orderStatusConfig: Record<OrderStatus, { bg: string; text: string; dot: string }> = {
   Pending: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
@@ -6,6 +7,7 @@ const orderStatusConfig: Record<OrderStatus, { bg: string; text: string; dot: st
   Picking: { bg: 'bg-cyan-50', text: 'text-cyan-700', dot: 'bg-cyan-500' },
   Shipping: { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500' },
   Delivered: { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
+  Failed: { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500' },
   Cancelled: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500' },
 };
 
@@ -41,17 +43,16 @@ export default function StatusBadge({ status, type }: Props) {
   else config = userStatusConfig[status as UserStatus];
 
   const label: Record<string, string> = {
-    Pending: 'Chờ xử lý', Confirmed: 'Đã xác nhận', Picking: 'Đang lấy hàng',
-    Shipping: 'Đang giao', Delivered: 'Đã giao', Cancelled: 'Đã hủy',
     Paid: 'Đã thanh toán', Failed: 'Thất bại', Refunded: 'Hoàn tiền',
-    Available: 'Sẵn sàng', Delivering: 'Đang giao', Offline: 'Offline',
+    Available: 'Sẵn sàng', Delivering: 'Đang giao', Offline: 'Đang nghỉ',
     Active: 'Hoạt động', Inactive: 'Không hoạt động', Suspended: 'Tạm khóa',
   };
+  const displayLabel = type === 'order' ? getOrderStatusLabel(status) : label[status] || status;
 
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-      {label[status] || status}
+      {displayLabel}
     </span>
   );
 }

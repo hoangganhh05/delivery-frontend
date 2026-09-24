@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw, LogOut } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import { mapBackendStatusToUI } from '../utils/status';
+import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { searchOrdersApi, updateShipmentStatusApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
+import BrandLogo from '../components/BrandLogo';
+import { BRAND_NAME } from '../config/brand';
 
 export default function ShipperMobile() {
   const navigate = useNavigate();
@@ -51,13 +53,13 @@ export default function ShipperMobile() {
       setUpdating(true);
       const res = await updateShipmentStatusApi(orderId, {
         status: newStatus,
-        note: note || `Shipper cập nhật trạng thái sang ${newStatus}`,
+        note: note || `Đã cập nhật trạng thái: ${getOrderStatusLabel(newStatus)}`,
       });
       if (res) {
         addToast({
           type: 'success',
           title: 'Cập nhật trạng thái thành công!',
-          message: `Đơn #${orderId} đã chuyển sang ${newStatus}`
+          message: `Đơn #${orderId}: ${getOrderStatusLabel(newStatus)}`
         });
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder({ ...selectedOrder, status: newStatus });
@@ -87,8 +89,10 @@ export default function ShipperMobile() {
     navigate('/login', { replace: true });
   };
 
-  const deliveredOrders = shipperOrders.filter(order => (order.status || '').toUpperCase() === 'DELIVERED').length;
-  const activeOrders = shipperOrders.length - deliveredOrders;
+  const deliveredOrders = shipperOrders.filter(order => ['DELIVERED', 'DONE', 'COMPLETED'].includes((order.status || '').toUpperCase())).length;
+  const activeOrders = shipperOrders.filter(order =>
+    ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'SHIPPING'].includes((order.status || '').toUpperCase())
+  ).length;
 
   if (selectedOrder) {
     const rawStatus = (selectedOrder.status || 'CREATED').toUpperCase();
@@ -112,7 +116,7 @@ export default function ShipperMobile() {
         <div className="h-44 sm:h-52 bg-blue-600 text-white p-4 sm:p-6 relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs text-blue-200 uppercase font-600">Điểm giao nhận</p>
+              <p className="text-xs text-blue-200 uppercase font-600">Điểm giao hàng</p>
               <p className="text-base font-700">{selectedOrder.receiverName}</p>
             </div>
             <button onClick={() => openDirections(selectedOrder.receiverAddress)} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-600 flex items-center gap-1">
@@ -141,16 +145,16 @@ export default function ShipperMobile() {
 
           {/* Package & COD */}
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
-            <p className="text-xs font-600 text-slate-500 uppercase mb-2">Chi tiết cước & Thu hộ</p>
+            <p className="text-xs font-600 text-slate-500 uppercase mb-2">Phí giao hàng và tiền cần thu</p>
             <div className="space-y-2 text-xs text-slate-600">
-              <div className="flex justify-between"><span>Cước phí</span><span className="font-600">{(selectedOrder.totalFee || 0).toLocaleString()}đ</span></div>
-              <div className="flex justify-between"><span>Thu hộ COD</span><span className="font-700 text-green-600">{(selectedOrder.codAmount || 0).toLocaleString()}đ</span></div>
+              <div className="flex justify-between"><span>Phí giao hàng</span><span className="font-600">{(selectedOrder.totalFee || 0).toLocaleString()}đ</span></div>
+              <div className="flex justify-between"><span>Tiền cần thu</span><span className="font-700 text-green-600">{(selectedOrder.codAmount || 0).toLocaleString()}đ</span></div>
             </div>
           </div>
 
           {/* Status update actions */}
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-2">
-            <p className="text-xs font-600 text-slate-500 uppercase mb-2">Cập nhật trạng thái trực tiếp</p>
+            <p className="text-xs font-600 text-slate-500 uppercase mb-2">Tiến trình giao hàng</p>
 
             {rawStatus === 'DELIVERED' ? (
               <div className="text-center py-4">
@@ -160,7 +164,7 @@ export default function ShipperMobile() {
             ) : rawStatus === 'ASSIGNED' ? (
                 <button
                   disabled={updating}
-                  onClick={() => handleUpdateStatus(selectedOrder.id, 'PICKED_UP', 'Shipper đã nhận kiện hàng')}
+                  onClick={() => handleUpdateStatus(selectedOrder.id, 'PICKED_UP', 'Đã nhận kiện hàng')}
                   className="w-full h-11 rounded-xl bg-blue-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Package size={15} /> Xác nhận đã lấy hàng
@@ -168,16 +172,16 @@ export default function ShipperMobile() {
             ) : rawStatus === 'PICKED_UP' ? (
                 <button
                   disabled={updating}
-                  onClick={() => handleUpdateStatus(selectedOrder.id, 'IN_TRANSIT', 'Shipper đang trên đường giao hàng')}
+                  onClick={() => handleUpdateStatus(selectedOrder.id, 'IN_TRANSIT', 'Đang trên đường giao hàng')}
                   className="w-full h-11 rounded-xl bg-blue-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Truck size={15} /> Bắt đầu giao hàng
                 </button>
             ) : rawStatus === 'IN_TRANSIT' || rawStatus === 'SHIPPING' ? (
                 <div className="space-y-2">
-                  <button disabled={updating} onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED', 'Shipper đã giao thành công')} className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"><CheckCircle2 size={15} /> {updating ? 'Đang cập nhật...' : 'Xác nhận giao thành công'}</button>
+                  <button disabled={updating} onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED', 'Đã giao thành công')} className="w-full h-11 rounded-xl bg-green-600 text-white text-xs font-600 flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"><CheckCircle2 size={15} /> {updating ? 'Đang cập nhật...' : 'Xác nhận giao thành công'}</button>
                   <textarea value={failureReason} onChange={e => setFailureReason(e.target.value)} placeholder="Lý do giao thất bại (bắt buộc)" className="w-full min-h-20 p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:border-red-300" />
-                  <button disabled={updating || !failureReason.trim()} onClick={() => handleUpdateStatus(selectedOrder.id, 'FAILED', failureReason.trim())} className="w-full h-10 rounded-xl border border-red-200 text-red-600 text-xs font-600 hover:bg-red-50 disabled:opacity-40">Báo giao thất bại</button>
+                  <button disabled={updating || !failureReason.trim()} onClick={() => handleUpdateStatus(selectedOrder.id, 'FAILED', failureReason.trim())} className="w-full h-10 rounded-xl border border-red-200 text-red-600 text-xs font-600 hover:bg-red-50 disabled:opacity-40">Xác nhận chưa giao được</button>
                 </div>
             ) : (
               <p className="py-3 text-center text-xs text-slate-400">Chưa có thao tác phù hợp với trạng thái hiện tại.</p>
@@ -194,12 +198,10 @@ export default function ShipperMobile() {
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100 px-4 sm:px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm shadow-blue-200">
-              <Truck size={12} className="text-white" />
-            </div>
+            <BrandLogo size={36} />
             <div>
-              <span className="text-sm font-700 text-slate-900 block leading-tight">DeliveryMS</span>
-              <span className="text-[10px] text-slate-400">Cổng Shipper</span>
+              <span className="text-sm font-700 text-slate-900 block leading-tight">{BRAND_NAME}</span>
+              <span className="text-[10px] text-slate-400">Đơn giao của tôi</span>
             </div>
           </div>
           <nav className="hidden lg:flex items-center gap-1 rounded-xl bg-slate-100 p-1">
@@ -230,17 +232,17 @@ export default function ShipperMobile() {
                   {(user?.fullName || user?.username || 'SH').charAt(0)}
                 </div>
                 <div>
-                  <p className="text-base font-700">{user?.fullName || user?.username || 'Shipper Nguyễn Văn Giao'}</p>
-                  <p className="text-blue-200 text-xs">Tài khoản Shipper Viettel</p>
+                  <p className="text-base font-700">{user?.fullName || user?.username || 'Nhân viên giao hàng'}</p>
+                  <p className="text-blue-200 text-xs">Nhân viên giao hàng</p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
-                { label: 'Được giao', value: shipperOrders.length, tone: 'bg-blue-50 text-blue-700' },
-                { label: 'Đang xử lý', value: activeOrders, tone: 'bg-amber-50 text-amber-700' },
-                { label: 'Hoàn thành', value: deliveredOrders, tone: 'bg-emerald-50 text-emerald-700' },
+                { label: 'Tổng đơn', value: shipperOrders.length, tone: 'bg-blue-50 text-blue-700' },
+                { label: 'Cần giao', value: activeOrders, tone: 'bg-amber-50 text-amber-700' },
+                { label: 'Đã giao', value: deliveredOrders, tone: 'bg-emerald-50 text-emerald-700' },
               ].map(item => (
                 <div key={item.label} className={`${item.tone} rounded-xl p-3 sm:p-4`}>
                   <p className="text-lg sm:text-2xl font-700">{loading ? '–' : item.value}</p>
@@ -261,7 +263,7 @@ export default function ShipperMobile() {
                     <button onClick={fetchShipperOrders} className="mt-2 text-xs text-blue-600 font-600">Thử lại</button>
                   </div>
                 ) : shipperOrders.length === 0 ? (
-                  <div className="md:col-span-2 py-10 text-center text-xs text-slate-400">Không có đơn hàng nào được phân công</div>
+                  <div className="md:col-span-2 py-10 text-center text-xs text-slate-400">Bạn chưa có đơn cần giao</div>
                 ) : (
                   shipperOrders.map(order => (
                     <button key={order.id} onClick={() => setSelectedOrder(order)}
@@ -273,7 +275,7 @@ export default function ShipperMobile() {
                       <p className="text-xs font-600 text-slate-800">Người nhận: {order.receiverName}</p>
                       <p className="text-xs text-slate-400 mt-0.5 truncate">{order.receiverAddress}</p>
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-                        <span className="text-xs text-green-600 font-600">COD: {(order.codAmount || 0).toLocaleString()}đ</span>
+                        <span className="text-xs text-green-600 font-600">Cần thu: {(order.codAmount || 0).toLocaleString()}đ</span>
                         <ChevronRight size={14} className="text-slate-400" />
                       </div>
                     </button>
@@ -286,14 +288,14 @@ export default function ShipperMobile() {
 
         {activeTab === 'orders' && (
           <div className="p-4 sm:p-6 space-y-3">
-            <p className="text-base font-700 text-slate-900">Danh sách tất cả đơn hàng</p>
+            <p className="text-base font-700 text-slate-900">Tất cả đơn của bạn</p>
             <div className="grid gap-3 md:grid-cols-2">
             {loading ? (
               <div className="md:col-span-2 py-12 text-center text-xs text-slate-400">Đang tải danh sách đơn hàng...</div>
             ) : loadError ? (
               <div className="md:col-span-2 py-12 text-center text-sm text-red-600">{loadError}</div>
             ) : shipperOrders.length === 0 ? (
-              <div className="md:col-span-2 py-12 text-center text-xs text-slate-400">Không có đơn hàng nào được phân công</div>
+              <div className="md:col-span-2 py-12 text-center text-xs text-slate-400">Bạn chưa có đơn cần giao</div>
             ) : shipperOrders.map(order => (
               <button key={order.id} onClick={() => setSelectedOrder(order)}
                 className="w-full bg-white rounded-xl border border-slate-100 shadow-sm p-4 text-left hover:border-blue-200">
@@ -320,7 +322,7 @@ export default function ShipperMobile() {
             ) : loadError ? (
               <div className="md:col-span-2 py-10 text-center text-sm text-red-600">{loadError}</div>
             ) : shipperOrders.length === 0 ? (
-              <div className="py-10 text-center text-xs text-slate-400">Chưa có điểm giao hàng được phân công</div>
+              <div className="py-10 text-center text-xs text-slate-400">Bạn chưa có địa chỉ cần giao</div>
             ) : shipperOrders.map(order => (
               <button
                 key={order.id}

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp, type Role } from './context/AppContext';
 import { lazy, Suspense, type ReactNode } from 'react';
 import Layout from './components/Layout';
+import DocumentTitle from './components/DocumentTitle';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
 const Login = lazy(() => import('./pages/Login'));
@@ -32,7 +33,7 @@ function AppRoutes() {
     hasPermission(code) ? element : <Navigate to={homeRoute} replace />;
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-sm text-slate-400">Đang tải giao diện...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-sm text-slate-400">Đang tải...</div>}>
     <Routes>
       {/* Auth */}
       <Route
@@ -43,11 +44,11 @@ function AppRoutes() {
       {/* Standalone views — auth required */}
       <Route
         path="/customer"
-        element={isLoggedIn ? allow(['Customer', 'Admin'], <CustomerView />) : <Navigate to="/login" replace />}
+        element={isLoggedIn ? allow(['Customer'], <CustomerView />) : <Navigate to="/login" replace />}
       />
       <Route
         path="/shipper-mobile"
-        element={isLoggedIn ? allow(['Shipper', 'Admin'], <ShipperMobile />) : <Navigate to="/login" replace />}
+        element={isLoggedIn ? allow(['Shipper'], <ShipperMobile />) : <Navigate to="/login" replace />}
       />
 
       {/* Admin shell — auth required */}
@@ -84,6 +85,7 @@ function AppRoutes() {
 function AppShell() {
   return (
     <>
+      <DocumentTitle />
       <AppRoutes />
       <ToastContainer />
       <ConfirmModal />

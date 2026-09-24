@@ -33,9 +33,9 @@ export default function ShipperDetail() {
     load();
   }, [id]);
 
-  if (loading) return <div className="p-12 text-center text-sm text-slate-400">Đang tải hồ sơ shipper...</div>;
+  if (loading) return <div className="p-12 text-center text-sm text-slate-400">Đang tải thông tin nhân viên...</div>;
   if (!shipper) {
-    return <div className="p-12 text-center space-y-4"><p className="text-sm text-slate-600">Không tìm thấy shipper.</p><button onClick={() => navigate("/shippers")} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">Quay lại</button></div>;
+    return <div className="p-12 text-center space-y-4"><p className="text-sm text-slate-600">Không tìm thấy nhân viên giao hàng.</p><button onClick={() => navigate("/shippers")} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">Quay lại</button></div>;
   }
 
   const name = shipper.fullName || shipper.username;
@@ -46,7 +46,7 @@ export default function ShipperDetail() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center gap-3">
         <button onClick={() => navigate("/shippers")} className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500"><ArrowLeft size={15} /></button>
-        <h2 className="text-base font-700 text-slate-900">Hồ sơ Shipper</h2>
+        <h2 className="text-base font-700 text-slate-900">Thông tin nhân viên giao hàng</h2>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">

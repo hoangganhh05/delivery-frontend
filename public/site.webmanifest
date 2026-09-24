@@ -1,0 +1,17 @@
+{
+  "name": "NexaShip - Giao hàng dễ dàng, theo dõi rõ ràng",
+  "short_name": "NexaShip",
+  "description": "Tạo, quản lý, giao và theo dõi đơn hàng theo từng loại tài khoản.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
