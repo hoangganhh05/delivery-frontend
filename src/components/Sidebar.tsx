@@ -87,22 +87,36 @@ export default function Sidebar() {
       flex flex-col flex-shrink-0 transition-all duration-200 lg:static lg:z-auto
       ${sidebarOpen ? 'translate-x-0 lg:w-60' : '-translate-x-full lg:translate-x-0 lg:w-16'}`}>
       {/* Logo */}
-      <div className="sidebar-brand h-[4.25rem] px-4 flex items-center gap-3 border-b overflow-hidden">
-        <BrandLogo size={36} className="flex-shrink-0" />
-        {sidebarOpen && (
-          <div className="flex-1 min-w-0">
-            <p className="sidebar-title text-sm font-800 leading-tight truncate tracking-tight">{BRAND_SHORT_NAME}</p>
-            <p className="sidebar-caption text-[10px] leading-tight mt-0.5 truncate">{BRAND_TAGLINE}</p>
-          </div>
+      <div className={`sidebar-brand h-[4.25rem] flex items-center border-b ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-2'}`}>
+        {sidebarOpen ? (
+          <>
+            <BrandLogo size={36} className="flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="sidebar-title text-sm font-800 leading-tight truncate tracking-tight">{BRAND_SHORT_NAME}</p>
+              <p className="sidebar-caption text-[10px] leading-tight mt-0.5 truncate">{BRAND_TAGLINE}</p>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Thu gọn menu"
+              title="Thu gọn menu"
+              className="sidebar-toggle w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            >
+              <ChevronLeft size={15} />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Mở rộng menu"
+            title="Mở rộng menu"
+            className="sidebar-expand relative h-12 w-12 rounded-xl flex items-center justify-center"
+          >
+            <BrandLogo size={36} />
+            <span className="sidebar-expand-indicator absolute -right-0.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full">
+              <ChevronRight size={12} strokeWidth={2.5} />
+            </span>
+          </button>
         )}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label={sidebarOpen ? 'Thu gọn menu' : 'Mở rộng menu'}
-          title={sidebarOpen ? 'Thu gọn menu' : 'Mở rộng menu'}
-          className="sidebar-toggle w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-        >
-          {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-        </button>
       </div>
 
       {/* Navigation */}
