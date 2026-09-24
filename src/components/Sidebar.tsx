@@ -7,7 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 import type { Role } from '../context/AppContext';
 import BrandLogo from './BrandLogo';
-import { BRAND_NAME, BRAND_TAGLINE } from '../config/brand';
+import { BRAND_SHORT_NAME, BRAND_TAGLINE } from '../config/brand';
 import { getRoleLabel } from '../utils/role';
 
 const allNavGroups = [
@@ -91,7 +91,7 @@ export default function Sidebar() {
         <BrandLogo size={36} className="flex-shrink-0" />
         {sidebarOpen && (
           <div className="flex-1 min-w-0">
-            <p className="sidebar-title text-sm font-800 leading-tight truncate tracking-tight">{BRAND_NAME}</p>
+            <p className="sidebar-title text-sm font-800 leading-tight truncate tracking-tight">{BRAND_SHORT_NAME}</p>
             <p className="sidebar-caption text-[10px] leading-tight mt-0.5 truncate">{BRAND_TAGLINE}</p>
           </div>
         )}

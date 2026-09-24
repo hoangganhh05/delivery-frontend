@@ -97,7 +97,7 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
     return html.replace(`<!-- ${slotName} -->`, content);
   }
 
-  const title = config.title ?? "NexaShip | Giao hàng dễ dàng, theo dõi rõ ràng";
+  const title = config.title ?? "GiaoTín | Quản lý giao hàng";
   const description = config.description ?? "";
   const favicon = config.icons?.icon ?? "";
   const socialImage = config.openGraph?.image ?? "";

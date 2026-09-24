@@ -243,7 +243,7 @@ export default function Dashboard() {
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} tickFormatter={v => `₫${Number(v).toLocaleString()}`} />
                 <Tooltip formatter={(v: any) => [`₫${Number(v).toLocaleString()}`, 'Doanh thu']} />
-                <Bar dataKey="revenue" fill="#4F46E5" radius={[4, 4, 0, 0]} maxBarSize={72} />
+                <Bar dataKey="revenue" fill="var(--user-accent-color)" radius={[6, 6, 0, 0]} maxBarSize={72} />
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, Bell, ChevronDown, LogOut, Settings, Menu, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp, type Role } from '../context/AppContext';
-import { BRAND_NAME } from '../config/brand';
+import { BRAND_SHORT_NAME } from '../config/brand';
 import { getRoleLabel } from '../utils/role';
 
 const pageTitles: Record<string, string> = {
@@ -78,7 +78,7 @@ export default function Header() {
 
       {/* Page title */}
       <div className="flex-1">
-        <p className="text-[10px] font-700 uppercase tracking-[0.16em] text-slate-400">{BRAND_NAME}</p>
+        <p className="text-[10px] font-700 uppercase tracking-[0.14em] text-slate-400">{BRAND_SHORT_NAME}</p>
         <h1 className="text-sm font-700 text-slate-900 truncate">{title}</h1>
       </div>
 

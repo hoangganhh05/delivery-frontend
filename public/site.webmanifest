@@ -1,11 +1,11 @@
 {
-  "name": "NexaShip - Giao hàng dễ dàng, theo dõi rõ ràng",
-  "short_name": "NexaShip",
+  "name": "GiaoTín - Quản lý giao hàng",
+  "short_name": "GiaoTín",
   "description": "Tạo, quản lý, giao và theo dõi đơn hàng theo từng loại tài khoản.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f7fb",
-  "theme_color": "#4f46e5",
+  "background_color": "#f6f8fc",
+  "theme_color": "#2563eb",
   "icons": [
     {
       "src": "/favicon.svg",

@@ -39,6 +39,7 @@ import type {
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from "../utils/passwordPolicy";
 import { applyUserPreferences } from "../utils/userPreferences";
 import { getRoleLabel } from "../utils/role";
+import { BRAND_SHORT_NAME } from "../config/brand";
 
 type AccountSection = "profile" | "addresses" | "security" | "preferences";
 
@@ -65,7 +66,7 @@ const INITIAL_SETTINGS: UserSettings = {
   serviceAlertNotifications: true,
   language: "vi",
   theme: "LIGHT",
-  accentColor: "#4F46E5",
+  accentColor: "#2563EB",
 };
 
 const EMPTY_ADDRESS: UserAddressRequest = {
@@ -212,7 +213,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
           { key: "paymentSuccessNotifications" as const, label: "Khi thanh toán thành công" },
           { key: "deliveryCompleteNotifications" as const, label: "Khi đơn đã giao" },
           { key: "shipperAssignmentNotifications" as const, label: "Khi có nhân viên giao hàng" },
-          { key: "serviceAlertNotifications" as const, label: "Thông báo quan trọng từ NexaShip" },
+          { key: "serviceAlertNotifications" as const, label: `Thông báo quan trọng từ ${BRAND_SHORT_NAME}` },
         ]
       : [
           { key: "newOrderNotifications" as const, label: "Khi có đơn hàng mới" },
@@ -882,7 +883,7 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
               <div>
                 <FieldLabel>Màu chủ đạo</FieldLabel>
                 <div className="flex flex-wrap gap-2">
-                  {["#4F46E5", "#2563EB", "#7C3AED", "#059669", "#DC2626", "#D97706", "#0891B2"].map((color) => (
+                  {["#2563EB", "#0F766E", "#7C3AED", "#059669", "#E11D48", "#D97706", "#0891B2"].map((color) => (
                     <button key={color} type="button" disabled={savingSettings} aria-label={`Chọn màu ${color}`} onClick={() => setSettings((current) => ({ ...current, accentColor: color }))} className={`h-9 w-9 rounded-full border-2 disabled:opacity-50 ${settings.accentColor === color ? "scale-110 border-slate-500" : "border-transparent"}`} style={{ backgroundColor: color }} />
                   ))}
                 </div>
@@ -893,12 +894,18 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
               <FieldLabel>Giao diện</FieldLabel>
               <div className="grid gap-2 sm:grid-cols-3">
                 {[
-                  { id: "LIGHT" as const, label: "Sáng", preview: "bg-white" },
-                  { id: "DARK" as const, label: "Tối", preview: "bg-slate-900" },
-                  { id: "SYSTEM" as const, label: "Theo thiết bị", preview: "bg-gradient-to-r from-white to-slate-900" },
+                  { id: "LIGHT" as const, label: "Sáng", preview: "theme-preview-light" },
+                  { id: "DARK" as const, label: "Tối", preview: "theme-preview-dark" },
+                  { id: "SYSTEM" as const, label: "Theo thiết bị", preview: "theme-preview-system" },
                 ].map(({ id, label, preview }) => (
-                  <button key={id} type="button" disabled={savingSettings} onClick={() => setSettings((current) => ({ ...current, theme: id }))} className={`rounded-xl border-2 p-3 text-left disabled:opacity-50 ${settings.theme === id ? "border-blue-500 bg-blue-50" : "border-slate-100 bg-slate-50"}`}>
-                    <span className={`mb-2 block h-10 rounded-lg border border-slate-200 ${preview}`} />
+                  <button key={id} type="button" disabled={savingSettings} onClick={() => setSettings((current) => ({ ...current, theme: id }))} className={`theme-option rounded-xl border-2 p-3 text-left disabled:opacity-50 ${settings.theme === id ? "border-blue-500 bg-blue-50" : "border-slate-100 bg-slate-50"}`}>
+                    <span className={`theme-preview mb-2 flex h-12 items-center gap-2 rounded-lg border p-2 ${preview}`}>
+                      <span className="theme-preview-sidebar h-full w-3 rounded" />
+                      <span className="flex flex-1 flex-col gap-1.5">
+                        <span className="theme-preview-line h-1.5 w-2/3 rounded-full" />
+                        <span className="theme-preview-card h-5 rounded" />
+                      </span>
+                    </span>
                     <span className="text-xs font-600 text-slate-700">{label}</span>
                   </button>
                 ))}
