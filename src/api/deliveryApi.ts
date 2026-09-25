@@ -100,7 +100,7 @@ export const updateShipmentStatusApi = (
 
 export const updateShipmentLocationApi = (
   orderId: number | string,
-  data: { latitude: number; longitude: number; accuracy?: number },
+  data: { latitude: number; longitude: number; accuracy?: number; timestamp?: string },
 ): Promise<ApiResponse> => {
   return axiosClient.put(`/shipments/orders/${orderId}/location`, data);
 };

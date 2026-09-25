@@ -1,4 +1,5 @@
 import { ExternalLink, MapPin, Truck } from "lucide-react";
+import GoogleDeliveryMap from "./GoogleDeliveryMap";
 
 interface LiveTrackingMapProps {
   latitude?: number | string | null;
@@ -33,6 +34,7 @@ export default function LiveTrackingMap({
   const bbox = `${lng - radiusDegrees},${lat - radiusDegrees},${lng + radiusDegrees},${lat + radiusDegrees}`;
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${lat},${lng}`;
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+  const hasGoogleMapsKey = Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim());
   const updatedDate = updatedAt ? new Date(updatedAt) : null;
   const isRecent = updatedDate && !Number.isNaN(updatedDate.getTime())
     ? Date.now() - updatedDate.getTime() < 120_000
@@ -56,22 +58,26 @@ export default function LiveTrackingMap({
           Google Maps <ExternalLink size={12} />
         </a>
       </div>
-      <div className="relative h-64 bg-slate-100 sm:h-72">
-        <iframe
-          title="Vị trí tài xế trên bản đồ"
-          src={mapUrl}
-          className="h-full w-full border-0"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
-        <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-700 text-slate-700 shadow-md">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-          <MapPin size={12} className="text-blue-600" /> Tài xế đang ở đây
+      {hasGoogleMapsKey ? (
+        <GoogleDeliveryMap latitude={lat} longitude={lng} destination={destination} driverName={driverName} />
+      ) : (
+        <div className="relative h-64 bg-slate-100 sm:h-72">
+          <iframe
+            title="Vị trí tài xế trên bản đồ"
+            src={mapUrl}
+            className="h-full w-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-700 text-slate-700 shadow-md">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            <MapPin size={12} className="text-blue-600" /> Tài xế đang ở đây
+          </div>
+          <div className="pointer-events-none absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-full items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg">
+            {driverAvatar ? <img src={driverAvatar} alt="" className="h-full w-full rounded-full object-cover" /> : <Truck size={18} />}
+          </div>
         </div>
-        <div className="pointer-events-none absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-full items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg">
-          {driverAvatar ? <img src={driverAvatar} alt="" className="h-full w-full rounded-full object-cover" /> : <Truck size={18} />}
-        </div>
-      </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[11px] text-slate-500">
         <span>Độ chính xác GPS: {accuracyMeters === null ? "—" : `khoảng ${Math.round(accuracyMeters)} m`}</span>
         {destination && <span className="max-w-full truncate sm:max-w-[55%]" title={destination}>Điểm giao: {destination}</span>}

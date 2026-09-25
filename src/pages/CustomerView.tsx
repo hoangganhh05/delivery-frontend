@@ -5,6 +5,8 @@ import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
 import LiveTrackingMap from '../components/LiveTrackingMap';
+import AdministrativeAddressFields from '../components/AdministrativeAddressFields';
+import { EMPTY_ADMINISTRATIVE_ADDRESS, formatAdministrativeAddress, type AdministrativeAddressValue } from '../types/administrative';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import PreferencesSettings from '../components/PreferencesSettings';
@@ -35,10 +37,12 @@ export default function CustomerView() {
   const [senderName, setSenderName] = useState(user?.fullName || '');
   const [senderPhone, setSenderPhone] = useState('');
   const [senderAddress, setSenderAddress] = useState('');
+  const [senderAdministrativeAddress, setSenderAdministrativeAddress] = useState<AdministrativeAddressValue>(EMPTY_ADMINISTRATIVE_ADDRESS);
 
   const [receiverName, setReceiverName] = useState('');
   const [receiverPhone, setReceiverPhone] = useState('');
   const [receiverAddress, setReceiverAddress] = useState('');
+  const [receiverAdministrativeAddress, setReceiverAdministrativeAddress] = useState<AdministrativeAddressValue>(EMPTY_ADMINISTRATIVE_ADDRESS);
 
   const [itemName, setItemName] = useState('');
   const [weightGram, setWeightGram] = useState(500);
@@ -100,9 +104,9 @@ export default function CustomerView() {
 
   const validateCreateStep = (step: Step) => {
     let message = '';
-    if (step === 0 && (!senderName.trim() || !senderPhone.trim() || !senderAddress.trim())) {
+    if (step === 0 && (!senderName.trim() || !senderPhone.trim() || !senderAddress.trim() || !senderAdministrativeAddress.wardCode)) {
       message = 'Vui lòng nhập đầy đủ tên, số điện thoại và địa chỉ người gửi.';
-    } else if (step === 1 && (!receiverName.trim() || !receiverPhone.trim() || !receiverAddress.trim())) {
+    } else if (step === 1 && (!receiverName.trim() || !receiverPhone.trim() || !receiverAddress.trim() || !receiverAdministrativeAddress.wardCode)) {
       message = 'Vui lòng nhập đầy đủ tên, số điện thoại và địa chỉ người nhận.';
     } else if (step === 2 && (!itemName.trim() || weightGram <= 0 || declaredValue <= 0)) {
       message = 'Tên hàng, trọng lượng và giá trị khai báo phải hợp lệ.';
@@ -337,11 +341,14 @@ export default function CustomerView() {
                   <input type="tel" inputMode="tel" value={senderPhone} onChange={e => setSenderPhone(e.target.value)}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
-                <div>
-                  <label className="block text-xs font-600 text-slate-700 mb-1">Địa chỉ lấy hàng</label>
-                  <input type="text" value={senderAddress} onChange={e => setSenderAddress(e.target.value)}
-                    className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
-                </div>
+                <AdministrativeAddressFields
+                  detailLabel="Địa chỉ lấy hàng"
+                  value={senderAdministrativeAddress}
+                  onChange={(address) => {
+                    setSenderAdministrativeAddress(address);
+                    setSenderAddress(formatAdministrativeAddress(address));
+                  }}
+                />
               </div>
             )}
 
@@ -357,11 +364,14 @@ export default function CustomerView() {
                   <input type="tel" inputMode="tel" value={receiverPhone} onChange={e => setReceiverPhone(e.target.value)}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
-                <div>
-                  <label className="block text-xs font-600 text-slate-700 mb-1">Địa chỉ giao hàng</label>
-                  <input type="text" value={receiverAddress} onChange={e => setReceiverAddress(e.target.value)}
-                    className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
-                </div>
+                <AdministrativeAddressFields
+                  detailLabel="Địa chỉ giao hàng"
+                  value={receiverAdministrativeAddress}
+                  onChange={(address) => {
+                    setReceiverAdministrativeAddress(address);
+                    setReceiverAddress(formatAdministrativeAddress(address));
+                  }}
+                />
               </div>
             )}
 

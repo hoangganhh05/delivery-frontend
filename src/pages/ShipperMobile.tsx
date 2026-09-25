@@ -114,7 +114,7 @@ export default function ShipperMobile() {
         const now = Date.now();
         if (now - lastLocationSentRef.current < 10_000) return;
         lastLocationSentRef.current = now;
-        void updateShipmentLocationApi(orderId, location).catch(() => {
+        void updateShipmentLocationApi(orderId, { ...location, timestamp: new Date().toISOString() }).catch(() => {
           setLocationState('error');
         });
       },
