@@ -5,14 +5,15 @@ import { useNavigate } from 'react-router-dom';
 import { loginApi, registerApi } from '../api/deliveryApi';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../utils/passwordPolicy';
 import BrandLogo from '../components/BrandLogo';
-import { BRAND_NAME, BRAND_TAGLINE } from '../config/brand';
+import { BRAND_NAME } from '../config/brand';
+import { useTranslation, type TranslationKey } from '../i18n/I18nProvider';
 
 const roleCards = [
   {
     role: 'Admin' as Role,
     icon: Shield,
-    label: 'Quản trị viên',
-    desc: 'Quản lý đơn và tài khoản',
+    labelKey: 'login.admin' as TranslationKey,
+    descKey: 'login.adminDescription' as TranslationKey,
     color: 'text-red-600',
     bg: 'bg-red-50',
     border: 'border-red-200',
@@ -20,8 +21,8 @@ const roleCards = [
   {
     role: 'Shipper' as Role,
     icon: Truck,
-    label: 'Nhân viên giao hàng',
-    desc: 'Nhận và giao đơn',
+    labelKey: 'login.shipper' as TranslationKey,
+    descKey: 'login.shipperDescription' as TranslationKey,
     color: 'text-violet-600',
     bg: 'bg-violet-50',
     border: 'border-violet-200',
@@ -29,8 +30,8 @@ const roleCards = [
   {
     role: 'Customer' as Role,
     icon: User,
-    label: 'Khách hàng',
-    desc: 'Tạo và theo dõi đơn',
+    labelKey: 'login.customer' as TranslationKey,
+    descKey: 'login.customerDescription' as TranslationKey,
     color: 'text-green-600',
     bg: 'bg-green-50',
     border: 'border-green-200',
@@ -46,6 +47,7 @@ const roleRoutes: Record<Role, string> = {
 
 export default function Login() {
   const { loginWithAuthData, addToast } = useApp();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<Role>('Admin');
   const [username, setUsername] = useState('');
@@ -143,27 +145,21 @@ export default function Login() {
             <BrandLogo size={44} />
             <div>
               <p className="text-white font-700 text-lg leading-tight">{BRAND_NAME}</p>
-              <p className="text-blue-300 text-xs">{BRAND_TAGLINE}</p>
+              <p className="text-blue-300 text-xs">{t('brand.tagline')}</p>
             </div>
           </div>
 
           <h1 className="text-[2.65rem] font-800 tracking-tight text-white leading-[1.12] mb-5">
-            Giao hàng dễ dàng,<br />theo dõi rõ ràng
+            {t('login.hero').split('|').map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}
           </h1>
-          <p className="text-blue-200 text-base leading-relaxed">
-            Mỗi loại tài khoản có đúng công cụ cần thiết cho công việc của mình.
-          </p>
+          <p className="text-blue-200 text-base leading-relaxed">{t('login.heroDescription')}</p>
         </div>
 
         <div className="relative space-y-4">
-          {[
-            { label: 'Khách hàng', desc: 'Tạo đơn, thanh toán và theo dõi giao hàng' },
-            { label: 'Quản trị viên', desc: 'Quản lý đơn, tài khoản và báo cáo' },
-            { label: 'Nhân viên giao hàng', desc: 'Nhận đơn và cập nhật kết quả giao hàng' },
-          ].map(({ label, desc }) => (
-            <div key={label} className="border-l border-white/25 pl-4">
-              <p className="text-white font-700 text-sm leading-tight">{label}</p>
-              <p className="text-blue-300 text-xs mt-1">{desc}</p>
+          {roleCards.map(({ role, labelKey, descKey }) => (
+            <div key={role} className="border-l border-white/25 pl-4">
+              <p className="text-white font-700 text-sm leading-tight">{t(labelKey)}</p>
+              <p className="text-blue-300 text-xs mt-1">{t(descKey)}</p>
             </div>
           ))}
         </div>
@@ -179,17 +175,18 @@ export default function Login() {
           </div>
 
           <div className="mb-8">
-            <p className="text-[11px] font-700 uppercase tracking-[0.18em] text-blue-600 mb-2">Chào mừng trở lại</p>
-            <h2 className="text-2xl sm:text-3xl font-800 tracking-tight text-slate-900">Đăng nhập {BRAND_NAME}</h2>
-            <p className="text-slate-500 text-sm mt-1">Chọn vai trò hoặc nhập thông tin tài khoản</p>
+            <p className="text-[11px] font-700 uppercase tracking-[0.18em] text-blue-600 mb-2">{t('login.welcomeBack')}</p>
+            <h2 className="text-2xl sm:text-3xl font-800 tracking-tight text-slate-900">{t('login.title', { brand: BRAND_NAME })}</h2>
+            <p className="text-slate-500 text-sm mt-1">{t('login.subtitle')}</p>
           </div>
 
           {/* Role selector */}
           <div className="mb-6">
-            <p className="text-xs font-600 text-slate-600 uppercase tracking-wide mb-3">Chọn loại tài khoản</p>
+            <p className="text-xs font-600 text-slate-600 uppercase tracking-wide mb-3">{t('login.chooseAccount')}</p>
             <div className="grid grid-cols-3 gap-2">
-              {roleCards.map(({ role, icon: Icon, label, desc, color, bg, border }) => {
+              {roleCards.map(({ role, icon: Icon, labelKey, descKey, color, bg, border }) => {
                 const isSelected = selectedRole === role;
+                const label = t(labelKey);
                 return (
                   <button
                     key={role}
@@ -204,7 +201,7 @@ export default function Login() {
                       <Icon size={14} className={isSelected ? color : 'text-slate-400'} />
                     </div>
                     <p className={`login-role-title text-xs font-700 ${isSelected ? 'text-slate-900' : 'text-slate-600'}`}>{label}</p>
-                    <p className="login-role-description text-[10px] text-slate-400 mt-0.5 truncate">{desc}</p>
+                    <p className="login-role-description text-[10px] text-slate-400 mt-0.5 truncate">{t(descKey)}</p>
                   </button>
                 );
               })}
@@ -214,7 +211,7 @@ export default function Login() {
           {/* Form */}
           <div className="space-y-4">
             <div>
-              <label htmlFor="login-username" className="block text-xs font-600 text-slate-700 mb-1.5">Tên đăng nhập</label>
+              <label htmlFor="login-username" className="block text-xs font-600 text-slate-700 mb-1.5">{t('login.username')}</label>
               <input
                 id="login-username"
                 type="text"
@@ -225,13 +222,13 @@ export default function Login() {
                 className={`w-full h-11 px-4 text-sm border rounded-xl outline-none transition-colors
                   ${errors.username ? 'border-red-300 bg-red-50 focus:border-red-400' : 'border-slate-200 bg-slate-50 focus:border-blue-400 focus:bg-white'}
                   placeholder-slate-400 text-slate-800`}
-                placeholder="Nhập tên đăng nhập"
+                placeholder={t('login.enterUsername')}
               />
               {errors.username && <p id="login-username-error" className="text-xs text-red-500 mt-1">{errors.username}</p>}
             </div>
 
             <div>
-              <label htmlFor="login-password" className="block text-xs font-600 text-slate-700 mb-1.5">Mật khẩu</label>
+              <label htmlFor="login-password" className="block text-xs font-600 text-slate-700 mb-1.5">{t('login.password')}</label>
               <div className="relative">
                 <input
                   id="login-password"
@@ -239,7 +236,7 @@ export default function Login() {
                   value={password}
                   onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })); }}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                  placeholder="Nhập mật khẩu..."
+                  placeholder={t('login.enterPassword')}
                   aria-invalid={Boolean(errors.password)}
                   aria-describedby={errors.password ? 'login-password-error' : undefined}
                   className={`w-full h-11 pl-4 pr-11 text-sm border rounded-xl outline-none transition-colors
@@ -272,16 +269,16 @@ export default function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Đang đăng nhập...
+                  {t('login.signingIn')}
                 </>
               ) : (
-                'Đăng nhập'
+                t('login.signIn')
               )}
             </button>
             {selectedRole === 'Customer' && (
               <button type="button" onClick={() => setShowRegister(true)}
                 className="w-full h-10 rounded-xl border border-blue-200 text-blue-700 text-sm font-600 hover:bg-blue-50">
-                Tạo tài khoản khách hàng
+                {t('login.createCustomer')}
               </button>
             )}
           </div>

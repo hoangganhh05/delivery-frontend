@@ -9,43 +9,44 @@ import type { Role } from '../context/AppContext';
 import BrandLogo from './BrandLogo';
 import { BRAND_SHORT_NAME, BRAND_TAGLINE } from '../config/brand';
 import { getRoleLabel } from '../utils/role';
+import { useTranslation, type TranslationKey } from '../i18n/I18nProvider';
 
 const allNavGroups = [
   {
-    label: 'Tổng quan',
+    labelKey: 'nav.overview' as TranslationKey,
     items: [
-      { path: '/', icon: LayoutDashboard, label: 'Tổng quan', roles: ['Admin', 'Staff'], permission: 'VIEW_REPORTS' },
+      { path: '/', icon: LayoutDashboard, labelKey: 'nav.overview' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_REPORTS' },
     ]
   },
   {
-    label: 'Giao nhận',
+    labelKey: 'nav.delivery' as TranslationKey,
     items: [
-      { path: '/orders', icon: Package, label: 'Đơn hàng', roles: ['Admin', 'Staff'], permission: 'VIEW_ORDERS' },
-      { path: '/dispatch', icon: Navigation, label: 'Phân công giao hàng', roles: ['Admin', 'Staff'], permission: 'ASSIGN_SHIPPER' },
-      { path: '/tracking', icon: MapPin, label: 'Tra cứu vận đơn', roles: ['Admin', 'Staff'], permission: 'VIEW_ORDERS' },
+      { path: '/orders', icon: Package, labelKey: 'nav.orders' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_ORDERS' },
+      { path: '/dispatch', icon: Navigation, labelKey: 'nav.dispatch' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'ASSIGN_SHIPPER' },
+      { path: '/tracking', icon: MapPin, labelKey: 'nav.tracking' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_ORDERS' },
     ]
   },
   {
-    label: 'Quản lý',
+    labelKey: 'nav.management' as TranslationKey,
     items: [
-      { path: '/shippers', icon: Truck, label: 'Nhân viên giao hàng', roles: ['Admin', 'Staff'], permission: 'VIEW_SHIPPERS' },
-      { path: '/users', icon: Users, label: 'Người dùng', roles: ['Admin', 'Staff'], permission: 'VIEW_USERS' },
-      { path: '/permissions', icon: Settings, label: 'Phân quyền', roles: ['Admin', 'Staff'], permission: 'MANAGE_ROLES' },
+      { path: '/shippers', icon: Truck, labelKey: 'nav.shippers' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_SHIPPERS' },
+      { path: '/users', icon: Users, labelKey: 'nav.users' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_USERS' },
+      { path: '/permissions', icon: Settings, labelKey: 'nav.permissions' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'MANAGE_ROLES' },
     ]
   },
   {
-    label: 'Tài chính',
+    labelKey: 'nav.finance' as TranslationKey,
     items: [
-      { path: '/payments', icon: CreditCard, label: 'Thanh toán', roles: ['Admin', 'Staff'], permission: 'VIEW_PAYMENTS' },
-      { path: '/vouchers', icon: Tag, label: 'Mã giảm giá', roles: ['Admin', 'Staff'], permission: 'MANAGE_VOUCHERS' },
+      { path: '/payments', icon: CreditCard, labelKey: 'nav.payments' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_PAYMENTS' },
+      { path: '/vouchers', icon: Tag, labelKey: 'nav.vouchers' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'MANAGE_VOUCHERS' },
     ]
   },
   {
-    label: 'Báo cáo & cài đặt',
+    labelKey: 'nav.reportsSettings' as TranslationKey,
     items: [
-      { path: '/notifications', icon: Bell, label: 'Thông báo', roles: ['Admin', 'Staff'], permission: 'VIEW_NOTIFICATIONS' },
-      { path: '/reports', icon: BarChart2, label: 'Báo cáo', roles: ['Admin', 'Staff'], permission: 'VIEW_REPORTS' },
-      { path: '/settings', icon: Settings, label: 'Cài đặt', roles: ['Admin', 'Staff', 'Shipper', 'Customer'], permission: 'SYSTEM_SETTINGS' },
+      { path: '/notifications', icon: Bell, labelKey: 'common.notifications' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_NOTIFICATIONS' },
+      { path: '/reports', icon: BarChart2, labelKey: 'nav.reports' as TranslationKey, roles: ['Admin', 'Staff'], permission: 'VIEW_REPORTS' },
+      { path: '/settings', icon: Settings, labelKey: 'common.settings' as TranslationKey, roles: ['Admin', 'Staff', 'Shipper', 'Customer'], permission: 'SYSTEM_SETTINGS' },
     ]
   },
 ];
@@ -60,6 +61,7 @@ const roleInfo: Record<Role, { color: string; bg: string; initials: string }> = 
 export default function Sidebar() {
   const location = useLocation();
   const { role, user, logout, openConfirm, sidebarOpen, setSidebarOpen, addToast, hasPermission } = useApp();
+  const { t } = useTranslation();
   const info = roleInfo[role];
   const displayName = user?.fullName || user?.username || role;
   const initials = displayName
@@ -71,13 +73,13 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     openConfirm({
-      title: 'Đăng xuất',
-      message: 'Bạn có chắc chắn muốn đăng xuất không?',
-      confirmLabel: 'Đăng xuất',
+      title: t('sidebar.logoutConfirmTitle'),
+      message: t('sidebar.logoutConfirmMessage'),
+      confirmLabel: t('common.logout'),
       danger: true,
       onConfirm: () => {
         logout();
-        addToast({ type: 'info', title: 'Đã đăng xuất', message: 'Hẹn gặp lại bạn!' });
+        addToast({ type: 'info', title: t('sidebar.loggedOut'), message: t('sidebar.seeYou') });
       },
     });
   };
@@ -97,10 +99,10 @@ export default function Sidebar() {
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              aria-label="Thu gọn menu"
+              aria-label={t('sidebar.collapse')}
               aria-expanded={true}
               aria-controls="main-sidebar-navigation"
-              title="Thu gọn menu"
+              title={t('sidebar.collapse')}
               className="sidebar-toggle w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
             >
               <ChevronLeft size={15} />
@@ -109,10 +111,10 @@ export default function Sidebar() {
         ) : (
           <button
             onClick={() => setSidebarOpen(true)}
-            aria-label="Mở rộng menu"
+            aria-label={t('sidebar.expand')}
             aria-expanded={false}
             aria-controls="main-sidebar-navigation"
-            title="Mở rộng menu"
+            title={t('sidebar.expand')}
             className="sidebar-expand relative h-12 w-12 rounded-xl flex items-center justify-center"
           >
             <span className="sidebar-expand-logo" aria-hidden="true">
@@ -126,31 +128,31 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav id="main-sidebar-navigation" className="sidebar-nav flex-1 overflow-y-auto py-4 px-2" aria-label="Điều hướng chính">
+      <nav id="main-sidebar-navigation" className="sidebar-nav flex-1 overflow-y-auto py-4 px-2" aria-label={t('sidebar.navigation')}>
         {allNavGroups.map((group) => {
           const visibleItems = group.items.filter(item => item.roles.includes(role) && (item.path === '/settings' || hasPermission(item.permission)));
           if (visibleItems.length === 0) return null;
           return (
-            <div key={group.label} className="mb-5">
+            <div key={group.labelKey} className="mb-5">
               {sidebarOpen && (
                 <p className="sidebar-group text-[11px] font-700 uppercase tracking-[0.13em] px-3 mb-2">
-                  {group.label}
+                  {t(group.labelKey)}
                 </p>
               )}
-              {visibleItems.map(({ path, icon: Icon, label }) => {
+              {visibleItems.map(({ path, icon: Icon, labelKey }) => {
                 const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
                 return (
                   <NavLink
                     key={path}
                     to={path}
                     onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
-                    title={!sidebarOpen ? label : undefined}
+                    title={!sidebarOpen ? t(labelKey) : undefined}
                     className={`sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 text-sm font-600
                       ${isActive ? 'sidebar-link-active' : ''}`}
                   >
                     <Icon size={16} className="flex-shrink-0" />
                     {sidebarOpen && (
-                      <span className="flex-1 truncate">{label}</span>
+                      <span className="flex-1 truncate">{t(labelKey)}</span>
                     )}
                   </NavLink>
                 );
@@ -179,7 +181,7 @@ export default function Sidebar() {
             <button onClick={handleLogout}
               className="sidebar-logout w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors">
               <LogOut size={13} />
-              <span>Đăng xuất</span>
+              <span>{t('common.logout')}</span>
             </button>
           </div>
         ) : (
@@ -187,8 +189,8 @@ export default function Sidebar() {
             <div className={`w-8 h-8 ${info.bg} rounded-full flex items-center justify-center`} title={displayName}>
               <span className={`text-xs font-700 ${info.color}`}>{initials}</span>
             </div>
-            <button onClick={handleLogout} title="Đăng xuất"
-              aria-label="Đăng xuất"
+            <button onClick={handleLogout} title={t('common.logout')}
+              aria-label={t('common.logout')}
               className="sidebar-logout w-9 h-9 rounded-lg flex items-center justify-center">
               <LogOut size={14} />
             </button>

@@ -6,6 +6,7 @@ import DocumentTitle from './components/DocumentTitle';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
 import { LoadingState } from './components/Skeleton';
+import { I18nProvider } from './i18n/I18nProvider';
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Orders = lazy(() => import('./pages/Orders'));
@@ -86,13 +87,15 @@ function AppRoutes() {
 }
 
 function AppShell() {
+  const { user } = useApp();
+
   return (
-    <>
+    <I18nProvider language={user?.settings?.language ?? 'vi'}>
       <DocumentTitle />
       <AppRoutes />
       <ToastContainer />
       <ConfirmModal />
-    </>
+    </I18nProvider>
   );
 }
 

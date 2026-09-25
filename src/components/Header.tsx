@@ -4,20 +4,21 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp, type Role } from '../context/AppContext';
 import { BRAND_SHORT_NAME } from '../config/brand';
 import { getRoleLabel } from '../utils/role';
+import { useTranslation, type TranslationKey } from '../i18n/I18nProvider';
 
-const pageTitles: Record<string, string> = {
-  '/': 'Tổng quan',
-  '/orders': 'Quản lý đơn hàng',
-  '/dispatch': 'Phân công giao hàng',
-  '/tracking': 'Tra cứu vận đơn',
-  '/shippers': 'Nhân viên giao hàng',
-  '/users': 'Quản lý người dùng',
-  '/permissions': 'Phân quyền',
-  '/payments': 'Quản lý thanh toán',
-  '/vouchers': 'Quản lý mã giảm giá',
-  '/notifications': 'Thông báo',
-  '/reports': 'Báo cáo giao hàng',
-  '/settings': 'Cài đặt',
+const pageTitles: Record<string, TranslationKey> = {
+  '/': 'nav.overview',
+  '/orders': 'nav.orders',
+  '/dispatch': 'nav.dispatch',
+  '/tracking': 'nav.tracking',
+  '/shippers': 'nav.shippers',
+  '/users': 'nav.users',
+  '/permissions': 'nav.permissions',
+  '/payments': 'nav.payments',
+  '/vouchers': 'nav.vouchers',
+  '/notifications': 'common.notifications',
+  '/reports': 'nav.reports',
+  '/settings': 'common.settings',
 };
 
 const roleColors: Record<Role, string> = {
@@ -31,6 +32,7 @@ export default function Header() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { role, user, logout, openConfirm, addToast, sidebarOpen, setSidebarOpen, unreadNotificationCount } = useApp();
+  const { t } = useTranslation();
 
   const [search, setSearch] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -38,7 +40,7 @@ export default function Header() {
 
   const title = Object.entries(pageTitles).find(([p]) =>
     p === '/' ? pathname === '/' : pathname.startsWith(p)
-  )?.[1] ?? 'Tổng quan';
+  )?.[1] ?? 'nav.overview';
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -53,13 +55,13 @@ export default function Header() {
   const handleLogout = () => {
     setShowUserMenu(false);
     openConfirm({
-      title: 'Đăng xuất',
-      message: 'Bạn có chắc chắn muốn đăng xuất không?',
-      confirmLabel: 'Đăng xuất',
+      title: t('sidebar.logoutConfirmTitle'),
+      message: t('sidebar.logoutConfirmMessage'),
+      confirmLabel: t('common.logout'),
       danger: true,
       onConfirm: () => {
         logout();
-        addToast({ type: 'info', title: 'Đã đăng xuất thành công' });
+        addToast({ type: 'info', title: t('header.logoutSuccess') });
         navigate('/login');
       },
     });
@@ -79,7 +81,7 @@ export default function Header() {
       {/* Page title */}
       <div className="flex-1">
         <p className="text-[10px] font-700 uppercase tracking-[0.14em] text-slate-400">{BRAND_SHORT_NAME}</p>
-        <h1 className="text-sm font-700 text-slate-900 truncate">{title}</h1>
+        <h1 className="text-sm font-700 text-slate-900 truncate">{t(title)}</h1>
       </div>
 
       {/* Search */}
@@ -87,7 +89,7 @@ export default function Header() {
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
-          placeholder="Tìm mã vận đơn, khách hàng..."
+          placeholder={t('common.searchOrders')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           onKeyDown={e => {
@@ -104,12 +106,12 @@ export default function Header() {
       {/* Notifications */}
       <button
         onClick={() => navigate('/notifications')}
-        aria-label="Mở thông báo"
+        aria-label={t('header.openNotifications')}
         className="relative w-10 h-10 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white flex items-center justify-center text-slate-500 hover:text-slate-700"
       >
         <Bell size={17} />
         {unreadNotificationCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-700 leading-none text-white" aria-label={`${unreadNotificationCount} thông báo chưa đọc`}>
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-700 leading-none text-white" aria-label={t('header.unread', { count: unreadNotificationCount })}>
             {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
           </span>
         )}
@@ -140,16 +142,16 @@ export default function Header() {
             </div>
             <button onClick={() => { setShowUserMenu(false); navigate('/account'); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
-              <UserRound size={14} className="text-slate-400" /> Tài khoản của tôi
+              <UserRound size={14} className="text-slate-400" /> {t('common.account')}
             </button>
             <button onClick={() => { setShowUserMenu(false); navigate('/settings'); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
-              <Settings size={14} className="text-slate-400" /> Cài đặt
+              <Settings size={14} className="text-slate-400" /> {t('common.settings')}
             </button>
             <div className="border-t border-slate-50 mt-1 pt-1">
               <button onClick={handleLogout}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
-                <LogOut size={14} /> Đăng xuất
+                <LogOut size={14} /> {t('common.logout')}
               </button>
             </div>
           </div>
