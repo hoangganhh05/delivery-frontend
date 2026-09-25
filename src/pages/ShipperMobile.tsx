@@ -49,11 +49,12 @@ export default function ShipperMobile() {
       return;
     }
     const mapsUrl = getGoogleMapsDirectionsUrl(address);
-    const openedWindow = window.open(mapsUrl, '_blank', 'noopener,noreferrer');
-    if (!openedWindow) {
-      // Popup blockers may reject window.open; navigating directly still hands the URL to Google Maps/app.
-      window.location.assign(mapsUrl);
-    }
+    // Keep the GiaoTín page available while Maps opens in a separate tab/app.
+    const mapsLink = document.createElement('a');
+    mapsLink.href = mapsUrl;
+    mapsLink.target = '_blank';
+    mapsLink.rel = 'noopener noreferrer';
+    mapsLink.click();
   };
 
   const fetchShipperOrders = async () => {
