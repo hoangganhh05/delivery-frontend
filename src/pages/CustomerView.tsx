@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
@@ -53,6 +53,7 @@ export default function CustomerView() {
   const [submitting, setSubmitting] = useState(false);
   const [qrPayment, setQrPayment] = useState<{ amount: number; content: string; imageUrl: string; accountNumber: string; accountName: string } | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
+  const paymentPollingInFlight = useRef(false);
 
   const fetchCustomerOrders = async () => {
     try {
@@ -213,7 +214,9 @@ export default function CustomerView() {
   useEffect(() => {
     if (createStep !== 6 || !createdOrderRes || !isPendingOnlinePayment(createdOrderRes)) return;
     let active = true;
-    const timer = window.setInterval(async () => {
+    const checkPaymentStatus = async () => {
+      if (paymentPollingInFlight.current || document.visibilityState !== 'visible') return;
+      paymentPollingInFlight.current = true;
       try {
         const response = await getOrderPaymentApi(Number(createdOrderRes.id));
         if (!active) return;
@@ -224,8 +227,12 @@ export default function CustomerView() {
         }
       } catch {
         // Keep showing the pending state; a later check may succeed.
+      } finally {
+        paymentPollingInFlight.current = false;
       }
-    }, 8000);
+    };
+
+    const timer = window.setInterval(() => { void checkPaymentStatus(); }, 8000);
     return () => { active = false; window.clearInterval(timer); };
   }, [createStep, createdOrderRes?.id, createdOrderRes?.paymentStatus]);
 

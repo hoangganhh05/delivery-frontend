@@ -119,14 +119,12 @@ html .border-blue-600 {
   background: rgba(255, 255, 255, 0.9);
   border-color: rgba(203, 213, 225, 0.65);
   box-shadow: 0 1px 12px rgba(30, 64, 175, 0.035);
-  backdrop-filter: blur(20px) saturate(135%);
 }
 
 .app-sidebar {
   background: rgba(255, 255, 255, 0.96);
   border-color: #e2e8f0 !important;
   box-shadow: 8px 0 28px rgba(30, 64, 175, 0.055);
-  backdrop-filter: blur(20px);
 }
 
 .app-sidebar .sidebar-brand {
@@ -200,7 +198,13 @@ html:not([data-user-theme='dark']) .app-main .rounded-xl.bg-white,
 html:not([data-user-theme='dark']) .app-main .rounded-2xl.bg-white {
   border-color: var(--surface-border) !important;
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(10px);
+}
+
+/* Switching the palette touches many elements at once; do it in one frame instead of animating every card. */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
 }
 
 .app-main table thead {

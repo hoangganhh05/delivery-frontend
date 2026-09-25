@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Loader2, Monitor, Moon, Save, Sun } from "lucide-react";
 import { getCurrentUserApi, updateCurrentUserSettingsApi } from "../api/deliveryApi";
 import { useApp } from "../context/AppContext";
@@ -48,13 +48,22 @@ function PreferenceSwitch({
 }
 
 export default function PreferencesSettings() {
-  const { addToast, role, updateCurrentUserSettings } = useApp();
+  const { addToast, role, user, updateCurrentUserSettings } = useApp();
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingAppearance, setSavingAppearance] = useState(false);
+  const appearanceSaveTimer = useRef<number | null>(null);
+  const appearanceSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const appearanceRevision = useRef(0);
 
   const load = useCallback(async () => {
+    if (user?.settings) {
+      setSettings(user.settings);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await getCurrentUserApi();
@@ -68,13 +77,18 @@ export default function PreferencesSettings() {
     } finally {
       setLoading(false);
     }
-  }, [addToast, updateCurrentUserSettings]);
+  }, [addToast, updateCurrentUserSettings, user?.settings]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const saveAll = async (next: UserSettings, appearanceOnly = false) => {
-    if (appearanceOnly) setSavingAppearance(true);
-    else setSaving(true);
+  useEffect(() => () => {
+    if (appearanceSaveTimer.current !== null) {
+      window.clearTimeout(appearanceSaveTimer.current);
+    }
+  }, []);
+
+  const saveAll = async (next: UserSettings) => {
+    setSaving(true);
     try {
       const response = await updateCurrentUserSettingsApi(next);
       if (response.httpStatus !== 200 || !response.data) throw new Error(response.message || "Không thể lưu cài đặt.");
@@ -82,18 +96,48 @@ export default function PreferencesSettings() {
       updateCurrentUserSettings(response.data);
     } catch (error) {
       addToast({ type: "error", title: "Không thể lưu cài đặt", message: error instanceof Error ? error.message : "Vui lòng thử lại." });
-      void load();
     } finally {
       setSaving(false);
-      setSavingAppearance(false);
     }
   };
 
   const changeAppearance = (changes: Partial<Pick<UserSettings, "theme" | "accentColor">>) => {
     const next = { ...settings, ...changes };
+    if (next.theme === settings.theme && next.accentColor === settings.accentColor) return;
+
     setSettings(next);
     updateCurrentUserSettings(next);
-    void saveAll(next, true);
+    const revision = appearanceRevision.current + 1;
+    appearanceRevision.current = revision;
+    setSavingAppearance(true);
+
+    if (appearanceSaveTimer.current !== null) {
+      window.clearTimeout(appearanceSaveTimer.current);
+    }
+
+    appearanceSaveTimer.current = window.setTimeout(() => {
+      appearanceSaveTimer.current = null;
+      appearanceSaveQueue.current = appearanceSaveQueue.current
+        .catch(() => undefined)
+        .then(async () => {
+          try {
+            const response = await updateCurrentUserSettingsApi(next);
+            if (response.httpStatus !== 200 || !response.data) {
+              throw new Error(response.message || "Không thể đồng bộ giao diện.");
+            }
+          } catch (error) {
+            if (revision === appearanceRevision.current) {
+              addToast({
+                type: "warning",
+                title: "Giao diện đã áp dụng trên thiết bị này",
+                message: error instanceof Error ? `${error.message} Bạn có thể thử đổi lại sau để đồng bộ tài khoản.` : "Chưa thể đồng bộ tài khoản. Bạn có thể thử đổi lại sau.",
+              });
+            }
+          } finally {
+            if (revision === appearanceRevision.current) setSavingAppearance(false);
+          }
+        });
+    }, 350);
   };
 
   const notificationEvents = role === "Shipper"
@@ -173,18 +217,18 @@ export default function PreferencesSettings() {
                 { id: "DARK" as const, label: "Tối", icon: Moon },
                 { id: "SYSTEM" as const, label: "Theo thiết bị", icon: Monitor },
               ].map(({ id, label, icon: Icon }) => (
-                <button key={id} type="button" disabled={savingAppearance} aria-pressed={settings.theme === id} onClick={() => changeAppearance({ theme: id })} className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border-2 text-xs font-600 transition-colors disabled:opacity-60 ${settings.theme === id ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-100 bg-slate-50 text-slate-600 hover:bg-slate-100"}`}>
+                <button key={id} type="button" aria-pressed={settings.theme === id} onClick={() => changeAppearance({ theme: id })} className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border-2 text-xs font-600 transition-colors ${settings.theme === id ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-100 bg-slate-50 text-slate-600 hover:bg-slate-100"}`}>
                   <Icon size={17} />{label}
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-[11px] text-slate-400">{savingAppearance ? "Đang lưu giao diện..." : "Giao diện được áp dụng ngay và tự lưu."}</p>
+            <p className="mt-2 text-[11px] text-slate-400">{savingAppearance ? "Đã áp dụng, đang đồng bộ nền..." : "Áp dụng ngay, tự lưu nền."}</p>
           </div>
           <div className="space-y-5">
             <div>
               <p className="mb-2 text-xs font-600 text-slate-700">Màu chủ đạo</p>
               <div className="flex flex-wrap gap-2">
-                {ACCENT_COLORS.map((color) => <button key={color} type="button" disabled={savingAppearance} aria-label={`Chọn màu ${color}`} aria-pressed={settings.accentColor === color} onClick={() => changeAppearance({ accentColor: color })} className={`h-9 w-9 rounded-full border-2 disabled:opacity-50 ${settings.accentColor === color ? "scale-110 border-slate-500" : "border-transparent"}`} style={{ backgroundColor: color }} />)}
+                {ACCENT_COLORS.map((color) => <button key={color} type="button" aria-label={`Chọn màu ${color}`} aria-pressed={settings.accentColor === color} onClick={() => changeAppearance({ accentColor: color })} className={`h-9 w-9 rounded-full border-2 ${settings.accentColor === color ? "scale-110 border-slate-500" : "border-transparent"}`} style={{ backgroundColor: color }} />)}
               </div>
             </div>
             <div>

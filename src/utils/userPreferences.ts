@@ -4,6 +4,18 @@ type VisualPreferences = Pick<UserSettings, "theme" | "accentColor" | "language"
 
 let systemThemeMedia: MediaQueryList | null = null;
 let systemThemeListener: ((event: MediaQueryListEvent) => void) | null = null;
+let themeTransitionFrame: number | null = null;
+
+function suppressThemeTransitions(root: HTMLElement) {
+  root.classList.add("theme-switching");
+  if (themeTransitionFrame !== null) window.cancelAnimationFrame(themeTransitionFrame);
+  themeTransitionFrame = window.requestAnimationFrame(() => {
+    themeTransitionFrame = window.requestAnimationFrame(() => {
+      root.classList.remove("theme-switching");
+      themeTransitionFrame = null;
+    });
+  });
+}
 
 function resolveTheme(theme: VisualPreferences["theme"]): "light" | "dark" {
   if (theme === "DARK") return "dark";
@@ -15,6 +27,7 @@ function resolveTheme(theme: VisualPreferences["theme"]): "light" | "dark" {
 
 export function applyUserPreferences(settings?: VisualPreferences | null) {
   const root = document.documentElement;
+  suppressThemeTransitions(root);
 
   if (systemThemeMedia && systemThemeListener) {
     systemThemeMedia.removeEventListener("change", systemThemeListener);
@@ -36,6 +49,7 @@ export function applyUserPreferences(settings?: VisualPreferences | null) {
   if (settings.theme === "SYSTEM") {
     systemThemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
     systemThemeListener = (event) => {
+      suppressThemeTransitions(root);
       root.dataset.userTheme = event.matches ? "dark" : "light";
     };
     systemThemeMedia.addEventListener("change", systemThemeListener);
