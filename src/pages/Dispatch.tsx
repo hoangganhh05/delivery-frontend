@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigation, Package, MapPin, RefreshCw, Search } from 'lucide-react';
+import { CheckCircle2, Navigation, Package, MapPin, RefreshCw, Search } from 'lucide-react';
 import { searchOrdersApi, getShippersApi, assignShipperApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import { LoadingState } from '../components/Skeleton';
@@ -115,6 +115,30 @@ export default function Dispatch() {
     }
   };
 
+  const handleSelectOrder = (order: any) => {
+    if (selectedOrder?.id === order.id) {
+      setSelectedOrder(null);
+      setSelectedShipper(null);
+      return;
+    }
+
+    setSelectedOrder(order);
+    setSelectedShipper(null);
+  };
+
+  const handleSelectShipper = (shipper: any) => {
+    if (!selectedOrder) {
+      addToast({
+        type: 'warning',
+        title: 'Chọn đơn hàng trước',
+        message: 'Hãy chọn một đơn hàng chờ phân công ở cột bên trái, rồi chọn người giao trong danh sách này.',
+      });
+      return;
+    }
+
+    setSelectedShipper((current: any | null) => current?.id === shipper.id ? null : shipper);
+  };
+
   const filteredUnassignedOrders = useMemo(() => {
     const query = orderQuery.trim().toLowerCase();
     if (!query) return unassignedOrders;
@@ -193,7 +217,7 @@ export default function Dispatch() {
                 return (
                   <div
                     key={order.id}
-                    onClick={() => setSelectedOrder(isSelected ? null : order)}
+                    onClick={() => handleSelectOrder(order)}
                     className={`rounded-xl border p-3.5 cursor-pointer transition-all
                       ${isSelected ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200'}`}
                   >
@@ -222,35 +246,32 @@ export default function Dispatch() {
             </div>
           </div>
 
-          {/* Shipper selection */}
+          {/* Selected assignment summary — the actual shipper selection happens in the large list. */}
           {selectedOrder && (
             <div className="bg-white rounded-xl border border-blue-300 shadow-md">
               <div className="p-4 border-b border-slate-100 bg-blue-50/50">
-                <h3 className="text-sm font-600 text-blue-900">Chọn người giao đơn</h3>
+                <h3 className="text-sm font-600 text-blue-900">Phân công cho đơn đã chọn</h3>
                 <p className="text-xs text-blue-700 font-mono mt-0.5">Vận đơn: {selectedOrder.trackingNumber}</p>
               </div>
-              <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
-                {filteredShippers.map((shipper) => {
-                  const isSelected = selectedShipper?.id === shipper.id;
-                  return (
-                    <div
-                      key={shipper.id}
-                      onClick={() => setSelectedShipper(isSelected ? null : shipper)}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all
-                        ${isSelected ? 'bg-blue-100 border-blue-500' : 'border-slate-100 hover:border-slate-200'}`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-700 text-white">{(shipper.fullName || shipper.username).charAt(0)}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-600 text-slate-800 truncate">{shipper.fullName || shipper.username}</p>
-                          <p className="text-[10px] text-slate-400">SĐT: {shipper.phoneNumber || 'Chưa cập nhật'}</p>
-                        </div>
+              <div className="p-3">
+                {selectedShipper ? (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-[10px] font-700 text-white">{(selectedShipper.fullName || selectedShipper.username).charAt(0)}</span>
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-700 text-slate-800 truncate">{selectedShipper.fullName || selectedShipper.username}</p>
+                        <p className="text-[10px] text-slate-500">Đã chọn từ danh sách bên phải</p>
+                      </div>
+                      <button type="button" onClick={() => setSelectedShipper(null)} className="text-[11px] font-600 text-blue-700 hover:text-blue-800">Bỏ chọn</button>
                     </div>
-                  );
-                })}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs text-slate-500">
+                    Chọn một nhân viên trong danh sách lớn bên phải.
+                  </p>
+                )}
               </div>
               <div className="p-3 border-t border-slate-100">
                 <button
@@ -266,12 +287,16 @@ export default function Dispatch() {
           )}
         </div>
 
-        {/* Right Panel — Interactive Shipper & Route Map */}
+        {/* Right Panel — primary shipper selection list */}
         <div className="flex-1 min-h-[420px] bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden relative flex flex-col">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <div className="min-w-0">
               <h3 className="text-sm font-700 text-slate-900">Danh sách nhân viên giao hàng</h3>
-              <p className="text-xs text-slate-500">{filteredShippers.length}/{shippersList.length} người phù hợp để giao đơn</p>
+              <p className="text-xs text-slate-500">
+                {selectedOrder
+                  ? `Chọn người giao cho ${selectedOrder.trackingNumber || `đơn #${selectedOrder.id}`}`
+                  : 'Chọn một đơn hàng ở cột bên trái trước khi chọn người giao'}
+              </p>
             </div>
           </div>
           <div className="border-b border-slate-100 bg-white p-3">
@@ -306,24 +331,40 @@ export default function Dispatch() {
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              {filteredShippers.map(shipper => (
-                <div key={shipper.id} className="p-4 border border-slate-100 rounded-xl bg-white shadow-sm hover:border-blue-200 space-y-2">
+              {filteredShippers.map(shipper => {
+                const isSelected = selectedShipper?.id === shipper.id;
+                return (
+                <button
+                  key={shipper.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  aria-disabled={!selectedOrder}
+                  onClick={() => handleSelectShipper(shipper)}
+                  className={`w-full p-4 border rounded-xl text-left shadow-sm space-y-2 transition-all
+                    ${isSelected
+                      ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-200 shadow-md'
+                      : selectedOrder
+                        ? 'bg-white border-slate-100 hover:border-blue-300 hover:-translate-y-0.5'
+                        : 'bg-white border-slate-100 opacity-70 cursor-not-allowed'}`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-700 text-sm">
                       {(shipper.fullName || shipper.username).charAt(0)}
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-700 text-slate-900">{shipper.fullName || shipper.username}</p>
                       <p className="text-xs text-slate-500">Mã nhân viên: #{shipper.id} · @{shipper.username}</p>
                     </div>
+                    {isSelected && <CheckCircle2 size={20} className="text-blue-600 flex-shrink-0" aria-label="Đã chọn" />}
                   </div>
                   <div className="text-xs text-slate-600 space-y-1 pt-1 border-t border-slate-50">
                     <p>• SĐT: <span className="font-600 text-slate-800">{shipper.phoneNumber || 'Chưa cập nhật'}</span></p>
                     <p>• Email: <span className="text-slate-500">{shipper.email || 'Chưa cập nhật'}</span></p>
                     <p>• Trạng thái: <span className="font-600 text-green-600">{(shipper.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'Đang hoạt động' : 'Đang nghỉ'}</span></p>
                   </div>
-                </div>
-              ))}
+                </button>
+                );
+              })}
               {!loading && filteredShippers.length === 0 && (
                 <div className="col-span-full py-12 text-center text-sm text-slate-400">Không tìm thấy nhân viên giao hàng phù hợp</div>
               )}
