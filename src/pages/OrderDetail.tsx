@@ -6,6 +6,7 @@ import { LoadingState } from '../components/Skeleton';
 import type { OrderStatus } from '../types/domain';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { getOrderByTrackingApi, trackOrderApi } from '../api/deliveryApi';
+import LiveTrackingMap from '../components/LiveTrackingMap';
 
 const statusSteps = [
   { key: 'CREATED', label: 'Đã tạo đơn', icon: Clock },
@@ -169,6 +170,18 @@ export default function OrderDetail() {
               </div>
             </div>
           </div>
+
+          {trackingInfo && (
+            <LiveTrackingMap
+              latitude={trackingInfo.driverLatitude}
+              longitude={trackingInfo.driverLongitude}
+              accuracy={trackingInfo.driverAccuracyMeters}
+              updatedAt={trackingInfo.driverLocationUpdatedAt}
+              driverName={trackingInfo.shipperName}
+              driverAvatar={trackingInfo.shipperAvatarUrl}
+              destination={trackingInfo.receiverAddress || order.receiverAddress}
+            />
+          )}
 
           {/* Package & Items info */}
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">

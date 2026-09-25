@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw, LogOut, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { searchOrdersApi, updateShipmentStatusApi } from '../api/deliveryApi';
+import { searchOrdersApi, updateShipmentLocationApi, updateShipmentStatusApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import PreferencesSettings from '../components/PreferencesSettings';
@@ -28,8 +28,9 @@ function getNavigationStop(order: any) {
       };
 }
 
-function getGoogleMapsDirectionsUrl(address: string) {
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}&travelmode=driving`;
+function getGoogleMapsDirectionsUrl(address: string, origin?: { latitude: number; longitude: number }) {
+  const originParam = origin ? `&origin=${encodeURIComponent(`${origin.latitude},${origin.longitude}`)}` : '';
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}&travelmode=driving${originParam}`;
 }
 
 export default function ShipperMobile() {
@@ -42,13 +43,17 @@ export default function ShipperMobile() {
   const [updating, setUpdating] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [failureReason, setFailureReason] = useState('');
+  const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
+  const [locationState, setLocationState] = useState<'idle' | 'requesting' | 'active' | 'denied' | 'unsupported' | 'error'>('idle');
+  const locationWatchRef = useRef<number | null>(null);
+  const lastLocationSentRef = useRef(0);
 
   const openDirections = (address?: string) => {
     if (!address) {
       addToast({ type: 'warning', title: 'Chưa có địa chỉ để chỉ đường' });
       return;
     }
-    const mapsUrl = getGoogleMapsDirectionsUrl(address);
+    const mapsUrl = getGoogleMapsDirectionsUrl(address, currentLocation || undefined);
     // Keep the GiaoTín page available while Maps opens in a separate tab/app.
     const mapsLink = document.createElement('a');
     mapsLink.href = mapsUrl;
@@ -76,6 +81,56 @@ export default function ShipperMobile() {
   useEffect(() => {
     fetchShipperOrders();
   }, []);
+
+  useEffect(() => {
+    if (locationWatchRef.current !== null) {
+      navigator.geolocation?.clearWatch(locationWatchRef.current);
+      locationWatchRef.current = null;
+    }
+    setCurrentLocation(null);
+    setLocationState('idle');
+
+    const orderId = selectedOrder?.id;
+    const status = String(selectedOrder?.status || '').toUpperCase();
+    const canTrack = Boolean(orderId) && ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'SHIPPING'].includes(status);
+    if (!canTrack) return;
+    if (!navigator.geolocation) {
+      setLocationState('unsupported');
+      return;
+    }
+
+    setLocationState('requesting');
+    locationWatchRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: Math.max(0, position.coords.accuracy || 0),
+        };
+        setCurrentLocation(location);
+        setLocationState('active');
+
+        // Avoid writing on every GPS tick while still keeping the marker fresh.
+        const now = Date.now();
+        if (now - lastLocationSentRef.current < 10_000) return;
+        lastLocationSentRef.current = now;
+        void updateShipmentLocationApi(orderId, location).catch(() => {
+          setLocationState('error');
+        });
+      },
+      (error) => {
+        setLocationState(error.code === error.PERMISSION_DENIED ? 'denied' : 'error');
+      },
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 },
+    );
+
+    return () => {
+      if (locationWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(locationWatchRef.current);
+        locationWatchRef.current = null;
+      }
+    };
+  }, [selectedOrder?.id, selectedOrder?.status]);
 
   const handleUpdateStatus = async (orderId: number | string, newStatus: string, note: string) => {
     try {
@@ -175,6 +230,19 @@ export default function ShipperMobile() {
           <p className="text-xs text-blue-100 flex items-center gap-1">
             <MapPin size={13} /> {navigationStop.address || 'Chưa cập nhật địa chỉ'}
           </p>
+        </div>
+
+        <div className="mx-4 mt-3 sm:mx-6 rounded-xl border border-blue-100 bg-white px-3 py-2.5 shadow-sm flex items-center gap-2">
+          <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${locationState === 'active' ? 'bg-emerald-500 animate-pulse' : locationState === 'requesting' ? 'bg-amber-400 animate-pulse' : 'bg-slate-300'}`} />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-700 text-slate-700">
+              {locationState === 'active' ? 'GPS đang hoạt động' : locationState === 'requesting' ? 'Đang xin quyền vị trí...' : locationState === 'denied' ? 'Bạn đã chặn quyền vị trí' : locationState === 'unsupported' ? 'Thiết bị không hỗ trợ GPS' : locationState === 'error' ? 'Chưa gửi được vị trí GPS' : 'Vị trí GPS chưa bật'}
+            </p>
+            <p className="text-[11px] text-slate-400 truncate">
+              {currentLocation ? `Độ chính xác khoảng ${Math.round(currentLocation.accuracy)} m` : 'Bật quyền vị trí để khách thấy vị trí thật của tài xế'}
+            </p>
+          </div>
+          {currentLocation && <span className="text-[10px] font-600 text-emerald-600">Đã đồng bộ</span>}
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 pb-24 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 sm:items-start">

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, Package, Truck, MapPin, Clock, AlertCircle, RefreshCw, LoaderCircle } from 'lucide-react';
 import { trackOrderApi } from '../api/deliveryApi';
 import { getOrderStatusLabel } from '../utils/status';
+import LiveTrackingMap from '../components/LiveTrackingMap';
 
 const RECENT_TRACKING_STORAGE_KEY = 'giaotin.tracking.recent.v1';
 const TRACKING_REFRESH_INTERVAL_MS = 60_000;
@@ -228,6 +229,16 @@ export default function Tracking() {
               </div>
             </div>
           </div>
+
+          <LiveTrackingMap
+            latitude={result.driverLatitude}
+            longitude={result.driverLongitude}
+            accuracy={result.driverAccuracyMeters}
+            updatedAt={result.driverLocationUpdatedAt}
+            driverName={result.shipperName}
+            driverAvatar={result.shipperAvatarUrl}
+            destination={result.receiverAddress}
+          />
 
           {/* Histories */}
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">

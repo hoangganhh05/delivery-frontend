@@ -4,6 +4,7 @@ import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCir
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
 import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
+import LiveTrackingMap from '../components/LiveTrackingMap';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import PreferencesSettings from '../components/PreferencesSettings';
@@ -756,6 +757,15 @@ export default function CustomerView() {
                   <p>• Người nhận: <span className="font-600">{trackedOrder.receiverName}</span></p>
                   {trackedOrder.shipperName && <p>• Người giao hàng: <span className="font-600">{trackedOrder.shipperName}</span></p>}
                 </div>
+                <LiveTrackingMap
+                  latitude={trackedOrder.driverLatitude}
+                  longitude={trackedOrder.driverLongitude}
+                  accuracy={trackedOrder.driverAccuracyMeters}
+                  updatedAt={trackedOrder.driverLocationUpdatedAt}
+                  driverName={trackedOrder.shipperName}
+                  driverAvatar={trackedOrder.shipperAvatarUrl}
+                  destination={trackedOrder.receiverAddress}
+                />
                 {trackedOrder.history && trackedOrder.history.length > 0 && (
                   <div className="space-y-3 pt-2">
                     <p className="text-xs font-700 text-slate-700">Cập nhật đơn hàng:</p>

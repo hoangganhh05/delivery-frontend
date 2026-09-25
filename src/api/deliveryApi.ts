@@ -98,6 +98,13 @@ export const updateShipmentStatusApi = (
   return axiosClient.put(`/shipments/orders/${orderId}/status`, data);
 };
 
+export const updateShipmentLocationApi = (
+  orderId: number | string,
+  data: { latitude: number; longitude: number; accuracy?: number },
+): Promise<ApiResponse> => {
+  return axiosClient.put(`/shipments/orders/${orderId}/location`, data);
+};
+
 // Shippers Management
 export const getShippersApi = (): Promise<ApiResponse> => {
   return axiosClient.get("/shippers");
@@ -260,6 +267,7 @@ export default {
   cancelOrderApi,
   assignShipperApi,
   updateShipmentStatusApi,
+  updateShipmentLocationApi,
   getShippersApi,
   getShipperApi,
   getShipperOrdersApi,
