@@ -11,6 +11,23 @@ import BrandLogo from '../components/BrandLogo';
 import { LoadingState } from '../components/Skeleton';
 import { BRAND_NAME } from '../config/brand';
 
+function getNavigationStop(order: any) {
+  const status = String(order?.status || '').toUpperCase();
+  const isPickupStage = ['CREATED', 'PAID', 'ASSIGNED'].includes(status);
+
+  return isPickupStage
+    ? {
+        label: 'Điểm lấy hàng',
+        name: order?.senderName || 'Người gửi',
+        address: order?.senderAddress,
+      }
+    : {
+        label: 'Điểm giao hàng',
+        name: order?.receiverName || 'Người nhận',
+        address: order?.receiverAddress,
+      };
+}
+
 export default function ShipperMobile() {
   const navigate = useNavigate();
   const { user, addToast, logout, openConfirm } = useApp();
@@ -24,10 +41,10 @@ export default function ShipperMobile() {
 
   const openDirections = (address?: string) => {
     if (!address) {
-      addToast({ type: 'warning', title: 'Chưa có địa chỉ giao hàng' });
+      addToast({ type: 'warning', title: 'Chưa có địa chỉ để chỉ đường' });
       return;
     }
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}&travelmode=driving`, '_blank', 'noopener,noreferrer');
   };
 
   const fetchShipperOrders = async () => {
@@ -100,7 +117,7 @@ export default function ShipperMobile() {
   const tabs = [
     { id: 'home', icon: Home, label: 'Trang chủ' },
     { id: 'orders', icon: Package, label: 'Đơn hàng' },
-    { id: 'map', icon: Map, label: 'Bản đồ' },
+    { id: 'map', icon: Map, label: 'Chỉ đường' },
     { id: 'profile', icon: User, label: 'Hồ sơ' },
     { id: 'settings', icon: Settings, label: 'Cài đặt' },
   ];
@@ -117,6 +134,7 @@ export default function ShipperMobile() {
 
   if (selectedOrder) {
     const rawStatus = (selectedOrder.status || 'CREATED').toUpperCase();
+    const navigationStop = getNavigationStop(selectedOrder);
     return (
       <div className="min-h-dvh bg-slate-50 flex flex-col max-w-5xl mx-auto">
         <div className="sticky top-0 z-20 bg-white border-b border-slate-100 px-4 sm:px-6 py-3 flex items-center gap-3">
@@ -137,15 +155,15 @@ export default function ShipperMobile() {
         <div className="h-44 sm:h-52 bg-blue-600 text-white p-4 sm:p-6 relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs text-blue-200 uppercase font-600">Điểm giao hàng</p>
-              <p className="text-base font-700">{selectedOrder.receiverName}</p>
+              <p className="text-xs text-blue-200 uppercase font-600">{navigationStop.label}</p>
+              <p className="text-base font-700">{navigationStop.name}</p>
             </div>
-            <button type="button" onClick={() => openDirections(selectedOrder.receiverAddress)} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-600 flex items-center gap-1">
-              <Navigation size={13} /> Dẫn đường
+            <button type="button" onClick={() => openDirections(navigationStop.address)} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-600 flex items-center gap-1">
+              <Navigation size={13} /> Google Maps
             </button>
           </div>
           <p className="text-xs text-blue-100 flex items-center gap-1">
-            <MapPin size={13} /> {selectedOrder.receiverAddress || 'Chưa cập nhật địa chỉ'}
+            <MapPin size={13} /> {navigationStop.address || 'Chưa cập nhật địa chỉ'}
           </p>
         </div>
 
@@ -334,8 +352,8 @@ export default function ShipperMobile() {
         {activeTab === 'map' && (
           <div className="p-4 sm:p-6 space-y-3">
             <div>
-              <p className="text-base font-700 text-slate-900">Điểm giao hàng</p>
-              <p className="text-xs text-slate-400 mt-0.5">Chọn một địa chỉ để mở chỉ đường</p>
+              <p className="text-base font-700 text-slate-900">Chỉ đường Google Maps</p>
+              <p className="text-xs text-slate-400 mt-0.5">Chọn đơn để mở chặng phù hợp trên Google Maps.</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
             {loading ? (
@@ -344,25 +362,31 @@ export default function ShipperMobile() {
               <div className="md:col-span-2 py-10 text-center text-sm text-red-600">{loadError}</div>
             ) : shipperOrders.length === 0 ? (
               <div className="py-10 text-center text-xs text-slate-400">Bạn chưa có địa chỉ cần giao</div>
-            ) : shipperOrders.map(order => (
-              <button
-                key={order.id}
-                onClick={() => openDirections(order.receiverAddress)}
-                className="w-full bg-white rounded-xl border border-slate-100 shadow-sm p-4 text-left hover:border-blue-200"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                    <MapPin size={16} />
+            ) : shipperOrders.map(order => {
+              const navigationStop = getNavigationStop(order);
+              return (
+                <button
+                  key={order.id}
+                  onClick={() => openDirections(navigationStop.address)}
+                  className="w-full bg-white rounded-xl border border-slate-100 shadow-sm p-4 text-left hover:border-blue-200"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                      <MapPin size={16} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-700 text-blue-600">{order.trackingNumber}</p>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-600 text-slate-600">{navigationStop.label}</span>
+                      </div>
+                      <p className="text-sm font-600 text-slate-800 mt-1">{navigationStop.name}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{navigationStop.address || 'Chưa cập nhật địa chỉ'}</p>
+                    </div>
+                    <Navigation size={15} className="text-slate-400 flex-shrink-0" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-700 text-blue-600">{order.trackingNumber}</p>
-                    <p className="text-sm font-600 text-slate-800 mt-1">{order.receiverName}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{order.receiverAddress || 'Chưa cập nhật địa chỉ'}</p>
-                  </div>
-                  <Navigation size={15} className="text-slate-400 flex-shrink-0" />
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
             </div>
           </div>
         )}
