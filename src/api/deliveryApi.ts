@@ -98,6 +98,18 @@ export const updateShipmentStatusApi = (
   return axiosClient.put(`/shipments/orders/${orderId}/status`, data);
 };
 
+export interface DriverLocation {
+  orderId: number;
+  latitude: number;
+  longitude: number;
+  accuracyMeters?: number | null;
+  reportedAt?: string | null;
+  receivedAt?: string | null;
+}
+
+export const getOrderLiveLocationApi = (trackingNumber: string): Promise<ApiResponse<DriverLocation | null>> =>
+  axiosClient.get(`/orders/${encodeURIComponent(trackingNumber)}/location`);
+
 export const updateShipmentLocationApi = (
   orderId: number | string,
   data: { latitude: number; longitude: number; accuracy?: number; timestamp?: string },

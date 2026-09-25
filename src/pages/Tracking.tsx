@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, Package, Truck, MapPin, Clock, AlertCircle, RefreshCw, LoaderCircle } from 'lucide-react';
-import { trackOrderApi } from '../api/deliveryApi';
+import { getOrderLiveLocationApi, trackOrderApi } from '../api/deliveryApi';
 import { getOrderStatusLabel } from '../utils/status';
 import LiveTrackingMap from '../components/LiveTrackingMap';
 
 const RECENT_TRACKING_STORAGE_KEY = 'giaotin.tracking.recent.v1';
-const TRACKING_REFRESH_INTERVAL_MS = 60_000;
+const TRACKING_REFRESH_INTERVAL_MS = 10_000;
 
 function getRecentTrackingNumbers(): string[] {
   try {
@@ -31,6 +31,27 @@ export default function Tracking() {
   const [recentTrackingNumbers, setRecentTrackingNumbers] = useState<string[]>(getRecentTrackingNumbers);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const requestIdRef = useRef(0);
+
+  const loadLiveLocation = useCallback(async (trackingNumber: string) => {
+    try {
+      const response = await getOrderLiveLocationApi(trackingNumber);
+      const location = response.data;
+      if (!location) return;
+      setResult((current: any) => current?.trackingNumber === trackingNumber
+        ? {
+            ...current,
+            driverLatitude: location.latitude,
+            driverLongitude: location.longitude,
+            driverAccuracyMeters: location.accuracyMeters,
+            driverLocationReportedAt: location.reportedAt,
+            driverLocationUpdatedAt: location.receivedAt,
+          }
+        : current);
+      setLastUpdated(new Date());
+    } catch {
+      // A location is optional: the order can still be tracked before the shipper enables GPS.
+    }
+  }, []);
 
   const track = useCallback(async (trackingNumber: string, background = false) => {
     const normalizedTrackingNumber = trackingNumber.trim();
@@ -59,6 +80,7 @@ export default function Tracking() {
           normalizedTrackingNumber,
           ...current.filter((item) => item.toLowerCase() !== normalizedTrackingNumber.toLowerCase()),
         ].slice(0, 5));
+        void loadLiveLocation(res.data.trackingNumber || normalizedTrackingNumber);
       } else {
         if (!background) {
           setResult(null);
@@ -81,7 +103,7 @@ export default function Tracking() {
         }
       }
     }
-  }, []);
+  }, [loadLiveLocation]);
 
   const handleTrack = () => {
     void track(input);
@@ -101,6 +123,7 @@ export default function Tracking() {
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') {
         void track(activeTrackingNumber, true);
+        void loadLiveLocation(activeTrackingNumber);
       }
     };
 
@@ -111,7 +134,7 @@ export default function Tracking() {
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
     };
-  }, [activeTrackingNumber, track]);
+  }, [activeTrackingNumber, loadLiveLocation, track]);
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
@@ -197,8 +220,8 @@ export default function Tracking() {
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-blue-200 pt-3">
               <p className="text-[11px] text-slate-500" aria-live="polite">
                 {lastUpdated
-                  ? `Cập nhật lúc ${lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}. Tự cập nhật mỗi phút khi trang đang mở.`
-                  : 'Tự cập nhật mỗi phút khi trang đang mở.'}
+                  ? `Cập nhật lúc ${lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}. Tự cập nhật mỗi 10 giây khi trang đang mở.`
+                  : 'Tự cập nhật mỗi 10 giây khi trang đang mở.'}
               </p>
               <button
                 type="button"

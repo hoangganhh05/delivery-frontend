@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
+import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderLiveLocationApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
 import LiveTrackingMap from '../components/LiveTrackingMap';
 import AdministrativeAddressFields from '../components/AdministrativeAddressFields';
 import { EMPTY_ADMINISTRATIVE_ADDRESS, formatAdministrativeAddress, type AdministrativeAddressValue } from '../types/administrative';
@@ -250,7 +250,15 @@ export default function CustomerView() {
       setTrackInput(normalizedTrackingNumber);
       const res = await trackOrderApi(normalizedTrackingNumber);
       if (res && res.data) {
-        setTrackedOrder(res.data);
+        const liveLocation = await getOrderLiveLocationApi(normalizedTrackingNumber).catch(() => null);
+        setTrackedOrder(liveLocation?.data ? {
+          ...res.data,
+          driverLatitude: liveLocation.data.latitude,
+          driverLongitude: liveLocation.data.longitude,
+          driverAccuracyMeters: liveLocation.data.accuracyMeters,
+          driverLocationReportedAt: liveLocation.data.reportedAt,
+          driverLocationUpdatedAt: liveLocation.data.receivedAt,
+        } : res.data);
       }
     } catch (err: any) {
       addToast({ type: 'error', title: 'Tra cứu thất bại', message: err.message || 'Không tìm thấy thông tin vận đơn' });
@@ -258,6 +266,30 @@ export default function CustomerView() {
       setTrackingLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (tab !== 'tracking' || !trackedOrder?.trackingNumber) return;
+    const refreshLocation = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const response = await getOrderLiveLocationApi(trackedOrder.trackingNumber);
+        const location = response.data;
+        if (!location) return;
+        setTrackedOrder((current: any) => current?.trackingNumber === trackedOrder.trackingNumber ? {
+          ...current,
+          driverLatitude: location.latitude,
+          driverLongitude: location.longitude,
+          driverAccuracyMeters: location.accuracyMeters,
+          driverLocationReportedAt: location.reportedAt,
+          driverLocationUpdatedAt: location.receivedAt,
+        } : current);
+      } catch {
+        // Keep the existing detail view when GPS is not available yet.
+      }
+    };
+    const timer = window.setInterval(() => { void refreshLocation(); }, 10_000);
+    return () => window.clearInterval(timer);
+  }, [tab, trackedOrder?.trackingNumber]);
 
   const handleLogout = () => {
     logout();

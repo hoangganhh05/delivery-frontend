@@ -5,7 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import { LoadingState } from '../components/Skeleton';
 import type { OrderStatus } from '../types/domain';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { getOrderByTrackingApi, trackOrderApi } from '../api/deliveryApi';
+import { getOrderByTrackingApi, getOrderLiveLocationApi, trackOrderApi } from '../api/deliveryApi';
 import LiveTrackingMap from '../components/LiveTrackingMap';
 
 const statusSteps = [
@@ -32,9 +32,10 @@ export default function OrderDetail() {
       if (!id) return;
       try {
         setLoading(true);
-        const [orderRes, trackRes] = await Promise.all([
+        const [orderRes, trackRes, locationRes] = await Promise.all([
           getOrderByTrackingApi(id).catch(() => null),
           trackOrderApi(id).catch(() => null),
+          getOrderLiveLocationApi(id).catch(() => null),
         ]);
 
         if (orderRes && orderRes.data) {
@@ -43,7 +44,14 @@ export default function OrderDetail() {
           setOrder(trackRes.data);
         }
         if (trackRes && trackRes.data) {
-          setTrackingInfo(trackRes.data);
+          setTrackingInfo(locationRes?.data ? {
+            ...trackRes.data,
+            driverLatitude: locationRes.data.latitude,
+            driverLongitude: locationRes.data.longitude,
+            driverAccuracyMeters: locationRes.data.accuracyMeters,
+            driverLocationReportedAt: locationRes.data.reportedAt,
+            driverLocationUpdatedAt: locationRes.data.receivedAt,
+          } : trackRes.data);
         }
       } catch (err) {
         console.error('Error fetching order detail:', err);
