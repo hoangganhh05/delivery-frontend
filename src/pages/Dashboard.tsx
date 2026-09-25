@@ -107,7 +107,7 @@ export default function Dashboard() {
   const hasOrderData = orderStatusData.some(({ value }) => value > 0);
   const chartStatusData = hasOrderData
     ? orderStatusData
-    : [{ name: 'Empty', value: 1, color: '#E2E8F0' }];
+    : [{ name: 'Empty', value: 1, color: 'var(--chart-empty)' }];
 
   const orderAnalyticsData = [
     { date: 'Hoàn thành', orders: stats.successOrders },
@@ -169,9 +169,9 @@ export default function Dashboard() {
                     <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--chart-tick)' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--chart-tick)' }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="orders" name="orders" stroke="#2563EB" strokeWidth={2} fill="url(#ordersGrad)" dot={{ r: 3, fill: '#2563EB', strokeWidth: 0 }} />
               </AreaChart>
@@ -197,7 +197,7 @@ export default function Dashboard() {
                   innerRadius={42}
                   outerRadius={62}
                   dataKey="value"
-                  stroke={hasOrderData ? '#FFFFFF' : 'none'}
+                  stroke={hasOrderData ? 'var(--chart-separator)' : 'none'}
                   strokeWidth={2}
                 >
                   {chartStatusData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
@@ -240,9 +240,9 @@ export default function Dashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={revenueData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} tickFormatter={v => `₫${Number(v).toLocaleString()}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--chart-tick)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--chart-tick)' }} axisLine={false} tickLine={false} tickFormatter={v => `₫${Number(v).toLocaleString()}`} />
                 <Tooltip formatter={(v: any) => [`₫${Number(v).toLocaleString()}`, 'Doanh thu']} />
                 <Bar dataKey="revenue" fill="var(--user-accent-color)" radius={[6, 6, 0, 0]} maxBarSize={72} />
               </BarChart>
