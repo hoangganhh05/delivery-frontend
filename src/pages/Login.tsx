@@ -197,14 +197,14 @@ export default function Login() {
                     onClick={() => handleRoleSelect(role)}
                     aria-pressed={isSelected}
                     aria-label={`Đăng nhập với vai trò ${label}`}
-                    className={`p-3 rounded-2xl border text-left transition-all
-                      ${isSelected ? `${border} ${bg} shadow-sm` : 'border-slate-200/70 bg-white/70 hover:border-slate-300 hover:-translate-y-0.5'}`}
+                    className={`login-role-card p-3 rounded-2xl border text-left transition-all
+                      ${isSelected ? `is-selected ${border} ${bg} shadow-sm` : 'hover:border-slate-300 hover:-translate-y-0.5'}`}
                   >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 ${isSelected ? bg : 'bg-slate-100'}`}>
+                    <div className={`login-role-icon w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 ${isSelected ? bg : ''}`}>
                       <Icon size={14} className={isSelected ? color : 'text-slate-400'} />
                     </div>
-                    <p className={`text-xs font-700 ${isSelected ? 'text-slate-900' : 'text-slate-600'}`}>{label}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{desc}</p>
+                    <p className={`login-role-title text-xs font-700 ${isSelected ? 'text-slate-900' : 'text-slate-600'}`}>{label}</p>
+                    <p className="login-role-description text-[10px] text-slate-400 mt-0.5 truncate">{desc}</p>
                   </button>
                 );
               })}
