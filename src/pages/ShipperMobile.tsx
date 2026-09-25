@@ -13,7 +13,7 @@ import { BRAND_NAME } from '../config/brand';
 
 function getNavigationStop(order: any) {
   const status = String(order?.status || '').toUpperCase();
-  const isPickupStage = ['CREATED', 'PAID', 'ASSIGNED'].includes(status);
+  const isPickupStage = ['CREATED', 'PAID', 'ASSIGNED'].includes(status) && Boolean(order?.senderAddress);
 
   return isPickupStage
     ? {
@@ -23,9 +23,13 @@ function getNavigationStop(order: any) {
       }
     : {
         label: 'Điểm giao hàng',
-        name: order?.receiverName || 'Người nhận',
-        address: order?.receiverAddress,
+        name: order?.receiverName || order?.senderName || 'Người nhận',
+        address: order?.receiverAddress || order?.senderAddress,
       };
+}
+
+function getGoogleMapsDirectionsUrl(address: string) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}&travelmode=driving`;
 }
 
 export default function ShipperMobile() {
@@ -44,7 +48,12 @@ export default function ShipperMobile() {
       addToast({ type: 'warning', title: 'Chưa có địa chỉ để chỉ đường' });
       return;
     }
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}&travelmode=driving`, '_blank', 'noopener,noreferrer');
+    const mapsUrl = getGoogleMapsDirectionsUrl(address);
+    const openedWindow = window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+    if (!openedWindow) {
+      // Popup blockers may reject window.open; navigating directly still hands the URL to Google Maps/app.
+      window.location.assign(mapsUrl);
+    }
   };
 
   const fetchShipperOrders = async () => {
