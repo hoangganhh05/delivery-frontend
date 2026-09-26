@@ -15,6 +15,24 @@ export interface UserAddress {
   defaultAddress: boolean;
 }
 
+export interface UserBankAccount {
+  id: number;
+  bankCode: string | null;
+  bankName: string;
+  accountHolderName: string;
+  accountNumberLast4: string;
+  defaultAccount: boolean;
+  verified: boolean;
+}
+
+export interface UserBankAccountRequest {
+  bankCode?: string | null;
+  bankName: string;
+  accountHolderName: string;
+  accountNumber: string;
+  defaultAccount?: boolean;
+}
+
 export interface UserSettings {
   emailNotifications: boolean;
   smsNotifications: boolean;

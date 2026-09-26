@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import {
   type AdministrativeAddressValue,
-  type District,
   type Province,
   type Ward,
 } from "../types/administrative";
-import { getDistricts, getProvinces, getWards } from "../services/vietnamAdministrativeApi";
+import { getProvinces, getWards } from "../services/vietnamAdministrativeApi";
 
 interface AdministrativeAddressFieldsProps {
   value: AdministrativeAddressValue;
@@ -24,10 +23,8 @@ export default function AdministrativeAddressFields({
   detailLabel = "Số nhà, đường, thôn/xóm",
 }: AdministrativeAddressFieldsProps) {
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [loadingProvinces, setLoadingProvinces] = useState(true);
-  const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingWards, setLoadingWards] = useState(false);
   const [error, setError] = useState("");
 
@@ -47,35 +44,19 @@ export default function AdministrativeAddressFields({
 
   useEffect(() => {
     if (value.provinceCode === null) {
-      setDistricts([]);
-      return;
-    }
-    const controller = new AbortController();
-    setLoadingDistricts(true);
-    getDistricts(value.provinceCode, controller.signal)
-      .then((items) => setDistricts(items))
-      .catch((requestError: unknown) => {
-        if ((requestError as { name?: string }).name !== "AbortError") setError("Không tải được quận/huyện.");
-      })
-      .finally(() => setLoadingDistricts(false));
-    return () => controller.abort();
-  }, [value.provinceCode]);
-
-  useEffect(() => {
-    if (value.districtCode === null) {
       setWards([]);
       return;
     }
     const controller = new AbortController();
     setLoadingWards(true);
-    getWards(value.districtCode, controller.signal)
+    getWards(value.provinceCode, controller.signal)
       .then((items) => setWards(items))
       .catch((requestError: unknown) => {
         if ((requestError as { name?: string }).name !== "AbortError") setError("Không tải được xã/phường.");
       })
       .finally(() => setLoadingWards(false));
     return () => controller.abort();
-  }, [value.districtCode]);
+  }, [value.provinceCode]);
 
   const selectClassName = "w-full h-10 appearance-none px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60";
 
@@ -91,7 +72,7 @@ export default function AdministrativeAddressFields({
           className={selectClassName}
         />
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="relative">
           <label className="block text-xs font-600 text-slate-700 mb-1">Tỉnh / Thành phố</label>
           <select
@@ -117,32 +98,10 @@ export default function AdministrativeAddressFields({
           {loadingProvinces && <SelectLoading />}
         </div>
         <div className="relative">
-          <label className="block text-xs font-600 text-slate-700 mb-1">Quận / Huyện</label>
-          <select
-            value={value.districtCode ?? ""}
-            disabled={value.provinceCode === null || loadingDistricts}
-            onChange={(event) => {
-              const district = districts.find((item) => item.code === Number(event.target.value));
-              onChange({
-                ...value,
-                districtCode: district?.code ?? null,
-                districtName: district?.name ?? "",
-                wardCode: null,
-                wardName: "",
-              });
-            }}
-            className={selectClassName}
-          >
-            <option value="">Chọn quận / huyện</option>
-            {districts.map((district) => <option key={district.code} value={district.code}>{district.name}</option>)}
-          </select>
-          {loadingDistricts && <SelectLoading />}
-        </div>
-        <div className="relative">
           <label className="block text-xs font-600 text-slate-700 mb-1">Xã / Phường</label>
           <select
             value={value.wardCode ?? ""}
-            disabled={value.districtCode === null || loadingWards}
+            disabled={value.provinceCode === null || loadingWards}
             onChange={(event) => {
               const ward = wards.find((item) => item.code === Number(event.target.value));
               onChange({ ...value, wardCode: ward?.code ?? null, wardName: ward?.name ?? "" });
@@ -156,7 +115,7 @@ export default function AdministrativeAddressFields({
         </div>
       </div>
       {error && <p className="text-xs text-red-600" role="alert">{error}</p>}
-      <p className="text-[11px] text-slate-400">Chọn đủ ba cấp để tạo địa chỉ chi tiết và dễ định vị hơn.</p>
+      <p className="text-[11px] text-slate-400">Danh mục tỉnh/thành và xã/phường được cập nhật theo dữ liệu hành chính sau 07/2025.</p>
     </div>
   );
 }

@@ -6,6 +6,8 @@ import type {
   UpdateUserSettingsRequest,
   UserAddress,
   UserAddressRequest,
+  UserBankAccount,
+  UserBankAccountRequest,
   UserMe,
   UserSettings,
 } from "../types/account";
@@ -105,6 +107,35 @@ export interface DriverLocation {
   accuracyMeters?: number | null;
   reportedAt?: string | null;
   receivedAt?: string | null;
+}
+
+export interface TrackingHistoryItem {
+  status?: string | null;
+  note?: string | null;
+  proofImageUrl?: string | null;
+  timestamp?: string | null;
+  createdAt?: string | null;
+}
+
+export interface TrackingInfo {
+  trackingNumber: string;
+  orderId?: number | null;
+  senderName?: string | null;
+  receiverName?: string | null;
+  receiverAddress?: string | null;
+  shipperName?: string | null;
+  shipperPhone?: string | null;
+  shipperAvatarUrl?: string | null;
+  currentStatus?: string | null;
+  shippingFee?: number | null;
+  codAmount?: number | null;
+  totalFee?: number | null;
+  history?: TrackingHistoryItem[];
+  driverLatitude?: number | null;
+  driverLongitude?: number | null;
+  driverAccuracyMeters?: number | null;
+  driverLocationReportedAt?: string | null;
+  driverLocationUpdatedAt?: string | null;
 }
 
 export const getOrderLiveLocationApi = (trackingNumber: string): Promise<ApiResponse<DriverLocation | null>> =>
@@ -218,6 +249,35 @@ export const setDefaultUserAddressApi = (
   return axiosClient.put(`/users/addresses/${id}/default`);
 };
 
+export const getUserBankAccountsApi = (): Promise<ApiResponse<UserBankAccount[]>> => {
+  return axiosClient.get("/users/bank-accounts");
+};
+
+export const createUserBankAccountApi = (
+  data: UserBankAccountRequest,
+): Promise<ApiResponse<UserBankAccount>> => {
+  return axiosClient.post("/users/bank-accounts", data);
+};
+
+export const updateUserBankAccountApi = (
+  id: number,
+  data: UserBankAccountRequest,
+): Promise<ApiResponse<UserBankAccount>> => {
+  return axiosClient.put(`/users/bank-accounts/${id}`, data);
+};
+
+export const deleteUserBankAccountApi = (
+  id: number,
+): Promise<ApiResponse<UserBankAccount[]>> => {
+  return axiosClient.delete(`/users/bank-accounts/${id}`);
+};
+
+export const setDefaultUserBankAccountApi = (
+  id: number,
+): Promise<ApiResponse<UserBankAccount>> => {
+  return axiosClient.put(`/users/bank-accounts/${id}/default`);
+};
+
 export const updateCurrentUserSettingsApi = (
   data: UpdateUserSettingsRequest,
 ): Promise<ApiResponse<UserSettings>> => {
@@ -246,7 +306,7 @@ export const getActiveVouchersApi = (): Promise<ApiResponse> => {
 };
 
 // Tracking
-export const trackOrderApi = (trackingNumber: string): Promise<ApiResponse> => {
+export const trackOrderApi = (trackingNumber: string): Promise<ApiResponse<TrackingInfo>> => {
   return axiosClient.get(`/tracking/${trackingNumber}`);
 };
 

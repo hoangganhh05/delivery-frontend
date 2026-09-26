@@ -99,8 +99,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token');
     const username = localStorage.getItem('username');
     const savedRole = localStorage.getItem('role');
+    const savedFullName = localStorage.getItem('fullName');
     if (token && username) {
-      return { username, fullName: username, role: normalizeRole(savedRole || 'Customer') };
+      return { username, fullName: savedFullName || username, role: normalizeRole(savedRole || 'Customer') };
     }
     return null;
   });
@@ -122,7 +123,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token);
     localStorage.setItem('username', username);
     localStorage.setItem('role', parsedRole);
-    localStorage.removeItem('fullName');
+    if (fullName) localStorage.setItem('fullName', fullName);
+    else localStorage.removeItem('fullName');
 
     setRoleState(parsedRole);
     setUser({ username, fullName: fullName || username, role: parsedRole });
@@ -133,6 +135,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const parsedRole = normalizeRole(profile.role);
     localStorage.setItem('username', profile.username);
     localStorage.setItem('role', parsedRole);
+    localStorage.setItem('fullName', profile.fullName || profile.username);
     setRoleState(parsedRole);
     setUser({
       id: profile.id,

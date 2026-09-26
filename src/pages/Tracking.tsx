@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, Package, Truck, MapPin, Clock, AlertCircle, RefreshCw, LoaderCircle } from 'lucide-react';
-import { getOrderLiveLocationApi, trackOrderApi } from '../api/deliveryApi';
+import { getOrderLiveLocationApi, trackOrderApi, type TrackingInfo } from '../api/deliveryApi';
 import { getOrderStatusLabel } from '../utils/status';
 import LiveTrackingMap from '../components/LiveTrackingMap';
 
@@ -23,7 +23,7 @@ function getRecentTrackingNumbers(): string[] {
 
 export default function Tracking() {
   const [input, setInput] = useState('');
-  const [result, setResult] = useState<any | null>(null);
+  const [result, setResult] = useState<TrackingInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -37,7 +37,7 @@ export default function Tracking() {
       const response = await getOrderLiveLocationApi(trackingNumber);
       const location = response.data;
       if (!location) return;
-      setResult((current: any) => current?.trackingNumber === trackingNumber
+      setResult((current) => current?.trackingNumber === trackingNumber
         ? {
             ...current,
             driverLatitude: location.latitude,
@@ -212,10 +212,12 @@ export default function Tracking() {
                   <p className="text-base font-700 text-blue-700">{getOrderStatusLabel(result.currentStatus)}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500">Mã đơn hàng</p>
-                <p className="text-sm font-700 text-slate-800">#{result.orderId}</p>
-              </div>
+              {result.orderId != null && (
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">Mã đơn hàng</p>
+                  <p className="text-sm font-700 text-slate-800">#{result.orderId}</p>
+                </div>
+              )}
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-blue-200 pt-3">
               <p className="text-[11px] text-slate-500" aria-live="polite">
@@ -234,6 +236,12 @@ export default function Tracking() {
               </button>
             </div>
           </div>
+
+          {result.orderId == null && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+              Bạn đang xem dữ liệu tra cứu công khai đã được ẩn thông tin riêng tư. Đăng nhập để xem chi tiết theo quyền tài khoản.
+            </div>
+          )}
 
           {/* Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -268,7 +276,7 @@ export default function Tracking() {
             <h3 className="text-sm font-600 text-slate-900 mb-4">Nhật ký trạng thái vận chuyển</h3>
             {result.history && result.history.length > 0 ? (
               <div className="space-y-4 border-l-2 border-blue-500 pl-4">
-                {result.history.map((item: any, idx: number) => (
+                {result.history.map((item, idx) => (
                   <div key={idx} className="space-y-0.5">
                     <p className="text-xs font-700 text-slate-900">{getOrderStatusLabel(item.status)}</p>
                     <p className="text-xs text-slate-600">{item.note || 'Cập nhật lộ trình'}</p>

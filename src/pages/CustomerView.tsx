@@ -52,7 +52,7 @@ export default function CustomerView() {
   const [selectedService, setSelectedService] = useState({ id: 'STANDARD', name: 'Tiêu chuẩn', fee: 30000, desc: 'Giao trong 1-2 ngày' });
   const [voucherCode, setVoucherCode] = useState('');
   const [discountFee, setDiscountFee] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('VCB_QR');
+  const [paymentMethod, setPaymentMethod] = useState('COD');
 
   const [createdOrderRes, setCreatedOrderRes] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -499,13 +499,6 @@ export default function CustomerView() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'VCB_QR' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
-                    <input type="radio" name="pay" checked={paymentMethod === 'VCB_QR'} onChange={() => setPaymentMethod('VCB_QR')} className="accent-blue-600" />
-                    <div>
-                      <p className="text-sm font-600 text-slate-900">Chuyển khoản ngân hàng bằng QR</p>
-                      <p className="text-xs text-slate-400">Đơn chỉ được ghi nhận sau khi tiền được xác nhận</p>
-                    </div>
-                  </label>
                   <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
                     <input type="radio" name="pay" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} className="accent-blue-600" />
                     <div>

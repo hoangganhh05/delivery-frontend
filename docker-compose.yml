@@ -5,6 +5,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Standalone compose uses the hosted API. The combined backend compose
+        # overrides this with /api/v1 and provides the backend service for Nginx.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://delivery-management-backend-fqen.onrender.com/api/v1}
     container_name: delivery_ui_ux
     ports:
       - "8443:80"

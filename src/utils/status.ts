@@ -10,7 +10,7 @@ const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   Cancelled: "Đã hủy",
 };
 
-export function mapBackendStatusToUI(status?: string): OrderStatus {
+export function mapBackendStatusToUI(status?: string | null): OrderStatus {
   switch ((status || "").toUpperCase()) {
     case "CREATED":
     case "PENDING":
@@ -38,11 +38,11 @@ export function mapBackendStatusToUI(status?: string): OrderStatus {
   }
 }
 
-export function getOrderStatusLabel(status?: string): string {
+export function getOrderStatusLabel(status?: string | null): string {
   return ORDER_STATUS_LABELS[mapBackendStatusToUI(status)];
 }
 
-export function paymentStatusFromOrder(status?: string) {
+export function paymentStatusFromOrder(status?: string | null) {
   const normalized = (status || "").toUpperCase();
   if (["PAID", "DELIVERED", "DONE", "COMPLETED"].includes(normalized)) return "Paid" as const;
   if (["FAILED", "CANCELLED"].includes(normalized)) return "Failed" as const;

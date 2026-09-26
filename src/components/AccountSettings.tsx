@@ -6,6 +6,7 @@ import {
   EyeOff,
   ImagePlus,
   KeyRound,
+  Landmark,
   Loader2,
   MapPin,
   Pencil,
@@ -20,12 +21,17 @@ import {
 import {
   changePasswordApi,
   createUserAddressApi,
+  createUserBankAccountApi,
   deleteUserAddressApi,
+  deleteUserBankAccountApi,
   getCurrentUserApi,
+  getUserBankAccountsApi,
   removeCurrentUserAvatarApi,
   setDefaultUserAddressApi,
+  setDefaultUserBankAccountApi,
   updateCurrentUserProfileApi,
   updateUserAddressApi,
+  updateUserBankAccountApi,
   uploadCurrentUserAvatarApi,
 } from "../api/deliveryApi";
 import { useApp } from "../context/AppContext";
@@ -35,11 +41,13 @@ import type {
   UpdateProfileRequest,
   UserAddress,
   UserAddressRequest,
+  UserBankAccount,
+  UserBankAccountRequest,
 } from "../types/account";
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from "../utils/passwordPolicy";
 import { getRoleLabel } from "../utils/role";
 
-type AccountSection = "profile" | "addresses" | "security";
+type AccountSection = "profile" | "addresses" | "payouts" | "security";
 
 interface AccountSettingsProps {
   embedded?: boolean;
@@ -48,6 +56,7 @@ interface AccountSettingsProps {
 const sections = [
   { id: "profile" as const, label: "Thông tin cá nhân", icon: UserRound },
   { id: "addresses" as const, label: "Sổ địa chỉ", icon: MapPin },
+  { id: "payouts" as const, label: "Tài khoản nhận tiền", icon: Landmark },
   { id: "security" as const, label: "Mật khẩu", icon: KeyRound },
 ];
 
@@ -61,6 +70,14 @@ const EMPTY_ADDRESS: UserAddressRequest = {
   province: "",
   postalCode: "",
   defaultAddress: false,
+};
+
+const EMPTY_BANK_ACCOUNT: UserBankAccountRequest = {
+  bankCode: "",
+  bankName: "",
+  accountHolderName: "",
+  accountNumber: "",
+  defaultAccount: false,
 };
 
 const MAX_SOURCE_AVATAR_BYTES = 12 * 1024 * 1024;
@@ -132,6 +149,16 @@ function cleanAddress(address: UserAddressRequest): UserAddressRequest {
   };
 }
 
+function cleanBankAccount(account: UserBankAccountRequest): UserBankAccountRequest {
+  return {
+    bankCode: account.bankCode?.trim().toUpperCase() || null,
+    bankName: account.bankName.trim().replace(/\s{2,}/g, " "),
+    accountHolderName: account.accountHolderName.trim().replace(/\s{2,}/g, " "),
+    accountNumber: account.accountNumber.replace(/\s+/g, ""),
+    defaultAccount: Boolean(account.defaultAccount),
+  };
+}
+
 function getYesterdayIsoDate(): string {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -165,20 +192,29 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<UserBankAccount[]>([]);
   const [password, setPassword] = useState<ChangePasswordRequest>(EMPTY_PASSWORD);
   const [showPassword, setShowPassword] = useState(false);
   const [addressDraft, setAddressDraft] = useState<UserAddressRequest>(EMPTY_ADDRESS);
   const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
   const [addressEditorOpen, setAddressEditorOpen] = useState(false);
+  const [bankAccountDraft, setBankAccountDraft] = useState<UserBankAccountRequest>(EMPTY_BANK_ACCOUNT);
+  const [editingBankAccountId, setEditingBankAccountId] = useState<number | null>(null);
+  const [bankAccountEditorOpen, setBankAccountEditorOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
+  const [savingBankAccount, setSavingBankAccount] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [addressActionId, setAddressActionId] = useState<number | null>(null);
+  const [bankAccountActionId, setBankAccountActionId] = useState<number | null>(null);
+  const [bankAccountsLoading, setBankAccountsLoading] = useState(false);
+  const [bankAccountsLoaded, setBankAccountsLoaded] = useState(false);
+  const [bankAccountsError, setBankAccountsError] = useState("");
   const visibleSections = currentRole === "Customer"
     ? sections
-    : sections.filter(({ id }) => id !== "addresses");
+    : sections.filter(({ id }) => id !== "addresses" && id !== "payouts");
   const loadAccount = useCallback(async () => {
     setLoading(true);
     setLoadingSlow(false);
@@ -215,9 +251,43 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
     void loadAccount();
   }, [loadAccount]);
 
+  const loadBankAccounts = useCallback(async () => {
+    setBankAccountsLoading(true);
+    setBankAccountsError("");
+    try {
+      const response = await getUserBankAccountsApi();
+      if (response.httpStatus !== 200 || !response.data) {
+        throw new Error(response.message || "Không thể tải tài khoản nhận tiền");
+      }
+      setBankAccounts(response.data);
+      setBankAccountsLoaded(true);
+    } catch (error) {
+      setBankAccountsError(error instanceof Error ? error.message : "Không thể tải tài khoản nhận tiền");
+    } finally {
+      setBankAccountsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      section === "payouts"
+      && currentRole === "Customer"
+      && !bankAccountsLoaded
+      && !bankAccountsLoading
+      && !bankAccountsError
+    ) {
+      void loadBankAccounts();
+    }
+  }, [bankAccountsError, bankAccountsLoaded, bankAccountsLoading, currentRole, loadBankAccounts, section]);
+
   const sortedAddresses = useMemo(
     () => [...addresses].sort((a, b) => Number(b.defaultAddress) - Number(a.defaultAddress)),
     [addresses],
+  );
+
+  const sortedBankAccounts = useMemo(
+    () => [...bankAccounts].sort((a, b) => Number(b.defaultAccount) - Number(a.defaultAccount)),
+    [bankAccounts],
   );
 
   const saveProfile = async () => {
@@ -398,6 +468,149 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
             });
           } finally {
             setAddressActionId(null);
+          }
+        })();
+      },
+    });
+  };
+
+  const openNewBankAccount = () => {
+    setEditingBankAccountId(null);
+    setBankAccountDraft({
+      ...EMPTY_BANK_ACCOUNT,
+      accountHolderName: profile.fullName,
+      defaultAccount: bankAccounts.length === 0,
+    });
+    setBankAccountEditorOpen(true);
+  };
+
+  const openEditBankAccount = (account: UserBankAccount) => {
+    setEditingBankAccountId(account.id);
+    setBankAccountDraft({
+      bankCode: account.bankCode ?? "",
+      bankName: account.bankName,
+      accountHolderName: account.accountHolderName,
+      accountNumber: "",
+      defaultAccount: account.defaultAccount,
+    });
+    setBankAccountEditorOpen(true);
+  };
+
+  const closeBankAccountEditor = () => {
+    setBankAccountEditorOpen(false);
+    setEditingBankAccountId(null);
+    setBankAccountDraft(EMPTY_BANK_ACCOUNT);
+  };
+
+  const saveBankAccount = async () => {
+    const normalizedNumber = bankAccountDraft.accountNumber.replace(/\s+/g, "");
+    if (!bankAccountDraft.bankName.trim() || !bankAccountDraft.accountHolderName.trim() || !normalizedNumber) {
+      addToast({
+        type: "warning",
+        title: "Thiếu thông tin tài khoản",
+        message: "Vui lòng nhập ngân hàng, tên chủ tài khoản và số tài khoản.",
+      });
+      return;
+    }
+    if (!/^\d{6,34}$/.test(normalizedNumber)) {
+      addToast({
+        type: "warning",
+        title: "Số tài khoản chưa hợp lệ",
+        message: "Số tài khoản chỉ gồm từ 6 đến 34 chữ số.",
+      });
+      return;
+    }
+
+    setSavingBankAccount(true);
+    try {
+      const payload = cleanBankAccount(bankAccountDraft);
+      const response = editingBankAccountId
+        ? await updateUserBankAccountApi(editingBankAccountId, payload)
+        : await createUserBankAccountApi(payload);
+
+      if (response.httpStatus === 200 && response.data) {
+        const saved = response.data;
+        setBankAccounts((current) => {
+          const withoutSaved = current.filter((item) => item.id !== saved.id);
+          const normalized = saved.defaultAccount
+            ? withoutSaved.map((item) => ({ ...item, defaultAccount: false }))
+            : withoutSaved;
+          return [saved, ...normalized];
+        });
+        setBankAccountsLoaded(true);
+        closeBankAccountEditor();
+        addToast({
+          type: "success",
+          title: editingBankAccountId ? "Đã cập nhật tài khoản nhận tiền" : "Đã thêm tài khoản nhận tiền",
+          message: "Số tài khoản được lưu mã hóa và chỉ hiển thị bốn số cuối.",
+        });
+      }
+    } catch (error) {
+      addToast({
+        type: "error",
+        title: "Không thể lưu tài khoản nhận tiền",
+        message: error instanceof Error ? error.message : "Vui lòng thử lại.",
+      });
+    } finally {
+      setSavingBankAccount(false);
+    }
+  };
+
+  const makeDefaultBankAccount = async (id: number) => {
+    if (bankAccountActionId !== null) return;
+    setBankAccountActionId(id);
+    try {
+      const response = await setDefaultUserBankAccountApi(id);
+      if (response.httpStatus === 200 && response.data) {
+        setBankAccounts((current) => current.map((item) => ({
+          ...item,
+          defaultAccount: item.id === response.data.id,
+        })));
+        addToast({
+          type: "success",
+          title: "Đã đặt tài khoản mặc định",
+          message: response.data.bankName,
+        });
+      }
+    } catch (error) {
+      addToast({
+        type: "error",
+        title: "Không thể đặt mặc định",
+        message: error instanceof Error ? error.message : "Vui lòng thử lại.",
+      });
+    } finally {
+      setBankAccountActionId(null);
+    }
+  };
+
+  const requestDeleteBankAccount = (account: UserBankAccount) => {
+    if (bankAccountActionId !== null) return;
+    openConfirm({
+      title: "Xóa tài khoản nhận tiền",
+      message: `Bạn có chắc muốn xóa tài khoản ${account.bankName} •••• ${account.accountNumberLast4} không?`,
+      confirmLabel: "Xóa tài khoản",
+      danger: true,
+      onConfirm: () => {
+        void (async () => {
+          setBankAccountActionId(account.id);
+          try {
+            const deleted = await deleteUserBankAccountApi(account.id);
+            if (deleted.httpStatus === 200 && deleted.data) {
+              setBankAccounts(deleted.data);
+              addToast({
+                type: "success",
+                title: "Đã xóa tài khoản nhận tiền",
+                message: "Danh sách tài khoản đã được cập nhật.",
+              });
+            }
+          } catch (error) {
+            addToast({
+              type: "error",
+              title: "Không thể xóa tài khoản nhận tiền",
+              message: error instanceof Error ? error.message : "Vui lòng thử lại.",
+            });
+          } finally {
+            setBankAccountActionId(null);
           }
         })();
       },
@@ -796,6 +1009,138 @@ export default function AccountSettings({ embedded = false }: AccountSettingsPro
                 </article>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+      {section === "payouts" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+            <p className="font-700">Tài khoản nhận hoàn tiền / COD</p>
+            <p className="mt-1">Đây không phải là liên kết thanh toán ngân hàng. Không nhập mật khẩu, OTP, số thẻ hay mã PIN. Số tài khoản được mã hóa khi lưu và chỉ hiển thị bốn số cuối.</p>
+          </div>
+
+          {bankAccountsLoading ? (
+            <div className="flex min-h-48 items-center justify-center rounded-2xl border border-slate-100 bg-white">
+              <div className="text-center" role="status" aria-live="polite">
+                <Loader2 className="mx-auto animate-spin text-blue-600" size={22} aria-hidden="true" />
+                <p className="mt-2 text-xs text-slate-500">Đang tải tài khoản nhận tiền...</p>
+              </div>
+            </div>
+          ) : bankAccountsError ? (
+            <div className="rounded-2xl border border-red-100 bg-white p-5 text-center">
+              <p className="text-xs font-600 text-red-600">{bankAccountsError}</p>
+              <button type="button" onClick={() => void loadBankAccounts()} className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-600 text-white">
+                <RefreshCw size={14} /> Thử lại
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-700 text-slate-900">Tài khoản nhận tiền của bạn</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">Đã lưu {bankAccounts.length}/5 tài khoản</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={bankAccounts.length >= 5}
+                  onClick={openNewBankAccount}
+                  className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-600 text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus size={15} /> Thêm tài khoản
+                </button>
+              </div>
+
+              {bankAccountEditorOpen && (
+                <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
+                  <div className="mb-2 flex items-center justify-between gap-4">
+                    <h3 className="text-sm font-700 text-slate-900">
+                      {editingBankAccountId ? "Sửa tài khoản nhận tiền" : "Thêm tài khoản nhận tiền"}
+                    </h3>
+                    <button type="button" onClick={closeBankAccountEditor} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100" aria-label="Đóng biểu mẫu tài khoản nhận tiền">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  {editingBankAccountId && (
+                    <p className="mb-4 rounded-xl bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
+                      Vì bảo mật, số tài khoản cũ không thể xem lại. Hãy nhập lại số tài khoản để xác nhận thay đổi.
+                    </p>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <FieldLabel>Tên ngân hàng</FieldLabel>
+                      <input value={bankAccountDraft.bankName} maxLength={100} placeholder="VD: Tên ngân hàng của bạn" onChange={(event) => setBankAccountDraft((current) => ({ ...current, bankName: event.target.value }))} className={inputClass} />
+                    </div>
+                    <div>
+                      <FieldLabel>Mã ngân hàng (tùy chọn)</FieldLabel>
+                      <input value={bankAccountDraft.bankCode ?? ""} maxLength={30} placeholder="VD: BANKCODE" onChange={(event) => setBankAccountDraft((current) => ({ ...current, bankCode: event.target.value }))} className={inputClass} />
+                    </div>
+                    <div>
+                      <FieldLabel>Tên chủ tài khoản</FieldLabel>
+                      <input value={bankAccountDraft.accountHolderName} maxLength={100} placeholder="Nhập đúng như tại ngân hàng" onChange={(event) => setBankAccountDraft((current) => ({ ...current, accountHolderName: event.target.value }))} className={inputClass} />
+                    </div>
+                    <div>
+                      <FieldLabel>{editingBankAccountId ? "Nhập lại số tài khoản" : "Số tài khoản"}</FieldLabel>
+                      <input type="text" inputMode="numeric" autoComplete="off" value={bankAccountDraft.accountNumber} maxLength={40} placeholder="Chỉ gồm chữ số" onChange={(event) => setBankAccountDraft((current) => ({ ...current, accountNumber: event.target.value.replace(/[^0-9\s]/g, "") }))} className={inputClass} />
+                    </div>
+                  </div>
+                  <label className="mt-4 flex cursor-pointer items-center gap-2 text-xs font-600 text-slate-700">
+                    <input type="checkbox" checked={Boolean(bankAccountDraft.defaultAccount)} onChange={(event) => setBankAccountDraft((current) => ({ ...current, defaultAccount: event.target.checked }))} className="h-4 w-4 rounded border-slate-300 accent-blue-600" />
+                    Đặt làm tài khoản nhận tiền mặc định
+                  </label>
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button type="button" onClick={closeBankAccountEditor} className="h-10 rounded-xl border border-slate-200 px-4 text-xs font-600 text-slate-600">Hủy</button>
+                    <button type="button" disabled={savingBankAccount} onClick={() => void saveBankAccount()} className="flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-5 text-xs font-600 text-white disabled:opacity-60">
+                      {savingBankAccount ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Lưu tài khoản
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {sortedBankAccounts.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-12 text-center">
+                  <Landmark size={30} className="mx-auto text-slate-300" />
+                  <p className="mt-2 text-sm font-600 text-slate-700">Bạn chưa có tài khoản nhận tiền nào</p>
+                  <p className="mt-1 text-xs text-slate-400">Thêm tài khoản để dùng cho hoàn tiền hoặc đối soát COD sau này.</p>
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {sortedBankAccounts.map((account) => (
+                    <article key={account.id} className={`rounded-2xl border bg-white p-4 shadow-sm ${account.defaultAccount ? "border-blue-200" : "border-slate-100"}`}>
+                      <div className="flex items-start gap-3">
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${account.defaultAccount ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}>
+                          <Landmark size={16} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-sm font-700 text-slate-900">{account.bankName}</h4>
+                            {account.defaultAccount && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-700 text-blue-700">Mặc định</span>}
+                          </div>
+                          <p className="mt-2 text-xs font-600 text-slate-700">{account.accountHolderName}</p>
+                          <p className="mt-1 text-xs text-slate-500">Số tài khoản: <span className="font-600">•••• {account.accountNumberLast4}</span></p>
+                          <p className={`mt-2 text-[10px] font-600 ${account.verified ? "text-emerald-600" : "text-amber-600"}`}>
+                            {account.verified ? "Đã xác minh" : "Chưa xác minh bởi ngân hàng"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-50 pt-3">
+                        {!account.defaultAccount && (
+                          <button type="button" disabled={bankAccountActionId !== null} onClick={() => void makeDefaultBankAccount(account.id)} className="flex h-8 items-center gap-1.5 rounded-lg bg-blue-50 px-3 text-[11px] font-600 text-blue-700 disabled:opacity-50">
+                            {bankAccountActionId === account.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Đặt mặc định
+                          </button>
+                        )}
+                        <button type="button" disabled={bankAccountActionId !== null} onClick={() => openEditBankAccount(account)} className="ml-auto flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-[11px] font-600 text-slate-600 disabled:opacity-50">
+                          <Pencil size={12} /> Sửa
+                        </button>
+                        <button type="button" disabled={bankAccountActionId !== null} onClick={() => requestDeleteBankAccount(account)} className="flex h-8 items-center gap-1.5 rounded-lg border border-red-100 px-3 text-[11px] font-600 text-red-600 disabled:opacity-50">
+                          <Trash2 size={12} /> Xóa
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

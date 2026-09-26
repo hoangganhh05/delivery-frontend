@@ -16,7 +16,7 @@ export interface District extends AdministrativeUnit {
 }
 
 export interface Ward extends AdministrativeUnit {
-  district_code: number;
+  district_code?: number;
   province_code: number;
 }
 
