@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Navigation, Package, MapPin, RefreshCw, Search } from 'lucide-react';
-import { searchOrdersApi, getShippersApi, assignShipperApi } from '../api/deliveryApi';
+import { searchOrdersApi, getShippersApi, assignShipperApi, autoAssignShipperApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import { LoadingState } from '../components/Skeleton';
 
@@ -113,6 +113,19 @@ export default function Dispatch() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAutoAssign = async () => {
+    if (!selectedOrder) return;
+    try {
+      setSubmitting(true);
+      await autoAssignShipperApi(selectedOrder.id);
+      addToast({ type: 'success', title: 'Đã gửi lời mời', message: 'Shipper đang hoạt động có 2 phút để nhận đơn.' });
+      setSelectedOrder(null);
+      await fetchData();
+    } catch (err: any) {
+      addToast({ type: 'error', title: 'Không thể phân công ngẫu nhiên', message: err.message || 'Không còn shipper phù hợp' });
+    } finally { setSubmitting(false); }
   };
 
   const handleSelectOrder = (order: any) => {
@@ -274,6 +287,10 @@ export default function Dispatch() {
                 )}
               </div>
               <div className="p-3 border-t border-slate-100">
+                <button onClick={handleAutoAssign} disabled={submitting}
+                  className="w-full mb-2 h-9 rounded-lg border border-emerald-300 text-emerald-700 text-xs font-600 hover:bg-emerald-50 disabled:opacity-50">
+                  Phân công ngẫu nhiên (chờ shipper nhận)
+                </button>
                 <button
                   onClick={handleAssign}
                   disabled={!selectedShipper || submitting}

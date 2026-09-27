@@ -107,6 +107,10 @@ export const assignShipperApi = (data: {
 }): Promise<ApiResponse> => {
   return axiosClient.post("/shipments/assign", data);
 };
+export const autoAssignShipperApi = (orderId: number) => axiosClient.post(`/shipments/auto-assign/${orderId}`);
+export const getShipmentOffersApi = () => axiosClient.get("/shipments/offers");
+export const acceptShipmentOfferApi = (offerId: number) => axiosClient.post(`/shipments/offers/${offerId}/accept`);
+export const declineShipmentOfferApi = (offerId: number) => axiosClient.post(`/shipments/offers/${offerId}/decline`);
 
 export const updateShipmentStatusApi = (
   orderId: number | string,

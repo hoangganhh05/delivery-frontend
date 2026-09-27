@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home, Package, Map, User, Phone, MapPin, Navigation, CheckCircle2, Truck, ChevronRight, RefreshCw, LogOut, Settings } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { searchOrdersApi, updateShipmentLocationApi, updateShipmentStatusApi } from '../api/deliveryApi';
+import { searchOrdersApi, updateShipmentLocationApi, updateShipmentStatusApi, getShipmentOffersApi, acceptShipmentOfferApi, declineShipmentOfferApi } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import AccountSettings from '../components/AccountSettings';
 import PreferencesSettings from '../components/PreferencesSettings';
@@ -38,6 +38,7 @@ export default function ShipperMobile() {
   const { user, addToast, logout, openConfirm } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [shipperOrders, setShipperOrders] = useState<any[]>([]);
+  const [shipmentOffers, setShipmentOffers] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -81,6 +82,23 @@ export default function ShipperMobile() {
   useEffect(() => {
     fetchShipperOrders();
   }, []);
+
+  useEffect(() => {
+    const loadOffers = () => getShipmentOffersApi().then((response) => setShipmentOffers(response.data || [])).catch(() => undefined);
+    void loadOffers();
+    const timer = window.setInterval(loadOffers, 15000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const respondToOffer = async (offerId: number, accept: boolean) => {
+    try {
+      if (accept) await acceptShipmentOfferApi(offerId);
+      else await declineShipmentOfferApi(offerId);
+      setShipmentOffers((current) => current.filter((offer) => offer.offerId !== offerId));
+      addToast({ type: 'success', title: accept ? 'Đã nhận đơn' : 'Đã từ chối đơn', message: accept ? 'Đơn đã vào danh sách giao của bạn.' : 'Hệ thống sẽ tìm shipper khác.' });
+      if (accept) await fetchShipperOrders();
+    } catch (error: any) { addToast({ type: 'error', title: 'Không thể xử lý lời mời', message: error.message || 'Lời mời đã hết hạn' }); }
+  };
 
   useEffect(() => {
     if (locationWatchRef.current !== null) {
@@ -188,8 +206,13 @@ export default function ShipperMobile() {
   ];
 
   const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
+    openConfirm({
+      title: 'Xác nhận đăng xuất',
+      message: 'Bạn có chắc muốn đăng xuất khỏi tài khoản không?',
+      confirmLabel: 'Đăng xuất',
+      danger: true,
+      onConfirm: () => { logout(); navigate('/login', { replace: true }); },
+    });
   };
 
   const deliveredOrders = shipperOrders.filter(order => ['DELIVERED', 'DONE', 'COMPLETED'].includes((order.status || '').toUpperCase())).length;
@@ -340,6 +363,21 @@ export default function ShipperMobile() {
       </div>
 
       <div className="flex-1 w-full max-w-6xl mx-auto overflow-y-auto pb-20 lg:pb-8">
+        {shipmentOffers.length > 0 && (
+          <div className="mx-4 mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+            <p className="text-sm font-700 text-amber-900">Bạn có {shipmentOffers.length} lời mời giao hàng</p>
+            {shipmentOffers.map((offer) => (
+              <div key={offer.offerId} className="rounded-xl bg-white p-3 border border-amber-100">
+                <p className="text-xs font-700 text-blue-700">Đơn {offer.trackingNumber}</p>
+                <p className="mt-1 text-xs text-slate-600">Giao cho {offer.receiverName}: {offer.receiverAddress}</p>
+                <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={() => void respondToOffer(offer.offerId, true)} className="flex-1 rounded-lg bg-emerald-600 py-2 text-xs font-700 text-white">Nhận đơn</button>
+                  <button type="button" onClick={() => void respondToOffer(offer.offerId, false)} className="flex-1 rounded-lg border border-red-200 py-2 text-xs font-700 text-red-600">Từ chối</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {activeTab === 'home' && (
           <div className="p-4 sm:p-6 space-y-4">
             {/* Profile banner */}

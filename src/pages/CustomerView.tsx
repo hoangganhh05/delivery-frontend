@@ -41,7 +41,7 @@ type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function CustomerView() {
   const navigate = useNavigate();
-  const { user, addToast, logout } = useApp();
+  const { user, addToast, logout, openConfirm } = useApp();
   const [tab, setTab] = useState<'home' | 'orders' | 'create' | 'tracking' | 'profile' | 'settings'>('home');
   const [createStep, setCreateStep] = useState<Step>(0);
   const [trackInput, setTrackInput] = useState('');
@@ -333,8 +333,13 @@ export default function CustomerView() {
   }, [tab, trackedOrder?.trackingNumber]);
 
   const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
+    openConfirm({
+      title: 'Xác nhận đăng xuất',
+      message: 'Bạn có chắc muốn đăng xuất khỏi tài khoản không?',
+      confirmLabel: 'Đăng xuất',
+      danger: true,
+      onConfirm: () => { logout(); navigate('/login', { replace: true }); },
+    });
   };
 
   const openOrderTracking = (trackingNumber?: string) => {
