@@ -698,9 +698,9 @@ export default function CustomerView() {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-50 pb-24 lg:pb-10">
+    <div className="min-h-dvh bg-[radial-gradient(circle_at_top_right,_#dbeafe,_transparent_38%),#f8fafc] pb-24 lg:pb-10">
       {/* Customer header */}
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100 px-4 sm:px-6 py-3">
+      <div className="sticky top-0 z-30 border-b border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl sm:px-6">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-2">
             <BrandLogo size={36} />
@@ -726,9 +726,12 @@ export default function CustomerView() {
         {/* Welcome */}
         {tab === 'home' && (
           <>
-            <div>
-              <p className="text-xs text-slate-500">Xin chào,</p>
-              <h2 className="text-xl font-700 text-slate-900">{user?.fullName || 'Khách hàng'}</h2>
+            <div className="rounded-3xl border border-white/80 bg-white/70 p-5 shadow-sm backdrop-blur sm:p-6">
+              <p className="text-xs font-600 uppercase tracking-[0.18em] text-blue-600">Không gian của bạn</p>
+              <div className="mt-2 flex items-end justify-between gap-4">
+                <div><p className="text-sm text-slate-500">Xin chào,</p><h2 className="text-2xl font-800 tracking-tight text-slate-950">{user?.fullName || 'Khách hàng'}</h2></div>
+                <div className="hidden rounded-2xl bg-blue-50 px-4 py-2 text-right sm:block"><p className="text-[10px] font-700 uppercase text-blue-500">Sẵn sàng</p><p className="text-xs font-600 text-blue-800">Tạo đơn trong vài phút</p></div>
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -737,7 +740,7 @@ export default function CustomerView() {
                 { label: 'Đang xử lý', value: activeOrders, tone: 'text-amber-700 bg-amber-50' },
                 { label: 'Đã giao', value: deliveredOrders, tone: 'text-emerald-700 bg-emerald-50' },
               ].map(item => (
-                <div key={item.label} className={`${item.tone} rounded-xl p-3 sm:p-4`}>
+                <div key={item.label} className={`${item.tone} rounded-2xl border border-white/80 p-3 shadow-sm transition-transform hover:-translate-y-0.5 sm:p-4`}>
                   <p className="text-lg sm:text-2xl font-700">{ordersLoading ? '–' : item.value}</p>
                   <p className="text-[10px] sm:text-xs opacity-80">{item.label}</p>
                 </div>
@@ -745,7 +748,7 @@ export default function CustomerView() {
             </div>
 
             {/* Track bar */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 text-white">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 p-5 text-white shadow-xl shadow-blue-200 sm:p-6">
               <p className="text-sm font-500 mb-3 opacity-90">Theo dõi nhanh đơn hàng</p>
               <div className="flex gap-2">
                 <input type="text" value={trackInput} onChange={e => setTrackInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { setTab('tracking'); handleTrackSearch(); } }}
@@ -766,7 +769,7 @@ export default function CustomerView() {
                 { label: 'Danh sách đơn', icon: Package, color: 'text-green-600', bg: 'bg-green-50', action: () => setTab('orders') },
               ].map(({ label, icon: Icon, color, bg, action }) => (
                 <button key={label} onClick={action}
-                  className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
+                  className="group rounded-2xl border border-white/80 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                   <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
                     <Icon size={18} className={color} />
                   </div>
@@ -796,7 +799,7 @@ export default function CustomerView() {
                     <button onClick={() => setTab('create')} className="text-xs text-blue-600 font-600 mt-2">Tạo đơn đầu tiên</button>
                   </div>
                 ) : confirmedOrders.slice(0, 3).map((order) => (
-                  <div key={order.id || order.trackingNumber} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                  <div key={order.id || order.trackingNumber} className="rounded-2xl border border-white bg-white/90 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="text-xs font-700 text-blue-600">{order.trackingNumber || `DH${order.id}`}</p>

@@ -333,9 +333,9 @@ export default function ShipperMobile() {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-50 flex flex-col">
+    <div className="min-h-dvh bg-[radial-gradient(circle_at_top_left,_#dbeafe,_transparent_36%),#f8fafc] flex flex-col">
       {/* Responsive header */}
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100 px-4 sm:px-6 py-3">
+      <div className="sticky top-0 z-30 border-b border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl sm:px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <BrandLogo size={36} />
@@ -381,7 +381,7 @@ export default function ShipperMobile() {
         {activeTab === 'home' && (
           <div className="p-4 sm:p-6 space-y-4">
             {/* Profile banner */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 text-white">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-900 to-blue-600 p-5 text-white shadow-xl shadow-blue-200 sm:p-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-lg font-700">
                   {(user?.fullName || user?.username || 'SH').charAt(0)}
@@ -399,7 +399,7 @@ export default function ShipperMobile() {
                 { label: 'Cần giao', value: activeOrders, tone: 'bg-amber-50 text-amber-700' },
                 { label: 'Đã giao', value: deliveredOrders, tone: 'bg-emerald-50 text-emerald-700' },
               ].map(item => (
-                <div key={item.label} className={`${item.tone} rounded-xl p-3 sm:p-4`}>
+                <div key={item.label} className={`${item.tone} rounded-2xl border border-white/80 p-3 shadow-sm transition-transform hover:-translate-y-0.5 sm:p-4`}>
                   <p className="text-lg sm:text-2xl font-700">{loading ? '–' : item.value}</p>
                   <p className="text-[10px] sm:text-xs opacity-80">{item.label}</p>
                 </div>
@@ -422,7 +422,7 @@ export default function ShipperMobile() {
                 ) : (
                   shipperOrders.map(order => (
                     <button key={order.id} onClick={() => setSelectedOrder(order)}
-                      className="w-full bg-white rounded-xl border border-slate-100 shadow-sm p-3.5 text-left hover:border-blue-200 transition-colors">
+                      className="w-full rounded-2xl border border-white bg-white/90 p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-700 text-blue-600">{order.trackingNumber}</p>
                         <StatusBadge status={mapBackendStatusToUI(order.status)} type="order" />
