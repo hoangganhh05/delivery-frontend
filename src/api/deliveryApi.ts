@@ -33,8 +33,22 @@ export interface PermissionMatrix { roles: ApiRole[]; permissions: PermissionRow
 export interface CurrentPermissions { role: ApiRole; permissions: string[]; }
 export interface PaymentRecord {
   orderId: number; trackingNumber: string; customerName: string; amount: number;
-  method: "COD" | "VCB_QR" | "VNPAY"; status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  method: "COD" | "VCB_QR" | "VNPAY" | "MANUAL_BANK_TRANSFER" | "MANUAL_MOMO";
+  status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
   paidAt?: string; reference?: string; createdAt: string;
+}
+export type CheckoutPaymentMethod = "COD" | "MANUAL_BANK_TRANSFER" | "MANUAL_MOMO";
+export interface ManualPaymentInstruction {
+  orderId: number;
+  method: Exclude<CheckoutPaymentMethod, "COD">;
+  title: string;
+  providerName: string;
+  recipientLabel: string;
+  recipientValue: string;
+  recipientName: string;
+  amount: number;
+  transferContent: string;
+  note: string;
 }
 export interface QrPaymentInfo {
   orderId: number; bankId: string; accountNumber: string; accountName: string;
@@ -181,6 +195,10 @@ export const updatePermissionMatrixApi = (permissions: Array<{ code: string; rol
 export const getPaymentsApi = (): Promise<ApiResponse<PaymentRecord[]>> => axiosClient.get("/payment");
 export const getOrderPaymentApi = (orderId: number): Promise<ApiResponse<PaymentRecord>> =>
   axiosClient.get(`/payment/orders/${orderId}`);
+export const getAvailablePaymentMethodsApi = (): Promise<ApiResponse<CheckoutPaymentMethod[]>> =>
+  axiosClient.get("/payment/methods");
+export const getManualPaymentInstructionsApi = (orderId: number): Promise<ApiResponse<ManualPaymentInstruction>> =>
+  axiosClient.get(`/payment/orders/${orderId}/instructions`);
 export const getOrderQrPaymentApi = (orderId: number): Promise<ApiResponse<QrPaymentInfo>> =>
   axiosClient.get(`/payment/orders/${orderId}/qr`);
 export const confirmOrderPaymentApi = (orderId: number, reference?: string): Promise<ApiResponse<PaymentRecord>> =>

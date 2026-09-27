@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings, Landmark, Smartphone } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderLiveLocationApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi } from '../api/deliveryApi';
+import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderLiveLocationApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi, getAvailablePaymentMethodsApi, getManualPaymentInstructionsApi, type CheckoutPaymentMethod, type ManualPaymentInstruction } from '../api/deliveryApi';
 import LiveTrackingMap from '../components/LiveTrackingMap';
 import AdministrativeAddressFields from '../components/AdministrativeAddressFields';
 import { EMPTY_ADMINISTRATIVE_ADDRESS, formatAdministrativeAddress, type AdministrativeAddressValue } from '../types/administrative';
@@ -18,6 +18,12 @@ const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Gói 
 
 const isConfirmedOrder = (order: any) => order.paymentMethod === 'COD' || order.paymentStatus === 'PAID';
 const isPendingOnlinePayment = (order: any) => order.paymentMethod !== 'COD' && order.paymentStatus === 'PENDING';
+const isManualPaymentMethod = (method?: string | null) => method === 'MANUAL_BANK_TRANSFER' || method === 'MANUAL_MOMO';
+const paymentMethodOptions: Record<CheckoutPaymentMethod, { title: string; description: string; icon: typeof Landmark }> = {
+  COD: { title: 'Thanh toán khi nhận hàng', description: 'Thanh toán cho shipper khi giao hàng', icon: Package },
+  MANUAL_BANK_TRANSFER: { title: 'Chuyển khoản ngân hàng', description: 'Chuyển khoản thủ công, nhân viên sẽ đối soát', icon: Landmark },
+  MANUAL_MOMO: { title: 'Chuyển tiền qua MoMo', description: 'Chuyển tiền thủ công, nhân viên sẽ đối soát', icon: Smartphone },
+};
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function CustomerView() {
@@ -52,12 +58,15 @@ export default function CustomerView() {
   const [selectedService, setSelectedService] = useState({ id: 'STANDARD', name: 'Tiêu chuẩn', fee: 30000, desc: 'Giao trong 1-2 ngày' });
   const [voucherCode, setVoucherCode] = useState('');
   const [discountFee, setDiscountFee] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('COD');
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<CheckoutPaymentMethod[]>(['COD']);
 
   const [createdOrderRes, setCreatedOrderRes] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [qrPayment, setQrPayment] = useState<{ amount: number; content: string; imageUrl: string; accountNumber: string; accountName: string } | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
+  const [manualPaymentInstruction, setManualPaymentInstruction] = useState<ManualPaymentInstruction | null>(null);
+  const [loadingManualPayment, setLoadingManualPayment] = useState(false);
   const paymentPollingInFlight = useRef(false);
 
   const fetchCustomerOrders = async () => {
@@ -81,6 +90,14 @@ export default function CustomerView() {
     getActiveVouchersApi()
       .then((response) => setAvailableVouchers(Array.isArray(response.data) ? response.data : []))
       .catch(() => setAvailableVouchers([]));
+    getAvailablePaymentMethodsApi()
+      .then((response) => {
+        const methods = (response.data || []).filter((method) => method in paymentMethodOptions);
+        const safeMethods: CheckoutPaymentMethod[] = methods.length > 0 ? methods : ['COD'];
+        setAvailablePaymentMethods(safeMethods);
+        setPaymentMethod((current) => safeMethods.includes(current) ? current : 'COD');
+      })
+      .catch(() => setAvailablePaymentMethods(['COD']));
   }, []);
 
   const handleApplyVoucher = async (codeToApply?: string) => {
@@ -151,6 +168,19 @@ export default function CustomerView() {
     }
   };
 
+  const loadManualPaymentInstructions = async (orderId: number) => {
+    setLoadingManualPayment(true);
+    try {
+      const response = await getManualPaymentInstructionsApi(orderId);
+      setManualPaymentInstruction(response.data);
+    } catch (error: any) {
+      setManualPaymentInstruction(null);
+      addToast({ type: 'error', title: 'Không tải được hướng dẫn thanh toán', message: error.message || 'Vui lòng thử lại.' });
+    } finally {
+      setLoadingManualPayment(false);
+    }
+  };
+
   const handleCreateOrder = async () => {
     try {
       setSubmitting(true);
@@ -181,14 +211,15 @@ export default function CustomerView() {
       if (res && res.data) {
         setCreatedOrderRes(res.data);
         setQrPayment(null);
+        setManualPaymentInstruction(null);
         setCreateStep(6);
         addToast(paymentMethod === 'COD'
           ? { type: 'success', title: 'Đã tạo đơn hàng', message: `Mã vận đơn: ${res.data.trackingNumber}` }
           : { type: 'info', title: 'Đang chờ thanh toán', message: 'Đơn chỉ được ghi nhận sau khi giao dịch được xác nhận.' });
         fetchCustomerOrders();
 
-        if (paymentMethod === 'VCB_QR') {
-          await loadQrPayment(Number(res.data.id));
+        if (isManualPaymentMethod(paymentMethod)) {
+          await loadManualPaymentInstructions(Number(res.data.id));
         }
       }
     } catch (err: any) {
@@ -201,6 +232,7 @@ export default function CustomerView() {
   const resumePendingPayment = async (order: any) => {
     setCreatedOrderRes(order);
     setQrPayment(null);
+    setManualPaymentInstruction(null);
     setCreateStep(6);
     setTab('create');
     try {
@@ -214,6 +246,7 @@ export default function CustomerView() {
       // The pending request remains visible so the customer can retry.
     }
     if (order.paymentMethod === 'VCB_QR') await loadQrPayment(Number(order.id));
+    if (isManualPaymentMethod(order.paymentMethod)) await loadManualPaymentInstructions(Number(order.id));
   };
 
   useEffect(() => {
@@ -499,13 +532,20 @@ export default function CustomerView() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
-                    <input type="radio" name="pay" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} className="accent-blue-600" />
-                    <div>
-                      <p className="text-sm font-600 text-slate-900">Thanh toán khi nhận hàng</p>
-                      <p className="text-xs text-slate-400">Thanh toán khi nhận hàng</p>
-                    </div>
-                  </label>
+                  {availablePaymentMethods.map((method) => {
+                    const option = paymentMethodOptions[method];
+                    const Icon = option.icon;
+                    return (
+                      <label key={method} className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer ${paymentMethod === method ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
+                        <input type="radio" name="pay" checked={paymentMethod === method} onChange={() => setPaymentMethod(method)} className="accent-blue-600" />
+                        <Icon size={19} className={paymentMethod === method ? 'text-blue-600' : 'text-slate-400'} aria-hidden="true" />
+                        <div>
+                          <p className="text-sm font-600 text-slate-900">{option.title}</p>
+                          <p className="text-xs text-slate-400">{option.description}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -537,10 +577,39 @@ export default function CustomerView() {
                     <p className="text-xs text-emerald-700">Vui lòng chuyển đúng số tiền và nội dung. Giao dịch hiện cần được đối soát trước khi đơn có hiệu lực.</p>
                   </div>
                 )}
+                {manualPaymentInstruction && isPendingOnlinePayment(createdOrderRes) && (
+                  <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3 text-left">
+                    <p className="text-sm text-amber-950 font-700 text-center">{manualPaymentInstruction.title}</p>
+                    <div className="text-xs text-amber-950 space-y-1.5">
+                      <p>{manualPaymentInstruction.method === 'MANUAL_BANK_TRANSFER' ? 'Ngân hàng' : 'Ví'}: <span className="font-700">{manualPaymentInstruction.providerName}</span></p>
+                      <p>{manualPaymentInstruction.recipientLabel}: <span className="font-700 break-all">{manualPaymentInstruction.recipientValue}</span></p>
+                      <p>Tên người nhận: <span className="font-700">{manualPaymentInstruction.recipientName}</span></p>
+                      <p>Số tiền: <span className="font-700">{Number(manualPaymentInstruction.amount).toLocaleString('vi-VN')}đ</span></p>
+                      <p>Nội dung: <span className="font-700 break-all">{manualPaymentInstruction.transferContent}</span></p>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <button onClick={() => navigator.clipboard.writeText(manualPaymentInstruction.recipientValue).then(() => addToast({ type: 'success', title: 'Đã sao chép', message: `Đã sao chép ${manualPaymentInstruction.recipientLabel.toLowerCase()}` }))}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-300 text-amber-900 text-xs font-600 hover:bg-amber-100">
+                        <Copy size={14} /> Sao chép thông tin nhận
+                      </button>
+                      <button onClick={() => navigator.clipboard.writeText(manualPaymentInstruction.transferContent).then(() => addToast({ type: 'success', title: 'Đã sao chép', message: 'Đã sao chép nội dung chuyển tiền' }))}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-300 text-amber-900 text-xs font-600 hover:bg-amber-100">
+                        <Copy size={14} /> Sao chép nội dung
+                      </button>
+                    </div>
+                    <p className="text-xs text-amber-800 text-center">{manualPaymentInstruction.note}</p>
+                  </div>
+                )}
                 {isPendingOnlinePayment(createdOrderRes) && !qrPayment && createdOrderRes.paymentMethod === 'VCB_QR' && (
                   <button type="button" onClick={() => void loadQrPayment(Number(createdOrderRes.id))} disabled={loadingQr}
                     className="rounded-xl border border-blue-200 px-4 py-2 text-xs font-600 text-blue-700 disabled:opacity-60">
                     {loadingQr ? 'Đang tải mã QR...' : 'Tải lại mã QR'}
+                  </button>
+                )}
+                {isPendingOnlinePayment(createdOrderRes) && isManualPaymentMethod(createdOrderRes.paymentMethod) && !manualPaymentInstruction && (
+                  <button type="button" onClick={() => void loadManualPaymentInstructions(Number(createdOrderRes.id))} disabled={loadingManualPayment}
+                    className="rounded-xl border border-blue-200 px-4 py-2 text-xs font-600 text-blue-700 disabled:opacity-60">
+                    {loadingManualPayment ? 'Đang tải hướng dẫn...' : 'Tải lại hướng dẫn thanh toán'}
                   </button>
                 )}
 

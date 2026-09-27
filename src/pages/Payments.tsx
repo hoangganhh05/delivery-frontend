@@ -16,7 +16,12 @@ const methodLabel = (method: PaymentRecord["method"]) => ({
   COD: "COD",
   VCB_QR: "Chuyển khoản ngân hàng",
   VNPAY: "VNPay",
+  MANUAL_BANK_TRANSFER: "Chuyển khoản ngân hàng",
+  MANUAL_MOMO: "MoMo thủ công",
 })[method];
+
+const requiresManualConfirmation = (method: PaymentRecord["method"]) =>
+  method === "VCB_QR" || method === "MANUAL_BANK_TRANSFER" || method === "MANUAL_MOMO";
 
 const formatCurrency = (amount: number) => `${Number(amount || 0).toLocaleString("vi-VN")}đ`;
 
@@ -186,7 +191,7 @@ export default function Payments() {
                       <td className="px-4 py-3 text-xs text-slate-500">{payment.paidAt ? new Date(payment.paidAt).toLocaleString("vi-VN") : "—"}</td>
                       <td className="px-4 py-3"><StatusBadge status={paymentStatus(payment.status)} type="payment" /></td>
                       {hasPermission("MANAGE_PAYMENTS") && <td className="px-4 py-3">
-                        {payment.method === "VCB_QR" && payment.status === "PENDING" && (
+                        {requiresManualConfirmation(payment.method) && payment.status === "PENDING" && (
                           <button type="button" onClick={() => { setSelectedPayment(payment); setPaymentReference(""); }}
                             className="whitespace-nowrap rounded-lg border border-blue-200 px-2 py-1 text-xs font-600 text-blue-700 hover:bg-blue-50">Xác nhận</button>
                         )}
@@ -213,7 +218,7 @@ export default function Payments() {
                     <div><dt className="text-slate-400">Ngày thanh toán</dt><dd className="mt-0.5 font-500 text-slate-700">{payment.paidAt ? new Date(payment.paidAt).toLocaleString("vi-VN") : "Chưa thanh toán"}</dd></div>
                     <div><dt className="text-slate-400">Tham chiếu</dt><dd className="mt-0.5 break-all font-500 text-slate-700">{payment.reference || "—"}</dd></div>
                   </dl>
-                  {hasPermission("MANAGE_PAYMENTS") && payment.method === "VCB_QR" && payment.status === "PENDING" && (
+                  {hasPermission("MANAGE_PAYMENTS") && requiresManualConfirmation(payment.method) && payment.status === "PENDING" && (
                     <button type="button" onClick={() => { setSelectedPayment(payment); setPaymentReference(""); }}
                       className="mt-3 rounded-lg border border-blue-200 px-3 py-2 text-xs font-600 text-blue-700">Đối soát chuyển khoản</button>
                   )}
