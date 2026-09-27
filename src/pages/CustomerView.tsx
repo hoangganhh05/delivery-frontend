@@ -13,6 +13,7 @@ import PreferencesSettings from '../components/PreferencesSettings';
 import BrandLogo from '../components/BrandLogo';
 import { LoadingState } from '../components/Skeleton';
 import { BRAND_NAME } from '../config/brand';
+import { calculateRoadDistanceKm } from '../services/shippingDistance';
 
 const createSteps = ['Người gửi', 'Người nhận', 'Kiện hàng', 'Gói giao hàng', 'Mã giảm giá', 'Thanh toán', 'Kết quả'];
 
@@ -68,6 +69,9 @@ export default function CustomerView() {
   const [declaredValue, setDeclaredValue] = useState(250000);
   const [codAmount, setCodAmount] = useState(0);
 
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [distanceLoading, setDistanceLoading] = useState(false);
+  const [distanceError, setDistanceError] = useState('');
   const [selectedService, setSelectedService] = useState({ id: 'STANDARD', name: 'Tiêu chuẩn', fee: 30000, desc: 'Giao trong 1-2 ngày' });
   const [voucherCode, setVoucherCode] = useState('');
   const [discountFee, setDiscountFee] = useState(0);
@@ -81,6 +85,45 @@ export default function CustomerView() {
   const [manualPaymentInstruction, setManualPaymentInstruction] = useState<ManualPaymentInstruction | null>(null);
   const [loadingManualPayment, setLoadingManualPayment] = useState(false);
   const paymentPollingInFlight = useRef(false);
+
+  const calculateFee = (serviceType: string, distance: number | null) => {
+    if (!distance || !Number.isFinite(distance) || weight <= 0) return 0;
+    const distanceBands = Math.max(0, Math.ceil((distance - 2) / 5));
+    const standardFee = 30000 + distanceBands * 5000;
+    return serviceType === 'EXPRESS' ? Math.round(standardFee * 1.5) : standardFee;
+  };
+
+  useEffect(() => {
+    if (!senderAdministrativeAddress.wardCode || !receiverAdministrativeAddress.wardCode) {
+      setDistanceKm(null);
+      setDistanceError('');
+      return;
+    }
+    const senderFullAddress = formatAdministrativeAddress(senderAdministrativeAddress);
+    const receiverFullAddress = formatAdministrativeAddress(receiverAdministrativeAddress);
+    let active = true;
+    setDistanceLoading(true);
+    setDistanceError('');
+    calculateRoadDistanceKm(senderFullAddress, receiverFullAddress)
+      .then((distance) => {
+        if (!active) return;
+        setDistanceKm(distance);
+        setSelectedService((current) => ({ ...current, fee: calculateFee(current.id, distance) }));
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setDistanceKm(null);
+          setDistanceError(error instanceof Error ? error.message : 'Không tính được khoảng cách giao hàng');
+        }
+      })
+      .finally(() => active && setDistanceLoading(false));
+    return () => { active = false; };
+  }, [senderAdministrativeAddress.wardCode, receiverAdministrativeAddress.wardCode, senderAdministrativeAddress.provinceCode, receiverAdministrativeAddress.provinceCode]);
+
+  useEffect(() => {
+    setSelectedService((current) => ({ ...current, fee: calculateFee(current.id, distanceKm) }));
+    setDiscountFee(0);
+  }, [distanceKm, weightGram]);
 
   const fetchCustomerOrders = async () => {
     try {
@@ -134,12 +177,16 @@ export default function CustomerView() {
 
   const validateCreateStep = (step: Step) => {
     let message = '';
-    if (step === 0 && (!senderName.trim() || !senderPhone.trim() || !senderAddress.trim() || !senderAdministrativeAddress.wardCode)) {
+    const validName = (value: string) => /^[\p{L}][\p{L} .'-]{1,99}$/u.test(value.trim());
+    const validPhone = (value: string) => /^(0|\+84)(3|5|7|8|9)\d{8}$/.test(value.trim());
+    if (step === 0 && (!validName(senderName) || !validPhone(senderPhone) || !senderAddress.trim() || !senderAdministrativeAddress.wardCode)) {
       message = 'Vui lòng nhập đầy đủ tên, số điện thoại và địa chỉ người gửi.';
-    } else if (step === 1 && (!receiverName.trim() || !receiverPhone.trim() || !receiverAddress.trim() || !receiverAdministrativeAddress.wardCode)) {
+    } else if (step === 1 && (!validName(receiverName) || !validPhone(receiverPhone) || !receiverAddress.trim() || !receiverAdministrativeAddress.wardCode)) {
       message = 'Vui lòng nhập đầy đủ tên, số điện thoại và địa chỉ người nhận.';
-    } else if (step === 2 && (!itemName.trim() || weightGram <= 0 || declaredValue <= 0)) {
+    } else if (step === 2 && (!itemName.trim() || itemName.trim().length > 150 || !Number.isFinite(Number(weightGram)) || weightGram < 1 || weightGram > 100000 || !Number.isFinite(Number(declaredValue)) || declaredValue < 1 || declaredValue > 1000000000 || !Number.isFinite(Number(codAmount)) || codAmount < 0 || codAmount > 1000000000)) {
       message = 'Tên hàng, trọng lượng và giá trị khai báo phải hợp lệ.';
+    } else if (step === 3 && (!distanceKm || distanceLoading || !selectedService.fee)) {
+      message = distanceLoading ? 'Đang tính khoảng cách giao hàng, vui lòng chờ một chút.' : (distanceError || 'Không thể tính phí giao hàng từ hai địa chỉ này.');
     }
 
     if (message) {
@@ -201,6 +248,7 @@ export default function CustomerView() {
         receiverAddress,
         weightGram: Number(weightGram),
         shippingFee: selectedService.fee,
+        distanceKm,
         serviceType: selectedService.id,
         voucherCode: voucherCode || null,
         codAmount: Number(codAmount),
@@ -411,12 +459,12 @@ export default function CustomerView() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Tên người gửi</label>
-                  <input type="text" value={senderName} onChange={e => setSenderName(e.target.value)}
+                  <input type="text" maxLength={100} value={senderName} onChange={e => setSenderName(e.target.value)}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Số điện thoại</label>
-                  <input type="tel" inputMode="tel" value={senderPhone} onChange={e => setSenderPhone(e.target.value)}
+                  <input type="tel" inputMode="numeric" pattern="(0|+84)(3|5|7|8|9)[0-9]{8}" maxLength={12} value={senderPhone} onChange={e => setSenderPhone(e.target.value.replace(/[^0-9+]/g, ''))}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <AdministrativeAddressFields
@@ -434,12 +482,12 @@ export default function CustomerView() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Tên người nhận</label>
-                  <input type="text" value={receiverName} onChange={e => setReceiverName(e.target.value)}
+                  <input type="text" maxLength={100} value={receiverName} onChange={e => setReceiverName(e.target.value)}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Số điện thoại người nhận</label>
-                  <input type="tel" inputMode="tel" value={receiverPhone} onChange={e => setReceiverPhone(e.target.value)}
+                  <input type="tel" inputMode="numeric" pattern="(0|+84)(3|5|7|8|9)[0-9]{8}" maxLength={12} value={receiverPhone} onChange={e => setReceiverPhone(e.target.value.replace(/[^0-9+]/g, ''))}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <AdministrativeAddressFields
@@ -457,22 +505,22 @@ export default function CustomerView() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Tên mặt hàng</label>
-                  <input type="text" value={itemName} onChange={e => setItemName(e.target.value)}
+                  <input type="text" maxLength={150} value={itemName} onChange={e => setItemName(e.target.value)}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Trọng lượng (gram)</label>
-                  <input type="number" min="1" value={weightGram} onChange={e => setWeightGram(Number(e.target.value))}
+                  <input type="number" min="1" max="100000" step="1" value={weightGram} onChange={e => setWeightGram(Number(e.target.value))}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Giá trị hàng (khai giá - VNĐ)</label>
-                  <input type="number" min="1" value={declaredValue} onChange={e => { setDeclaredValue(Number(e.target.value)); setDiscountFee(0); }}
+                  <input type="number" min="1" max="1000000000" step="1" value={declaredValue} onChange={e => { setDeclaredValue(Number(e.target.value)); setDiscountFee(0); }}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Số tiền cần thu khi giao hàng (VNĐ)</label>
-                  <input type="number" min="0" value={codAmount} onChange={e => setCodAmount(Number(e.target.value))}
+                  <input type="number" min="0" max="1000000000" step="1" value={codAmount} onChange={e => setCodAmount(Number(e.target.value))}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
               </div>
@@ -480,16 +528,19 @@ export default function CustomerView() {
 
             {createStep === 3 && (
               <div className="space-y-3">
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-700">
+                  {distanceLoading ? 'Đang tính khoảng cách đường bộ...' : distanceKm ? `Khoảng cách ước tính: ${distanceKm} km · Phí tính theo mốc 2km đầu và mỗi 5km tiếp theo.` : (distanceError || 'Hãy hoàn tất hai địa chỉ để hệ thống tính phí.')}
+                </div>
                 {[
-                  { id: 'STANDARD', name: 'Tiêu chuẩn', fee: 30000, desc: 'Giao trong 1-2 ngày' },
-                  { id: 'EXPRESS', name: 'Hỏa tốc', fee: 50000, desc: 'Giao nhanh trong 24h' },
+                  { id: 'STANDARD', name: 'Tiêu chuẩn', fee: calculateFee('STANDARD', distanceKm), desc: 'Giao trong 1-2 ngày' },
+                  { id: 'EXPRESS', name: 'Hỏa tốc', fee: calculateFee('EXPRESS', distanceKm), desc: 'Giao nhanh trong 24h' },
                 ].map(srv => (
                   <label key={srv.id} onClick={() => { setSelectedService(srv); setDiscountFee(0); }} className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer ${selectedService.name === srv.name ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
                     <div>
                       <p className="text-sm font-600 text-slate-900">{srv.name}</p>
                       <p className="text-xs text-slate-500">{srv.desc}</p>
                     </div>
-                    <p className="text-sm font-700 text-blue-600">{srv.fee.toLocaleString()}đ</p>
+                    <p className="text-sm font-700 text-blue-600">{srv.fee ? srv.fee.toLocaleString() + 'đ' : 'Chưa tính'}</p>
                   </label>
                 ))}
               </div>

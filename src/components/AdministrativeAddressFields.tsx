@@ -67,6 +67,7 @@ export default function AdministrativeAddressFields({
         <input
           type="text"
           value={value.detail}
+          maxLength={255}
           onChange={(event) => onChange({ ...value, detail: event.target.value })}
           placeholder="VD: Số 12, ngõ 8, xóm Trung Thành"
           className={selectClassName}
