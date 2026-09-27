@@ -132,7 +132,9 @@ export default function ShipperMobile() {
         const now = Date.now();
         if (now - lastLocationSentRef.current < 10_000) return;
         lastLocationSentRef.current = now;
-        void updateShipmentLocationApi(orderId, { ...location, timestamp: new Date().toISOString() }).catch(() => {
+        // The backend records its own receipt time. Omitting the device timestamp
+        // avoids rejecting GPS updates when the phone clock is ahead of the server.
+        void updateShipmentLocationApi(orderId, location).catch(() => {
           setLocationState('error');
         });
       },
