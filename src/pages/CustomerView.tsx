@@ -87,7 +87,7 @@ export default function CustomerView() {
   const paymentPollingInFlight = useRef(false);
 
   const calculateFee = (serviceType: string, distance: number | null) => {
-    if (!distance || !Number.isFinite(distance) || weight <= 0) return 0;
+    if (!distance || !Number.isFinite(distance)) return 0;
     const distanceBands = Math.max(0, Math.ceil((distance - 2) / 5));
     const standardFee = 30000 + distanceBands * 5000;
     return serviceType === 'EXPRESS' ? Math.round(standardFee * 1.5) : standardFee;
@@ -464,7 +464,7 @@ export default function CustomerView() {
                 </div>
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Số điện thoại</label>
-                  <input type="tel" inputMode="numeric" pattern="(0|+84)(3|5|7|8|9)[0-9]{8}" maxLength={12} value={senderPhone} onChange={e => setSenderPhone(e.target.value.replace(/[^0-9+]/g, ''))}
+                  <input type="tel" inputMode="numeric" pattern="(0|[+]84)(3|5|7|8|9)[0-9]{8}" maxLength={12} value={senderPhone} onChange={e => setSenderPhone(e.target.value.replace(/[^0-9+]/g, ''))}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <AdministrativeAddressFields
@@ -487,7 +487,7 @@ export default function CustomerView() {
                 </div>
                 <div>
                   <label className="block text-xs font-600 text-slate-700 mb-1">Số điện thoại người nhận</label>
-                  <input type="tel" inputMode="numeric" pattern="(0|+84)(3|5|7|8|9)[0-9]{8}" maxLength={12} value={receiverPhone} onChange={e => setReceiverPhone(e.target.value.replace(/[^0-9+]/g, ''))}
+                  <input type="tel" inputMode="numeric" pattern="(0|[+]84)(3|5|7|8|9)[0-9]{8}" maxLength={12} value={receiverPhone} onChange={e => setReceiverPhone(e.target.value.replace(/[^0-9+]/g, ''))}
                     className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-slate-50 focus:bg-white" />
                 </div>
                 <AdministrativeAddressFields
