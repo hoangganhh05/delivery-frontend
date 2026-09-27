@@ -1,13 +1,22 @@
 type Point = { latitude: number; longitude: number };
 
 async function geocode(address: string): Promise<Point> {
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=vn&q=${encodeURIComponent(address)}`, {
-    headers: { Accept: "application/json" },
-  });
-  if (!response.ok) throw new Error("Không thể xác định vị trí địa chỉ");
-  const items = await response.json() as Array<{ lat: string; lon: string }>;
-  if (!items[0]) throw new Error("Không tìm thấy vị trí của địa chỉ");
-  return { latitude: Number(items[0].lat), longitude: Number(items[0].lon) };
+  const parts = address.split(",").map((part) => part.trim()).filter(Boolean);
+  const queries = [
+    `${address}, Việt Nam`,
+    `${parts.slice(1).join(", ")}, Việt Nam`,
+    `${parts.at(-1) || address}, Việt Nam`,
+  ].filter((query, index, all) => all.indexOf(query) === index);
+
+  for (const query of queries) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=vn&accept-language=vi&q=${encodeURIComponent(query)}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) continue;
+    const items = await response.json() as Array<{ lat: string; lon: string }>;
+    if (items[0]) return { latitude: Number(items[0].lat), longitude: Number(items[0].lon) };
+  }
+  throw new Error("Không tìm thấy vị trí địa chỉ. Hãy kiểm tra lại tỉnh và xã/phường.");
 }
 
 export async function calculateRoadDistanceKm(senderAddress: string, receiverAddress: string): Promise<number> {
@@ -21,4 +30,3 @@ export async function calculateRoadDistanceKm(senderAddress: string, receiverAdd
   }
   return Math.ceil(distanceKm * 10) / 10;
 }
-
