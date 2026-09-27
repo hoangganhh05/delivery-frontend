@@ -24,6 +24,9 @@ const paymentMethodOptions: Record<CheckoutPaymentMethod, { title: string; descr
   MANUAL_BANK_TRANSFER: { title: 'Chuyển khoản ngân hàng', description: 'Chuyển khoản thủ công, nhân viên sẽ đối soát', icon: Landmark },
   MANUAL_MOMO: { title: 'Chuyển tiền qua MoMo', description: 'Chuyển tiền thủ công, nhân viên sẽ đối soát', icon: Smartphone },
 };
+// The checked-in QR is the owner's public MoMo "Nhận tiền" QR. A deployment can
+// override it without a code change when the recipient QR is replaced.
+const manualMomoQrImageUrl = (import.meta.env.VITE_MANUAL_MOMO_QR_IMAGE_URL || '/momo-receive-qr.png').trim();
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function CustomerView() {
@@ -587,6 +590,18 @@ export default function CustomerView() {
                       <p>Số tiền: <span className="font-700">{Number(manualPaymentInstruction.amount).toLocaleString('vi-VN')}đ</span></p>
                       <p>Nội dung: <span className="font-700 break-all">{manualPaymentInstruction.transferContent}</span></p>
                     </div>
+                    {manualPaymentInstruction.method === 'MANUAL_MOMO' && manualMomoQrImageUrl && (
+                      <div className="rounded-xl bg-white p-3 text-center">
+                        <p className="mb-2 text-xs font-700 text-slate-700">Quét QR MoMo để chuyển tiền</p>
+                        <img
+                          src={manualMomoQrImageUrl}
+                          alt="Mã QR nhận tiền MoMo"
+                          className="mx-auto max-h-64 w-auto rounded-lg"
+                          referrerPolicy="no-referrer"
+                        />
+                        <p className="mt-2 text-[11px] text-slate-500">Kiểm tra đúng số tiền và nội dung chuyển tiền trước khi xác nhận.</p>
+                      </div>
+                    )}
                     <div className="flex flex-wrap justify-center gap-2">
                       <button onClick={() => navigator.clipboard.writeText(manualPaymentInstruction.recipientValue).then(() => addToast({ type: 'success', title: 'Đã sao chép', message: `Đã sao chép ${manualPaymentInstruction.recipientLabel.toLowerCase()}` }))}
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-300 text-amber-900 text-xs font-600 hover:bg-amber-100">
