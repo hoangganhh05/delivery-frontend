@@ -43,6 +43,7 @@ export interface ManualPaymentInstruction {
   method: Exclude<CheckoutPaymentMethod, "COD">;
   title: string;
   providerName: string;
+  bankId?: string;
   recipientLabel: string;
   recipientValue: string;
   recipientName: string;

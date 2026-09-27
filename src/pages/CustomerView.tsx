@@ -27,6 +27,16 @@ const paymentMethodOptions: Record<CheckoutPaymentMethod, { title: string; descr
 // The checked-in QR is the owner's public MoMo "Nhận tiền" QR. A deployment can
 // override it without a code change when the recipient QR is replaced.
 const manualMomoQrImageUrl = (import.meta.env.VITE_MANUAL_MOMO_QR_IMAGE_URL || '/momo-receive-qr.png').trim();
+
+function createVietQrImageUrl(bankId: string, accountNumber: string, accountName: string, amount: number, transferContent: string) {
+  const query = new URLSearchParams({
+    amount: String(Math.round(amount)),
+    addInfo: transferContent,
+    accountName,
+  });
+  return `https://img.vietqr.io/image/${encodeURIComponent(bankId)}-${encodeURIComponent(accountNumber)}-compact2.png?${query.toString()}`;
+}
+
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function CustomerView() {
@@ -152,17 +162,12 @@ export default function CustomerView() {
       const qr = qrResponse.data;
       const amount = Number(qr.amount);
       const content = qr.transferContent;
-      const query = new URLSearchParams({
-        amount: String(Math.round(amount)),
-        addInfo: content,
-        accountName: qr.accountName,
-      });
       setQrPayment({
         amount,
         content,
         accountNumber: qr.accountNumber,
         accountName: qr.accountName,
-        imageUrl: `https://img.vietqr.io/image/${qr.bankId}-${qr.accountNumber}-compact2.png?${query.toString()}`,
+        imageUrl: createVietQrImageUrl(qr.bankId, qr.accountNumber, qr.accountName, amount, content),
       });
     } catch (error: any) {
       addToast({ type: 'error', title: 'Không tải được mã thanh toán', message: error.message || 'Vui lòng thử lại.' });
@@ -600,6 +605,24 @@ export default function CustomerView() {
                           referrerPolicy="no-referrer"
                         />
                         <p className="mt-2 text-[11px] text-slate-500">Kiểm tra đúng số tiền và nội dung chuyển tiền trước khi xác nhận.</p>
+                      </div>
+                    )}
+                    {manualPaymentInstruction.method === 'MANUAL_BANK_TRANSFER' && manualPaymentInstruction.bankId && (
+                      <div className="rounded-xl bg-white p-3 text-center">
+                        <p className="mb-2 text-xs font-700 text-slate-700">Quét VietQR để chuyển khoản</p>
+                        <img
+                          src={createVietQrImageUrl(
+                            manualPaymentInstruction.bankId,
+                            manualPaymentInstruction.recipientValue,
+                            manualPaymentInstruction.recipientName,
+                            Number(manualPaymentInstruction.amount),
+                            manualPaymentInstruction.transferContent,
+                          )}
+                          alt={`VietQR ${manualPaymentInstruction.providerName} với số tiền đã điền sẵn`}
+                          className="mx-auto max-h-72 w-auto rounded-lg"
+                          referrerPolicy="no-referrer"
+                        />
+                        <p className="mt-2 text-[11px] text-slate-500">Số tiền và nội dung chuyển khoản đã được điền sẵn theo đơn này.</p>
                       </div>
                     )}
                     <div className="flex flex-wrap justify-center gap-2">
