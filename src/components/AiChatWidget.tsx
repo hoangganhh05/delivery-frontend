@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Sparkles, X, Send, RotateCcw, Package, ChevronRight, MessageSquare, ExternalLink } from 'lucide-react';
+import { Bot, Sparkles, X, Send, RotateCcw, Package, ChevronRight, HelpCircle } from 'lucide-react';
 import { aiChatApi, type AiChatMessage } from '../api/deliveryApi';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ interface Message {
   timestamp: Date;
   suggestedAction?: string;
   actionData?: any;
+  quickQuestions?: string[];
 }
 
 const DEFAULT_WELCOME: Message = {
@@ -17,13 +18,26 @@ const DEFAULT_WELCOME: Message = {
   sender: 'assistant',
   text: 'Xin chào! Em là **GiaoTín AI** - Trợ lý thông minh của Viettel Delivery. 🤖✨\n\nEm có thể giúp bạn:\n- 🔍 **Tra cứu đơn hàng**: Gửi mã vận đơn dạng `VT12345678`\n- 💰 **Báo giá & Cước phí**: Tiêu chuẩn, Hỏa tốc, tiền thu COD\n- ⏱️ **Thời gian giao hàng** & Chính sách bảo hiểm hàng hóa\n\nBạn cần em hỗ trợ điều gì hôm nay?',
   timestamp: new Date(),
+  quickQuestions: [
+    'Cách tính phí vận chuyển?',
+    'Gói Hỏa tốc giao trong bao lâu?',
+    'Chính sách bồi thường hàng hóa',
+    'Voucher giảm giá hôm nay',
+  ],
 };
 
-const QUICK_PROMPTS = [
-  'Tra cứu đơn hàng VT...',
-  'Cách tính phí vận chuyển?',
-  'Gói Hỏa tốc giao trong bao lâu?',
-  'Chính sách bồi thường hàng hóa',
+interface QuickPrompt {
+  label: string;
+  action: 'prefill' | 'send';
+  value: string;
+}
+
+const QUICK_PROMPTS: QuickPrompt[] = [
+  { label: '🔍 Tra cứu đơn hàng', action: 'prefill', value: 'Tra cứu đơn ' },
+  { label: '💰 Phí vận chuyển?', action: 'send', value: 'Cách tính phí vận chuyển của Viettel Delivery như thế nào?' },
+  { label: '⚡ Gói Hỏa tốc?', action: 'send', value: 'Gói Hỏa tốc giao trong bao lâu và cước phí thế nào?' },
+  { label: '🛡️ Bồi thường hàng hóa', action: 'send', value: 'Chính sách bồi thường hàng hóa khi bị mất hoặc hỏng?' },
+  { label: '🎟️ Voucher giảm giá', action: 'send', value: 'Hôm nay có những mã voucher khuyến mãi nào?' },
 ];
 
 export default function AiChatWidget() {
@@ -80,6 +94,7 @@ export default function AiChatWidget() {
         timestamp: new Date(),
         suggestedAction: aiData?.suggestedAction,
         actionData: aiData?.actionData,
+        quickQuestions: aiData?.quickQuestions,
       };
 
       setMessages((prev) => [...prev, aiMsg]);
@@ -93,6 +108,15 @@ export default function AiChatWidget() {
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePromptClick = (prompt: QuickPrompt) => {
+    if (prompt.action === 'prefill') {
+      setInput(prompt.value);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      handleSend(prompt.value);
     }
   };
 
@@ -117,7 +141,6 @@ export default function AiChatWidget() {
     const lines = text.split('\n');
     return lines.map((line, idx) => {
       let formatted = line;
-      // Bold replace
       const parts = formatted.split(/(\*\*.*?\*\*)/g);
 
       return (
@@ -144,7 +167,7 @@ export default function AiChatWidget() {
         <div
           role="dialog"
           aria-label="Cửa sổ Trợ lý AI GiaoTín"
-          className="mb-3 w-[92vw] sm:w-[380px] h-[540px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
+          className="mb-3 w-[92vw] sm:w-[390px] h-[560px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white p-4 flex items-center justify-between shadow-md">
@@ -198,7 +221,7 @@ export default function AiChatWidget() {
                 )}
 
                 <div
-                  className={`max-w-[82%] rounded-2xl p-3 shadow-xs ${
+                  className={`max-w-[84%] rounded-2xl p-3 shadow-xs ${
                     msg.sender === 'user'
                       ? 'bg-red-600 text-white rounded-tr-xs'
                       : 'bg-white text-slate-800 border border-slate-200/70 rounded-tl-xs'
@@ -237,6 +260,23 @@ export default function AiChatWidget() {
                     </div>
                   )}
 
+                  {/* Quick Question suggestions attached to this message */}
+                  {msg.sender === 'assistant' && msg.quickQuestions && msg.quickQuestions.length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-slate-100/80 flex flex-wrap gap-1.5">
+                      {msg.quickQuestions.map((q, qIdx) => (
+                        <button
+                          key={qIdx}
+                          type="button"
+                          onClick={() => handleSend(q)}
+                          disabled={loading}
+                          className="text-[11px] text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 rounded-full px-2.5 py-0.5 transition-colors text-left font-500 disabled:opacity-50"
+                        >
+                          💬 {q}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <span
                     className={`block text-[9px] mt-1 text-right ${
                       msg.sender === 'user' ? 'text-white/70' : 'text-slate-400'
@@ -264,17 +304,17 @@ export default function AiChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Prompts */}
+          {/* Quick Prompts Bar */}
           <div className="px-3 py-2 bg-white border-t border-slate-100 flex gap-1.5 overflow-x-auto no-scrollbar">
             {QUICK_PROMPTS.map((prompt, i) => (
               <button
                 key={i}
                 type="button"
-                onClick={() => handleSend(prompt)}
+                onClick={() => handlePromptClick(prompt)}
                 disabled={loading}
-                className="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200 text-[11px] text-slate-600 transition-colors flex-shrink-0 disabled:opacity-50"
+                className="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200 text-[11px] text-slate-600 transition-colors flex-shrink-0 disabled:opacity-50 font-500"
               >
-                {prompt}
+                {prompt.label}
               </button>
             ))}
           </div>
