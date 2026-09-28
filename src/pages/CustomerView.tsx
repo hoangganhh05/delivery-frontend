@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, MapPin, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings, Landmark, Smartphone } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Sparkles, X, Search, ChevronRight, Plus, Clock, CheckCircle2, Truck, Copy, Home, User, LogOut, LoaderCircle, Settings, Landmark, Smartphone } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { getOrderStatusLabel, mapBackendStatusToUI } from '../utils/status';
-import { createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderLiveLocationApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi, getAvailablePaymentMethodsApi, getManualPaymentInstructionsApi, type CheckoutPaymentMethod, type ManualPaymentInstruction } from '../api/deliveryApi';
+import { aiParseOrderApi, createOrderApi, calculateVoucherApi, searchOrdersApi, trackOrderApi, getOrderLiveLocationApi, getOrderQrPaymentApi, getOrderPaymentApi, getActiveVouchersApi, getAvailablePaymentMethodsApi, getManualPaymentInstructionsApi, type CheckoutPaymentMethod, type ManualPaymentInstruction } from '../api/deliveryApi';
 import LiveTrackingMap from '../components/LiveTrackingMap';
 import AdministrativeAddressFields from '../components/AdministrativeAddressFields';
 import { EMPTY_ADMINISTRATIVE_ADDRESS, formatAdministrativeAddress, type AdministrativeAddressValue } from '../types/administrative';
@@ -86,6 +86,50 @@ export default function CustomerView() {
   const [loadingManualPayment, setLoadingManualPayment] = useState(false);
   const paymentPollingInFlight = useRef(false);
 
+    const [aiPasteText, setAiPasteText] = useState('');
+  const [parsingAi, setParsingAi] = useState(false);
+  const [showAiParserModal, setShowAiParserModal] = useState(false);
+
+  const handleParseOrderAi = async () => {
+    if (!aiPasteText.trim()) return;
+    try {
+      setParsingAi(true);
+      const res = await aiParseOrderApi(aiPasteText.trim());
+      const data = res.data;
+      if (data) {
+        if (data.receiverName) setReceiverName(data.receiverName);
+        if (data.receiverPhone) setReceiverPhone(data.receiverPhone);
+        if (data.receiverAddress) setReceiverAddress(data.receiverAddress);
+        if (data.itemName) setItemName(data.itemName);
+        if (data.weightGram) setWeightGram(data.weightGram);
+        if (data.codAmount != null && Number(data.codAmount) >= 0) setCodAmount(Number(data.codAmount));
+
+        if (data.streetAddress || data.receiverAddress) {
+          setReceiverAdministrativeAddress((prev) => ({
+            ...prev,
+            detail: data.streetAddress || data.receiverAddress || prev.detail,
+          }));
+        }
+
+        addToast({
+          type: 'success',
+          title: 'Trích xuất AI thành công!',
+          message: data.message || `Đã điền người nhận: ${data.receiverName || 'Khách hàng'}`,
+        });
+        setShowAiParserModal(false);
+        setAiPasteText('');
+        setCreateStep(1);
+      }
+    } catch (err: any) {
+      addToast({
+        type: 'error',
+        title: 'Lỗi trích xuất AI',
+        message: err.message || 'Không thể phân tích nội dung này.',
+      });
+    } finally {
+      setParsingAi(false);
+    }
+  };
   const calculateFee = (serviceType: string, distance: number | null) => {
     if (!distance || !Number.isFinite(distance)) return 0;
     const distanceBands = Math.max(0, Math.ceil((distance - 2) / 5));
@@ -443,7 +487,93 @@ export default function CustomerView() {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
+          {createStep < 3 && (
+            <div className="bg-gradient-to-r from-red-600/10 via-rose-500/10 to-amber-500/10 border border-red-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <Sparkles size={20} className="animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-700 text-slate-900 flex items-center gap-1.5">
+                    <span>Điền đơn nhanh bằng Trí tuệ nhân tạo (AI)</span>
+                    <span className="text-[10px] bg-red-600 text-white font-600 px-1.5 py-0.5 rounded-full">Gemini</span>
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Dán tin nhắn Zalo, SMS, Facebook chốt đơn — AI sẽ tự động phân tích và điền form cho bạn trong 1 giây!
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAiParserModal(true)}
+                className="h-9 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-700 flex items-center gap-1.5 shadow-sm transition-all shrink-0"
+              >
+                <Sparkles size={14} />
+                <span>Dán tin nhắn đơn hàng</span>
+              </button>
+            </div>
+          )}
+
+          {showAiParserModal && (
+            <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
+                      <Sparkles size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-700 text-slate-900">Trích xuất đơn hàng thông minh</h4>
+                      <p className="text-[11px] text-slate-400">Hỗ trợ nhận diện tiếng Việt tự nhiên qua Gemini AI</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAiParserModal(false)}
+                    className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-600 text-slate-700">
+                    Dán nội dung tin nhắn hoặc thông tin chốt đơn:
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={aiPasteText}
+                    onChange={(e) => setAiPasteText(e.target.value)}
+                    placeholder="Ví dụ: Ship cho anh Tuấn sđt 0988123456 ở số 45 ngõ 12 Đội Cấn, Ba Đình, Hà Nội. Hàng là 2 áo polo nam, tiền thu hộ COD 450k nhé..."
+                    className="w-full p-3 text-xs border border-slate-200 rounded-xl outline-none focus:border-red-500 focus:bg-white bg-slate-50 leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                    <span>Gợi ý: Càng có đủ SĐT, tên và địa chỉ, AI nhận diện càng chuẩn xác.</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiParserModal(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-600 text-slate-600 hover:bg-slate-100"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleParseOrderAi}
+                    disabled={!aiPasteText.trim() || parsingAi}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-700 flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition-all"
+                  >
+                    <Sparkles size={14} className={parsingAi ? 'animate-spin' : ''} />
+                    <span>{parsingAi ? 'Đang phân tích...' : 'Phân tích & Tự động điền'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
             <h3 className="text-base font-700 text-slate-900 mb-5">
               {createStep === 0 && 'Bước 1: Thông tin người gửi'}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Navigation, Package, MapPin, RefreshCw, Search } from 'lucide-react';
-import { searchOrdersApi, getShippersApi, assignShipperApi, autoAssignShipperApi } from '../api/deliveryApi';
+import { CheckCircle2, Navigation, Package, MapPin, RefreshCw, Search, Sparkles } from 'lucide-react';
+import { searchOrdersApi, getShippersApi, assignShipperApi, autoAssignShipperApi, getAiShipperRecommendationsApi, type AiShipperRecommendation } from '../api/deliveryApi';
 import { useApp } from '../context/AppContext';
 import { LoadingState } from '../components/Skeleton';
 
@@ -14,6 +14,8 @@ export default function Dispatch() {
 
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [selectedShipper, setSelectedShipper] = useState<any | null>(null);
+  const [aiRecommendations, setAiRecommendations] = useState<AiShipperRecommendation[]>([]);
+  const [loadingAiRecs, setLoadingAiRecs] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [shipperFilter, setShipperFilter] = useState('Tất cả');
   const [orderQuery, setOrderQuery] = useState('');
@@ -54,6 +56,20 @@ export default function Dispatch() {
     }
   }, []);
 
+  useEffect(() => {
+    if (selectedOrder?.id) {
+      setLoadingAiRecs(true);
+      getAiShipperRecommendationsApi(selectedOrder.id)
+        .then((res) => setAiRecommendations(res.data || []))
+        .catch((err) => {
+          console.error('Error fetching AI shipper recommendations', err);
+          setAiRecommendations([]);
+        })
+        .finally(() => setLoadingAiRecs(false));
+    } else {
+      setAiRecommendations([]);
+    }
+  }, [selectedOrder?.id]);
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
@@ -286,10 +302,70 @@ export default function Dispatch() {
                   </p>
                 )}
               </div>
+              {/* AI Recommendation Card */}
+              <div className="p-3 border-t border-slate-100 bg-gradient-to-b from-red-50/40 to-white">
+                <div className="rounded-xl border border-red-200 bg-white p-3 space-y-2 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-xs font-700 text-red-700">
+                      <Sparkles size={14} className="text-red-600" />
+                      Gợi ý bởi AI Dispatcher
+                    </span>
+                    {aiRecommendations[0] && (
+                      <span className="text-[10px] bg-red-600 text-white font-700 px-2 py-0.5 rounded-full">
+                        {aiRecommendations[0].matchScore}% phù hợp
+                      </span>
+                    )}
+                  </div>
+
+                  {loadingAiRecs ? (
+                    <p className="text-[11px] text-slate-500 py-1 flex items-center gap-1.5">
+                      <RefreshCw size={12} className="animate-spin text-red-500" />
+                      AI đang phân tích GPS & tải trọng shipper...
+                    </p>
+                  ) : aiRecommendations[0] ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <p className="text-xs font-700 text-slate-900 truncate">
+                            {aiRecommendations[0].fullName || aiRecommendations[0].username}
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            {aiRecommendations[0].activeOrders} đơn đang giao · SĐT: {aiRecommendations[0].phoneNumber || 'N/A'}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const found = shippersList.find(s => s.id === aiRecommendations[0].shipperId);
+                            if (found) setSelectedShipper(found);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] font-700 shadow-xs transition-colors shrink-0"
+                        >
+                          Chọn nhanh
+                        </button>
+                      </div>
+
+                      {aiRecommendations[0].reasons && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {aiRecommendations[0].reasons.map((r, i) => (
+                            <span key={i} className="text-[9px] bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded font-500">
+                              ✓ {r}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 py-1">Không có shipper trực tuyến phù hợp.</p>
+                  )}
+                </div>
+              </div>
+
               <div className="p-3 border-t border-slate-100">
                 <button onClick={handleAutoAssign} disabled={submitting}
-                  className="w-full mb-2 h-9 rounded-lg border border-emerald-300 text-emerald-700 text-xs font-600 hover:bg-emerald-50 disabled:opacity-50">
-                  Phân công ngẫu nhiên (chờ shipper nhận)
+                  className="w-full mb-2 h-9 rounded-lg border border-red-200 text-red-700 bg-red-50/60 hover:bg-red-100/60 text-xs font-700 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
+                  <Sparkles size={13} className="text-red-600" />
+                  Giao tự động bằng AI (Gửi lời mời shipper tối ưu)
                 </button>
                 <button
                   onClick={handleAssign}

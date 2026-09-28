@@ -61,6 +61,52 @@ export interface OperationsReport {
   timeline: Array<{ date: string; orders: number; revenue: number }>;
 }
 
+export interface AiParsedOrderData {
+  senderName?: string;
+  senderPhone?: string;
+  senderAddress?: string;
+  receiverName?: string;
+  receiverPhone?: string;
+  receiverAddress?: string;
+  province?: string;
+  district?: string;
+  ward?: string;
+  streetAddress?: string;
+  itemName?: string;
+  weightGram?: number;
+  declaredValue?: number;
+  codAmount?: number;
+  note?: string;
+  parserSource?: string;
+  message?: string;
+}
+
+export interface AiChatMessage {
+  role: 'user' | 'assistant' | 'model';
+  content: string;
+}
+
+export interface AiChatResponse {
+  reply: string;
+  suggestedAction?: 'TRACK_ORDER' | 'CREATE_ORDER' | 'NONE';
+  actionData?: any;
+  quickQuestions?: string[];
+  source?: string;
+}
+
+export interface AiShipperRecommendation {
+  shipperId: number;
+  username: string;
+  fullName: string;
+  phoneNumber?: string;
+  matchScore: number;
+  estimatedDistanceKm?: number;
+  activeOrders: number;
+  reasons: string[];
+  recommended: boolean;
+}
+
+
 // Authentication
 export const loginApi = (data: any): Promise<ApiResponse> => {
   return axiosClient.post("/auth/login", data);
@@ -352,7 +398,29 @@ export const markAllNotificationsAsReadApi = (): Promise<ApiResponse> => {
   return axiosClient.put("/notifications/read-all");
 };
 
+// AI Smart Features
+export const aiParseOrderApi = (text: string): Promise<ApiResponse<AiParsedOrderData>> => {
+  return axiosClient.post("/ai/parse-order", { text });
+};
+
+export const aiChatApi = (
+  message: string,
+  history?: AiChatMessage[],
+  trackingNumber?: string,
+): Promise<ApiResponse<AiChatResponse>> => {
+  return axiosClient.post("/ai/chat", { message, history, trackingNumber });
+};
+
+export const getAiShipperRecommendationsApi = (
+  orderId: number | string,
+): Promise<ApiResponse<AiShipperRecommendation[]>> => {
+  return axiosClient.get(`/ai/recommend-shippers/${orderId}`);
+};
+
 export default {
+  aiParseOrderApi,
+  aiChatApi,
+  getAiShipperRecommendationsApi,
   loginApi,
   registerApi,
   getDashboardStatsApi,

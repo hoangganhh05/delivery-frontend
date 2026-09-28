@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import DocumentTitle from './components/DocumentTitle';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
+import AiChatWidget from './components/AiChatWidget';
 import { LoadingState } from './components/Skeleton';
 import { I18nProvider } from './i18n/I18nProvider';
 const Login = lazy(() => import('./pages/Login'));
@@ -95,6 +96,7 @@ function AppShell() {
       <AppRoutes />
       <ToastContainer />
       <ConfirmModal />
+      <AiChatWidget />
     </I18nProvider>
   );
 }
