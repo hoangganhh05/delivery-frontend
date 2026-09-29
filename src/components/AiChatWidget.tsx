@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Sparkles, X, Send, RotateCcw, Package, ChevronRight, HelpCircle } from 'lucide-react';
+import { MessageCircle, X, Send, RotateCcw, Package, ChevronRight, Headphones } from 'lucide-react';
 import { aiChatApi, type AiChatMessage } from '../api/deliveryApi';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,7 +16,7 @@ interface Message {
 const DEFAULT_WELCOME: Message = {
   id: 'welcome',
   sender: 'assistant',
-  text: 'Xin chào! Em là **GiaoTín AI** - Trợ lý thông minh của Viettel Delivery. 🤖✨\n\nEm có thể giúp bạn:\n- 🔍 **Tra cứu đơn hàng**: Gửi mã vận đơn dạng `VT12345678`\n- 💰 **Báo giá & Cước phí**: Tiêu chuẩn, Hỏa tốc, tiền thu COD\n- ⏱️ **Thời gian giao hàng** & Chính sách bảo hiểm hàng hóa\n\nBạn cần em hỗ trợ điều gì hôm nay?',
+  text: 'Xin chào! Em là **Trợ lý hỗ trợ GiaoTín**.\n\nEm có thể hỗ trợ bạn:\n- 🔍 **Tra cứu đơn hàng**: Gửi mã vận đơn dạng `VT12345678`\n- 💰 **Báo giá & Cước phí**: Tiêu chuẩn, Hỏa tốc, tiền thu hộ COD\n- ⏱️ **Thời gian giao hàng** & Chính sách bảo hiểm hàng hóa\n\nBạn cần em hỗ trợ điều gì hôm nay?',
   timestamp: new Date(),
   quickQuestions: [
     'Cách tính phí vận chuyển?',
@@ -34,10 +34,10 @@ interface QuickPrompt {
 
 const QUICK_PROMPTS: QuickPrompt[] = [
   { label: '🔍 Tra cứu đơn hàng', action: 'prefill', value: 'Tra cứu đơn ' },
-  { label: '💰 Phí vận chuyển?', action: 'send', value: 'Cách tính phí vận chuyển của Viettel Delivery như thế nào?' },
-  { label: '⚡ Gói Hỏa tốc?', action: 'send', value: 'Gói Hỏa tốc giao trong bao lâu và cước phí thế nào?' },
+  { label: '💰 Phí vận chuyển', action: 'send', value: 'Cách tính phí vận chuyển của Viettel Delivery như thế nào?' },
+  { label: '⚡ Gói Hỏa tốc', action: 'send', value: 'Gói Hỏa tốc giao trong bao lâu và cước phí thế nào?' },
   { label: '🛡️ Bồi thường hàng hóa', action: 'send', value: 'Chính sách bồi thường hàng hóa khi bị mất hoặc hỏng?' },
-  { label: '🎟️ Voucher giảm giá', action: 'send', value: 'Hôm nay có những mã voucher khuyến mãi nào?' },
+  { label: '🎟️ Mã giảm giá', action: 'send', value: 'Hôm nay có những mã voucher khuyến mãi nào?' },
 ];
 
 export default function AiChatWidget() {
@@ -102,7 +102,7 @@ export default function AiChatWidget() {
       const errorMsg: Message = {
         id: String(Date.now() + 1),
         sender: 'assistant',
-        text: 'Dạ hiện tại kết nối AI đang gián đoạn một chút. Bạn vui lòng thử lại sau ít giây hoặc liên hệ tổng đài hỗ trợ nhé!',
+        text: 'Dạ hiện tại kết nối đang gián đoạn một chút. Bạn vui lòng thử lại sau ít giây hoặc liên hệ tổng đài 1900.8095 nhé!',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -148,7 +148,7 @@ export default function AiChatWidget() {
           {parts.map((part, pIdx) => {
             if (part.startsWith('**') && part.endsWith('**')) {
               return (
-                <strong key={pIdx} className="font-700 text-slate-900">
+                <strong key={pIdx} className="font-600 text-slate-900">
                   {part.slice(2, -2)}
                 </strong>
               );
@@ -166,24 +166,18 @@ export default function AiChatWidget() {
       {isOpen && (
         <div
           role="dialog"
-          aria-label="Cửa sổ Trợ lý AI GiaoTín"
-          className="mb-3 w-[92vw] sm:w-[390px] h-[560px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200"
+          aria-label="Cửa sổ hỗ trợ khách hàng GiaoTín"
+          className="mb-3 w-[92vw] sm:w-[380px] h-[530px] max-h-[80vh] bg-white rounded-2xl shadow-xl border border-slate-200/80 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-150"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white p-4 flex items-center justify-between shadow-md">
+          <div className="bg-blue-600 text-white p-3.5 flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <div className="w-9 h-9 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-                  <Bot size={20} className="text-white" />
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full"></span>
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-white">
+                <Headphones size={17} />
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-700 text-sm leading-tight">GiaoTín AI Assistant</h3>
-                  <span className="text-[10px] bg-white/20 text-white px-1.5 py-0.2 rounded-md font-600">Gemini</span>
-                </div>
-                <p className="text-[11px] text-white/80 leading-tight">Trợ lý hỗ trợ giao nhận thông minh</p>
+                <h3 className="font-600 text-xs sm:text-sm leading-tight">Hỗ trợ khách hàng GiaoTín</h3>
+                <p className="text-[11px] text-blue-100 leading-tight">Tư vấn cước phí & tra cứu đơn hàng</p>
               </div>
             </div>
 
@@ -192,54 +186,54 @@ export default function AiChatWidget() {
                 type="button"
                 onClick={handleReset}
                 title="Làm mới đoạn chat"
-                className="w-8 h-8 rounded-xl hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+                className="w-7 h-7 rounded-lg hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors"
               >
-                <RotateCcw size={15} />
+                <RotateCcw size={14} />
               </button>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
                 title="Đóng chat"
-                className="w-8 h-8 rounded-xl hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+                className="w-7 h-7 rounded-lg hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60">
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-3 bg-slate-50/50">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.sender === 'assistant' && (
-                  <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 text-white flex-shrink-0 flex items-center justify-center shadow-xs text-xs font-700 mt-0.5">
-                    <Sparkles size={13} />
+                  <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex-shrink-0 flex items-center justify-center text-xs font-600 mt-0.5">
+                    <Headphones size={13} />
                   </div>
                 )}
 
                 <div
-                  className={`max-w-[84%] rounded-2xl p-3 shadow-xs ${
+                  className={`max-w-[84%] rounded-xl p-3 text-xs leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-red-600 text-white rounded-tr-xs'
-                      : 'bg-white text-slate-800 border border-slate-200/70 rounded-tl-xs'
+                      ? 'bg-blue-600 text-white rounded-tr-xs'
+                      : 'bg-white text-slate-800 border border-slate-200/60 rounded-tl-xs shadow-xs'
                   }`}
                 >
                   {renderFormattedText(msg.text)}
 
-                  {/* Order Preview Card if AI found grounded tracking data */}
+                  {/* Order Preview Card if tracking data grounded */}
                   {msg.actionData && msg.actionData.trackingNumber && (
-                    <div className="mt-2.5 pt-2.5 border-t border-slate-100 bg-red-50/60 -mx-1 p-2.5 rounded-xl border border-red-100">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 bg-slate-50 -mx-1 p-2.5 rounded-lg border border-slate-200/60">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                          <Package size={14} className="text-red-600" />
-                          <span className="font-700 text-xs text-red-700">
+                          <Package size={13} className="text-blue-600" />
+                          <span className="font-600 text-xs text-blue-700">
                             {msg.actionData.trackingNumber}
                           </span>
                         </div>
-                        <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-600">
+                        <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-500 border border-blue-100">
                           {msg.actionData.currentStatus || 'Đang vận chuyển'}
                         </span>
                       </div>
@@ -252,26 +246,26 @@ export default function AiChatWidget() {
                           setIsOpen(false);
                           navigate(`/tracking?code=${msg.actionData.trackingNumber}`);
                         }}
-                        className="mt-2 w-full py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-600 flex items-center justify-center gap-1 transition-colors"
+                        className="mt-2 w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-500 flex items-center justify-center gap-1 transition-colors"
                       >
-                        <span>Xem chi tiết lộ trình GPS</span>
+                        <span>Xem chi tiết lộ trình</span>
                         <ChevronRight size={13} />
                       </button>
                     </div>
                   )}
 
-                  {/* Quick Question suggestions attached to this message */}
+                  {/* Quick Question suggestions attached to message */}
                   {msg.sender === 'assistant' && msg.quickQuestions && msg.quickQuestions.length > 0 && (
-                    <div className="mt-2.5 pt-2 border-t border-slate-100/80 flex flex-wrap gap-1.5">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-wrap gap-1.5">
                       {msg.quickQuestions.map((q, qIdx) => (
                         <button
                           key={qIdx}
                           type="button"
                           onClick={() => handleSend(q)}
                           disabled={loading}
-                          className="text-[11px] text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 rounded-full px-2.5 py-0.5 transition-colors text-left font-500 disabled:opacity-50"
+                          className="text-[11px] text-blue-700 bg-blue-50/80 hover:bg-blue-100 border border-blue-200/70 rounded-full px-2.5 py-0.5 transition-colors text-left font-500 disabled:opacity-50"
                         >
-                          💬 {q}
+                          {q}
                         </button>
                       ))}
                     </div>
@@ -289,15 +283,15 @@ export default function AiChatWidget() {
             ))}
 
             {loading && (
-              <div className="flex gap-2.5 items-center text-slate-400 text-xs pl-2 py-1">
-                <div className="w-7 h-7 rounded-xl bg-red-100 text-red-600 flex items-center justify-center animate-pulse">
-                  <Sparkles size={13} />
+              <div className="flex gap-2 items-center text-slate-400 text-xs pl-1 py-1">
+                <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Headphones size={13} />
                 </div>
-                <div className="flex items-center gap-1 bg-white border border-slate-200 px-3 py-2 rounded-2xl shadow-xs">
-                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce"></span>
-                  <span className="text-[11px] text-slate-500 ml-1">AI đang suy nghĩ...</span>
+                <div className="flex items-center gap-1.5 bg-white border border-slate-200/60 px-3 py-1.5 rounded-xl shadow-xs">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce"></span>
+                  <span className="text-[11px] text-slate-500 ml-1">Đang xử lý câu trả lời...</span>
                 </div>
               </div>
             )}
@@ -312,7 +306,7 @@ export default function AiChatWidget() {
                 type="button"
                 onClick={() => handlePromptClick(prompt)}
                 disabled={loading}
-                className="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200 text-[11px] text-slate-600 transition-colors flex-shrink-0 disabled:opacity-50 font-500"
+                className="whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200/70 text-[11px] text-slate-600 transition-colors flex-shrink-0 disabled:opacity-50 font-500"
               >
                 {prompt.label}
               </button>
@@ -320,24 +314,24 @@ export default function AiChatWidget() {
           </div>
 
           {/* Input Box */}
-          <div className="p-3 bg-white border-t border-slate-100 flex items-center gap-2">
+          <div className="p-2.5 bg-white border-t border-slate-100 flex items-center gap-2">
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Hỏi bất kỳ câu hỏi nào với Gemini AI hoặc nhập mã VT..."
+              placeholder="Nhập câu hỏi hoặc mã đơn VT..."
               disabled={loading}
-              className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              className="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-100 outline-none transition-all"
             />
             <button
               type="button"
               onClick={() => handleSend()}
               disabled={!input.trim() || loading}
-              className="w-10 h-10 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white flex items-center justify-center shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
-              <Send size={15} />
+              <Send size={14} />
             </button>
           </div>
         </div>
@@ -347,20 +341,11 @@ export default function AiChatWidget() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        aria-label={isOpen ? 'Đóng Trợ lý AI' : 'Mở Trợ lý AI GiaoTín'}
-        className="group relative flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-xl shadow-red-500/25 hover:shadow-red-500/40 hover:scale-105 active:scale-95 transition-all duration-200 border border-white/20"
+        aria-label={isOpen ? 'Đóng hỗ trợ' : 'Mở tư vấn & hỗ trợ'}
+        className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-102 active:scale-98 transition-all duration-150"
       >
-        <span className="relative flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-300 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-        </span>
-        <div className="flex items-center gap-1.5 font-700 text-xs sm:text-sm tracking-wide">
-          <Sparkles size={16} className="text-amber-300 animate-pulse" />
-          <span>GiaoTín AI</span>
-        </div>
-        <span className="hidden group-hover:inline-block text-[11px] bg-white/20 px-1.5 py-0.5 rounded font-500 text-white/90">
-          {isOpen ? 'Thu nhỏ' : 'Hỏi ngay'}
-        </span>
+        <MessageCircle size={18} className="text-white" />
+        <span className="font-600 text-xs tracking-tight">Hỗ trợ khách hàng</span>
       </button>
     </div>
   );
