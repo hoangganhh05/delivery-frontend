@@ -327,7 +327,7 @@ export default function AiChatWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Nhập câu hỏi hoặc mã VT12345678..."
+              placeholder="Hỏi bất kỳ câu hỏi nào với Gemini AI hoặc nhập mã VT..."
               disabled={loading}
               className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
