@@ -84,8 +84,8 @@ export default function AiChatWidget() {
           content: m.text,
         }));
 
-      const res = await aiChatApi(textToSend, historyPayload);
-      const aiData = res.data;
+      const res: any = await aiChatApi(textToSend, historyPayload);
+      const aiData = res?.data?.reply ? res.data : res?.reply ? res : res?.data;
 
       const aiMsg: Message = {
         id: String(Date.now() + 1),
